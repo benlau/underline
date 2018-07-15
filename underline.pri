@@ -1,4 +1,3 @@
-INCLUDEPATH += $$PWD
-DEPENDPATH += $$PWD
+CONFIG += c++11
 
-include(./cpp/cpp.pri)
+include($$PWD/cpp/cpp.pri)
