@@ -3,6 +3,7 @@ QT       += testlib qml
 TARGET = tests
 CONFIG   += console
 CONFIG   -= app_bundle
+CONFIG += c++14
 
 TEMPLATE = app
 

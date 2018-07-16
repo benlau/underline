@@ -10,5 +10,7 @@ public:
 private slots:
 
     void test_some();
+
+    void test_map();
 };
 

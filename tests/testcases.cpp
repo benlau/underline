@@ -2,6 +2,7 @@
 #include <QTest>
 #include <Automator>
 #include <QtShell>
+#include <functional>
 #include "testcases.h"
 #include "underline.h"
 
@@ -22,5 +23,26 @@ void TestCases::test_some()
 
     QCOMPARE(_::some(QList<int>() << 0 << 2 << 4, isOdd), false);
     QCOMPARE(_::some(QList<int>() << 0 << 3 << 4, isOdd), true);
+}
+
+void TestCases::test_map()
+{
+    {
+        auto func = [](QString item) {
+            return item.toInt();
+        };
+
+
+        QCOMPARE(_::map(QList<QString>() << "1" << "2" << "3", func), QList<int>() << 1 << 2 << 3);
+    }
+
+    {
+        // generic lambda
+        auto func = [](auto item) {
+            return item.toInt();
+        };
+
+        QCOMPARE(_::map(QStringList() << "1" << "2" << "3", func), QList<int>() << 1 << 2 << 3);
+    }
 }
 
