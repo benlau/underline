@@ -9,6 +9,8 @@ public:
 
 private slots:
 
+    void test_function();
+
     void test_some();
 
     void test_map();
