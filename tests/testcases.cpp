@@ -18,9 +18,8 @@ TestCases::TestCases(QObject *parent) : QObject(parent)
     Q_UNUSED(ref);
 }
 
-
 template <typename F, typename T>
-auto wrapper(F functor, T t) -> typename _::Private::ret_arg1_traits<F,T>::type {
+auto wrapper(F functor, T t) -> typename _::Private::ret_func<F,T>::type {
     return functor(t);
 }
 
@@ -45,21 +44,6 @@ void TestCases::test_private_traits()
     }
 
     {
-        // ret_arg1_traits
-
-        auto func = [](auto i) {
-            return i;
-        };
-
-        const std::type_info& ti1 = typeid(_::Private::ret_arg1_traits<decltype(func), int>::type);
-        const std::type_info& ti2 = typeid(int);
-
-        QVERIFY(ti1 == ti2);
-
-        QCOMPARE(wrapper(func, 3), 3);
-    }
-
-    {
 
         // container_value_type
 
@@ -68,19 +52,6 @@ void TestCases::test_private_traits()
 
         QVERIFY(ti1 == ti2);
 
-    }
-
-    {
-        // combine container_value_type && ret_arg1_traits
-        auto func = [](auto i) {
-            return i;
-        };
-
-        const std::type_info& ti1 = typeid(_::Private::ret_arg1_traits<decltype(func), _::Private::container_value_type<QList<QString>>::type>::type);
-
-        const std::type_info& ti2 = typeid(QString);
-
-        QVERIFY(ti1 == ti2);
     }
 }
 
@@ -140,14 +111,12 @@ void TestCases::test_some()
     {
         /// Standard lambda method without the index parameter
         auto func = [](int item) {
-            Q_UNUSED(index);
             return item % 2 == 1;
         };
 
         QCOMPARE(_::some(QList<int>() << 0 << 2 << 4, func), false);
         QCOMPARE(_::some(QList<int>() << 0 << 3 << 4, func), true);
     }
-
 
     {
         /// Standard function

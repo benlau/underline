@@ -16,11 +16,6 @@ namespace _ {
             typedef Container<NewType, typename rebind<Args, NewType>::type...> type;
         };
 
-        template <typename Functor, typename A1>
-        struct ret_arg1_traits {
-            typedef decltype(std::declval<Functor>()(std::declval<A1>())) type;
-        };
-
         template <typename T>
         struct container_value_type {
             typedef typename std::remove_reference<T>::type::value_type type;
@@ -57,7 +52,7 @@ namespace _ {
 
         template <typename Functor, typename A1>
         inline auto invoke(Functor functor, A1 a1) ->
-            typename std::enable_if<is_args_compatible<Functor, A1>::value,         decltype(func0<Functor, A1>()) >::type {
+            typename std::enable_if<is_args_compatible<Functor, A1>::value, decltype(func0<Functor, A1>()) >::type {
             return functor(a1);
         }
 
@@ -108,10 +103,10 @@ namespace _ {
 
     template <typename T, typename F>
     inline auto map(T& list, F callback) -> QList<
-        typename Private::ret_arg1_traits<F, typename Private::container_value_type<T>::type>::type
+        typename Private::ret_func<F, typename Private::container_value_type<T>::type>::type
     > {
 
-        QList<typename Private::ret_arg1_traits<F, typename Private::container_value_type<T>::type>::type> res;
+        QList<typename Private::ret_func<F, typename Private::container_value_type<T>::type>::type> res;
 
         for (int i = 0 ; i < list.size() ; i++) {
             res << callback(list[i]);

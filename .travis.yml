@@ -9,6 +9,8 @@ addons:
 compiler:
   - gcc
 before_install:
+    - sudo apt-get install -qq g++-6
+    - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90
     - export GOPATH=`pwd`/gosrc
     - export PATH=`pwd`/gosrc/bin:$PATH
     - go get qpm.io/qpm
