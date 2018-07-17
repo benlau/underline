@@ -1,16 +1,19 @@
 language : cpp
 dist: trusty
 env:
-  - DISPLAY=:99.0
+  - CC=gcc-6 CXX=g++-6
 addons:
   apt:
     packages:
     - valgrind
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-6
 compiler:
   - gcc
 before_install:
-    - sudo apt-get install -qq g++-6
-    - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90
     - export GOPATH=`pwd`/gosrc
     - export PATH=`pwd`/gosrc/bin:$PATH
     - go get qpm.io/qpm

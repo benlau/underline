@@ -25,5 +25,5 @@ build_script:
   - nmake
   - dir /w
   - dir release /w
-  - tree/F/A
+  - tree /F /A
   - ./tests/tests

@@ -30,14 +30,30 @@ namespace _ {
 
         /// Convert to a function with zero paramter. Only the return type remained the same.
         template <typename Functor>
-        decltype(std::declval<Functor>()()) func0();
+        typename std::enable_if<is_args_compatible<Functor>::value,
+        decltype(std::declval<Functor>()())>::type
+        func0();
+
+        template <typename Functor>
+        typename std::enable_if<!is_args_compatible<Functor>::value,void>::type
+        func0();
 
         template <typename Functor, typename Arg1>
-        decltype(std::declval<Functor>()(std::declval<Arg1>()))
+        typename std::enable_if<is_args_compatible<Functor, Arg1>::value,
+        decltype(std::declval<Functor>()(std::declval<Arg1>()))>::type
+        func0();
+
+        template <typename Functor, typename Arg1>
+        typename std::enable_if<!is_args_compatible<Functor, Arg1>::value, void>::type
         func0();
 
         template <typename Functor, typename Arg1, typename Arg2>
-        decltype(std::declval<Functor>()(std::declval<Arg1>(), std::declval<Arg2>()))
+        typename std::enable_if<is_args_compatible<Functor, Arg1, Arg2>::value,
+        decltype(std::declval<Functor>()(std::declval<Arg1>(),std::declval<Arg2>()))>::type
+        func0();
+
+        template <typename Functor, typename Arg1, typename Arg2>
+        typename std::enable_if<!is_args_compatible<Functor, Arg1, Arg2>::value,void>::type
         func0();
 
         template <typename Functor, typename ...Args>
@@ -51,16 +67,17 @@ namespace _ {
         }
 
         template <typename Functor, typename A1>
-        inline auto invoke(Functor functor, A1 a1) ->
-            typename std::enable_if<is_args_compatible<Functor, A1>::value, decltype(func0<Functor, A1>()) >::type {
-            return functor(a1);
-        }
-
-        template <typename Functor, typename A1>
         inline auto invoke(Functor functor, A1) ->
             typename std::enable_if<is_args_compatible<Functor>::value,
             decltype(func0<Functor>())>::type {
             return functor();
+        }
+
+        template <typename Functor, typename A1>
+        inline auto invoke(Functor functor, A1 a1) ->
+        typename std::enable_if<is_args_compatible<Functor,A1>::value,
+        typename ret_func<Functor,A1>::type>::type {
+            return functor(a1);
         }
 
         /* invoke(Functor,A1,A2) */
@@ -68,21 +85,21 @@ namespace _ {
         template <typename Functor, typename A1, typename A2>
         inline auto invoke(Functor functor, A1 a1, A2 a2) ->
             typename std::enable_if<is_args_compatible<Functor,A1,A2>::value,
-            decltype(func0<Functor,A1,A2>())>::type {
+            typename ret_func<Functor,A1, A2>::type>::type {
             return functor(a1,a2);
         }
 
         template <typename Functor, typename A1, typename A2>
         inline auto invoke(Functor functor, A1 a1, A2) ->
             typename std::enable_if<is_args_compatible<Functor,A1>::value,
-            decltype(func0<Functor,A1>())>::type {
+            typename ret_func<Functor,A1>::type>::type {
             return functor(a1);
         }
 
         template <typename Functor, typename A1, typename A2>
         inline auto invoke(Functor functor, A1, A2) ->
             typename std::enable_if<is_args_compatible<Functor>::value,
-            decltype(func0<Functor>())>::type {
+            typename ret_func<Functor>::type>::type{
             return functor();
         }
 

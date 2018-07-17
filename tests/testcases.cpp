@@ -82,6 +82,8 @@ void TestCases::test_private_invoke()
 
     QCOMPARE((std::is_same<decltype(_::Private::func0<decltype(myFunc1),QString>()), QString>::value), true);
 
+    QCOMPARE((std::is_same<_::Private::ret_func<decltype(myFunc0)>::type,int>::value), true);
+
     QCOMPARE((std::is_same<_::Private::ret_func<decltype(myFunc1),int>::type,int>::value), true);
 
     QCOMPARE(_::Private::invoke(myFunc0) , -1);
@@ -92,7 +94,6 @@ void TestCases::test_private_invoke()
     QCOMPARE(_::Private::invoke(myFunc1, 2,3) , 2);
 
     QCOMPARE(_::Private::invoke(myFunc2, 2,3) , 2);
-
 }
 
 void TestCases::test_some()
