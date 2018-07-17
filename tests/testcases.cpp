@@ -53,6 +53,14 @@ void TestCases::test_private_traits()
         QVERIFY(ti1 == ti2);
 
     }
+
+    {
+        const std::type_info& ti1 = typeid(_::Private::rebind<QList<int>, QString>::type);
+        const std::type_info& ti2 = typeid(QList<QString>);
+
+        QVERIFY(ti1 == ti2);
+
+    }
 }
 
 void TestCases::test_private_invoke()
@@ -166,6 +174,7 @@ void TestCases::test_map()
         };
 
         QCOMPARE(_::map(QList<QString>() << "1" << "2" << "3", func), QList<int>() << 1 << 2 << 3);
+        QCOMPARE(_::map(QVector<QString>() << "1" << "2" << "3", func), QVector<int>() << 1 << 2 << 3);
     }
 
     {
@@ -174,7 +183,10 @@ void TestCases::test_map()
             return item.toInt();
         };
 
-        QCOMPARE(_::map(QStringList() << "1" << "2" << "3", func), QList<int>() << 1 << 2 << 3);
+        QCOMPARE(_::map(QList<QString>() << "1" << "2" << "3", func), QList<int>() << 1 << 2 << 3);
+        QCOMPARE(_::map(QVector<QString>() << "1" << "2" << "3", func), QVector<int>() << 1 << 2 << 3);
+
     }
+
 }
 

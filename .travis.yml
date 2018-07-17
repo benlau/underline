@@ -14,6 +14,9 @@ addons:
 compiler:
   - gcc
 before_install:
+    - export CC=gcc-6
+    - export CXX=g++-6
+    - ${CXX} --version
     - export GOPATH=`pwd`/gosrc
     - export PATH=`pwd`/gosrc/bin:$PATH
     - go get qpm.io/qpm

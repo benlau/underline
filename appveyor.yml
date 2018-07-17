@@ -23,7 +23,7 @@ build_script:
   - cd ..
   - qmake 
   - nmake
+  - tree /F /A
   - dir /w
   - dir release /w
-  - tree /F /A
   - ./tests/tests

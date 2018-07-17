@@ -1,4 +1,11 @@
-Qt/Qml Library Project Template
--------------
+It is still under development
 
-Reference: [e-fever/e-fever-codebase: A Collection of Project Wizard for Qt Creator](https://github.com/e-fever/e-fever-codebase)
+
+Example:
+
+```C++
+
+QList<int> output1 = _::map(QList<QString>() << "1" << "2" << "3", [](auto item) { return item.toInt();});
+
+QVector<int> output2 = _::map(QVector<QString>() << "1" << "2" << "3", [](auto item) { return item.toInt();});
+```
