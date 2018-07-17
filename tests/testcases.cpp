@@ -18,15 +18,96 @@ TestCases::TestCases(QObject *parent) : QObject(parent)
     Q_UNUSED(ref);
 }
 
-void TestCases::test_function()
+
+template <typename F, typename T>
+auto wrapper(F functor, T t) -> typename _::Private::ret_arg1_traits<F,T>::type {
+    return functor(t);
+}
+
+void TestCases::test_private_traits()
 {
-    auto func = [](auto i) {
-        Q_UNUSED(i);
+    {
+        auto func = [](auto i) {
+            Q_UNUSED(i);
+        };
+
+        QCOMPARE((std::is_convertible<std::function<void(int)>, decltype(func)>::value), false);
+
+        QCOMPARE((std::is_convertible<decltype(func), std::function<void(int)>>::value), true);
+    }
+
+    {
+        // rebind
+        const std::type_info& ti1 = typeid(_::Private::rebind<QList<int>, QString>::type);
+        const std::type_info& ti2 = typeid(QList<QString>);
+
+        QVERIFY(ti1 == ti2);
+    }
+
+    {
+        // ret_arg1_traits
+
+        auto func = [](auto i) {
+            return i;
+        };
+
+        const std::type_info& ti1 = typeid(_::Private::ret_arg1_traits<decltype(func), int>::type);
+        const std::type_info& ti2 = typeid(int);
+
+        QVERIFY(ti1 == ti2);
+
+        QCOMPARE(wrapper(func, 3), 3);
+    }
+
+    {
+
+        // container_value_type
+
+        const std::type_info& ti1 = typeid(_::Private::container_value_type<QList<int>>::type);
+        const std::type_info& ti2 = typeid(int);
+
+        QVERIFY(ti1 == ti2);
+
+    }
+
+    {
+        // combine container_value_type && ret_arg1_traits
+        auto func = [](auto i) {
+            return i;
+        };
+
+        const std::type_info& ti1 = typeid(_::Private::ret_arg1_traits<decltype(func), _::Private::container_value_type<QList<QString>>::type>::type);
+
+        const std::type_info& ti2 = typeid(QString);
+
+        QVERIFY(ti1 == ti2);
+    }
+}
+
+void TestCases::test_private_invoke()
+{
+    auto func0 = []() {
+        return -1;
     };
 
-    QCOMPARE((std::is_convertible<std::function<void(int)>, decltype(func)>::value), false);
+    auto func1 = [](auto i) {
+        return i;
+    };
 
-    QCOMPARE((std::is_convertible<decltype(func), std::function<void(int)>>::value), true);
+    Q_UNUSED(func1);
+
+
+    QCOMPARE((int) (_::Private::is_args_compatible<decltype(func0)>::value), 1);
+    QCOMPARE((int) (_::Private::is_args_compatible<decltype(func0), int>::value), 0);
+
+    QCOMPARE((int) (_::Private::is_args_compatible<decltype(func1),int>::value), 1);
+    QCOMPARE((int) (_::Private::is_args_compatible<decltype(func1),QString>::value), 1);
+    QCOMPARE((int) (_::Private::is_args_compatible<decltype(func1),QString, int>::value), 0);
+
+
+    QCOMPARE(_::Private::invoke(func0) , -1);
+    QCOMPARE(_::Private::invoke(func0, 1) , -1);
+    QCOMPARE(_::Private::invoke(func1, 1) , 1);
 }
 
 void TestCases::test_some()

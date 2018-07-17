@@ -9,7 +9,9 @@ public:
 
 private slots:
 
-    void test_function();
+    void test_private_traits();
+
+    void test_private_invoke();
 
     void test_some();
 
