@@ -32,18 +32,3 @@ DISTFILES +=     qpm.json     \
 HEADERS += \
     testcases.h
 
-win32 {
-    CONFIG(debug, debug|release) {
-        QMAKE_LIBDIR += $${OUT_PWD}/../buildlib/debug
-        PRE_TARGETDEPS += $${OUT_PWD}/../buildlib/debug/underline.lib
-    } else {
-        QMAKE_LIBDIR += $${OUT_PWD}/../buildlib/release
-        PRE_TARGETDEPS += $${OUT_PWD}/../buildlib/release/underline.lib
-    }
-
-} else {
-    LIBS += -L$${OUT_PWD}/../buildlib
-    PRE_TARGETDEPS += $$absolute_path($${OUT_PWD}/../buildlib/libunderline.a)
-}
-
-LIBS += -lunderline

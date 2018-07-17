@@ -1,5 +1,5 @@
 TARGET = underline
-TEMPLATE = lib
+TEMPLATE = aux
 
 ROOT_DIR = $$absolute_path($$PWD/..)
 

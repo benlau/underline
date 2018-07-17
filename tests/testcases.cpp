@@ -86,28 +86,42 @@ void TestCases::test_private_traits()
 
 void TestCases::test_private_invoke()
 {
-    auto func0 = []() {
+    auto myFunc0 = []() {
         return -1;
     };
 
-    auto func1 = [](auto i) {
+    auto myFunc1 = [](auto i) {
         return i;
     };
 
-    Q_UNUSED(func1);
+    auto myFunc2 = [](auto i, auto j) {
+        Q_UNUSED(j);
+        return i;
+    };
 
+    QCOMPARE((int) (_::Private::is_args_compatible<decltype(myFunc0)>::value), 1);
+    QCOMPARE((int) (_::Private::is_args_compatible<decltype(myFunc0), int>::value), 0);
 
-    QCOMPARE((int) (_::Private::is_args_compatible<decltype(func0)>::value), 1);
-    QCOMPARE((int) (_::Private::is_args_compatible<decltype(func0), int>::value), 0);
+    QCOMPARE((int) (_::Private::is_args_compatible<decltype(myFunc1),int>::value), 1);
+    QCOMPARE((int) (_::Private::is_args_compatible<decltype(myFunc1),QString>::value), 1);
+    QCOMPARE((int) (_::Private::is_args_compatible<decltype(myFunc1),QString, int>::value), 0);
+    QCOMPARE((int) (_::Private::is_args_compatible<decltype(myFunc1),QString, int>::value), 0);
 
-    QCOMPARE((int) (_::Private::is_args_compatible<decltype(func1),int>::value), 1);
-    QCOMPARE((int) (_::Private::is_args_compatible<decltype(func1),QString>::value), 1);
-    QCOMPARE((int) (_::Private::is_args_compatible<decltype(func1),QString, int>::value), 0);
+    QCOMPARE((std::is_same<decltype(_::Private::func0<decltype(myFunc0)>()), int>::value), true);
 
+    QCOMPARE((std::is_same<decltype(_::Private::func0<decltype(myFunc1),QString>()), QString>::value), true);
 
-    QCOMPARE(_::Private::invoke(func0) , -1);
-    QCOMPARE(_::Private::invoke(func0, 1) , -1);
-    QCOMPARE(_::Private::invoke(func1, 1) , 1);
+    QCOMPARE((std::is_same<_::Private::ret_func<decltype(myFunc1),int>::type,int>::value), true);
+
+    QCOMPARE(_::Private::invoke(myFunc0) , -1);
+    QCOMPARE(_::Private::invoke(myFunc0, 1) , -1);
+    QCOMPARE(_::Private::invoke(myFunc0, 2,3) , -1);
+
+    QCOMPARE(_::Private::invoke(myFunc1, 1) , 1);
+    QCOMPARE(_::Private::invoke(myFunc1, 2,3) , 2);
+
+    QCOMPARE(_::Private::invoke(myFunc2, 2,3) , 2);
+
 }
 
 void TestCases::test_some()

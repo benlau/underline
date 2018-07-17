@@ -18,7 +18,8 @@ script:
     - source qtci/path.env
     - qt-5.7
     - source qt-5.7.env
-    - mkdir build
-    - cd build
-    - run-unittests ../tests/unittests/unittests.pro
+    - qmake
+    - make
+    - APP=`find . -name tests`
+    - $APP
 
