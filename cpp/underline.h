@@ -8,7 +8,8 @@ namespace _ {
 
         /// Source: https://stackoverflow.com/questions/5052211/changing-value-type-of-a-given-stl-container
         template <class Container, class NewType>
-        struct rebind;
+        struct rebind {
+        };
 
         template <class ValueType, class... Args, template <class...> class Container, class NewType>
         struct rebind<Container<ValueType, Args...>, NewType>
@@ -21,6 +22,7 @@ namespace _ {
             typedef typename std::remove_reference<T>::type::value_type type;
         };
 
+        /// Check is the Functor be able to take Args as input. It works with generic lambda.
         template <typename Functor,typename ...Args>
         struct is_args_compatible {
             enum {
@@ -106,7 +108,7 @@ namespace _ {
     }
 
     template <typename T, typename P>
-    inline bool some(T& list, P predicate) {
+    inline bool some(const T& list, P predicate) {
         bool res = false;
 
         for (int i = 0 ; i < list.size() ; i++) {
@@ -119,11 +121,11 @@ namespace _ {
     }
 
     template <typename T, typename F>
-    inline auto map(T& list, F callback) -> QList<
+    inline auto map(const T& list, F callback) -> typename Private::rebind<T,
         typename Private::ret_func<F, typename Private::container_value_type<T>::type>::type
-    > {
+    >::type {
 
-        QList<typename Private::ret_func<F, typename Private::container_value_type<T>::type>::type> res;
+        typename Private::rebind<T, typename Private::ret_func<F, typename Private::container_value_type<T>::type>::type>::type res;
 
         for (int i = 0 ; i < list.size() ; i++) {
             res << callback(list[i]);
