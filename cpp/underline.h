@@ -1,5 +1,7 @@
 #pragma once
 #include <QList>
+#include <QStringList>
+#include <QVariantList>
 #include <functional>
 
 namespace _ {
@@ -9,6 +11,16 @@ namespace _ {
         /// Source: https://stackoverflow.com/questions/5052211/changing-value-type-of-a-given-stl-container
         template <class Container, class NewType>
         struct rebind {
+        };
+
+        template <class NewType>
+        struct rebind<QStringList, NewType> {
+            typedef QList<NewType> type;
+        };
+
+        template <class NewType>
+        struct rebind<QVariantList, NewType> {
+            typedef QList<NewType> type;
         };
 
         template <class ValueType, class... Args, template <class...> class Container, class NewType>
