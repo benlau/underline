@@ -1,14 +1,14 @@
 QT       += testlib qml
 
-TARGET = c14tests
+TARGET = c11tests
 CONFIG   += console
 CONFIG   -= app_bundle
-CONFIG += c++14
+CONFIG += c++11
 
 TEMPLATE = app
 
 SOURCES +=     main.cpp \     
-    c14testcases.cpp
+    c11testcases.cpp
 
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
 DEFINES += QUICK_TEST_SOURCE_DIR=\\\"$$PWD/qmltests\\\"
@@ -29,5 +29,5 @@ DISTFILES +=    \
 }
 
 HEADERS += \
-    c14testcases.h
+    c11testcases.h
 

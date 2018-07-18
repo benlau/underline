@@ -1,11 +1,11 @@
 #pragma once
 #include <QObject>
 
-class TestCases : public QObject
+class C11TestCases : public QObject
 {
     Q_OBJECT
 public:
-    explicit TestCases(QObject *parent = 0);
+    explicit C11TestCases(QObject *parent = 0);
 
 private slots:
 

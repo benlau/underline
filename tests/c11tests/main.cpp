@@ -4,7 +4,7 @@
 #include <QtQuickTest/quicktest.h>
 #include <XBacktrace.h>
 #include <QtShell>
-#include "c14testcases.h"
+#include "c11testcases.h"
 #include "underline.h"
 
 int main(int argc, char *argv[])
@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
     QCoreApplication app(argc, argv);
 
     TestRunner runner;
-    runner.add<C14TestCases>();
+    runner.add<C11TestCases>();
 
     bool error = runner.exec(app.arguments());
 

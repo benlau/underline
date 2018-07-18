@@ -3,14 +3,14 @@
 #include <Automator>
 #include <QtShell>
 #include <functional>
-#include "testcases.h"
+#include "c14testcases.h"
 #include "underline.h"
 
 static bool isOdd(int value) {
     return value % 2 == 1;
 }
 
-TestCases::TestCases(QObject *parent) : QObject(parent)
+C14TestCases::C14TestCases(QObject *parent) : QObject(parent)
 {
     auto ref = [=]() {
         QTest::qExec(this, 0, 0); // Autotest detect available test cases of a QObject by looking for "QTest::qExec" in source code
@@ -23,7 +23,7 @@ auto wrapper(F functor, T t) -> typename _::Private::ret_func<F,T>::type {
     return functor(t);
 }
 
-void TestCases::test_private_traits()
+void C14TestCases::test_private_traits()
 {
     {
         auto func = [](auto i) {
@@ -72,7 +72,7 @@ void TestCases::test_private_traits()
     }
 }
 
-void TestCases::test_private_invoke()
+void C14TestCases::test_private_invoke()
 {
     auto myFunc0 = []() {
         return -1;
@@ -127,7 +127,7 @@ void TestCases::test_private_invoke()
     QCOMPARE((std::is_same<_::Private::ret_invoke<decltype(myFunc0),QString, int>::type , int>::value), true);
 }
 
-void TestCases::test_some()
+void C14TestCases::test_some()
 {
     {
         /// Standard lambda method
@@ -189,7 +189,7 @@ void TestCases::test_some()
 
 }
 
-void TestCases::test_map()
+void C14TestCases::test_map()
 {
     {
         auto func = [](QString item) {
