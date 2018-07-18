@@ -27,5 +27,5 @@ script:
     - source qt-5.7.env
     - qmake
     - make
-    - tests/tests
+    - tests/c14tests/c14tests
 

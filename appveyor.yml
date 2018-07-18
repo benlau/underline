@@ -25,6 +25,4 @@ build_script:
   - nmake
   - tree /F /A
   - dir /w
-  - cd tests\release
-  - dir /w
-  - tests.exe
+  - tests\c14tests\release\c14tests
