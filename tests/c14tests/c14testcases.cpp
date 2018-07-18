@@ -5,9 +5,19 @@
 #include <functional>
 #include "c14testcases.h"
 #include "underline.h"
+#include "dataobject.h"
 
 static bool isOdd(int value) {
     return value % 2 == 1;
+}
+
+static QObject* createMockObject(QObject* parent) {
+    QObject* ret = new DataObject(parent);
+    ret->setProperty("value1", 1);
+    ret->setProperty("value2", 2.0);
+    ret->setProperty("value3", "3");
+
+    return ret;
 }
 
 C14TestCases::C14TestCases(QObject *parent) : QObject(parent)
@@ -220,5 +230,170 @@ void C14TestCases::test_map()
         QCOMPARE(_::map(QStringList() << "1" << "2" << "3", func), QList<int>() << 1 << 2 << 3);
         QCOMPARE(_::map(QVector<QString>() << "1" << "2" << "3", func), QVector<int>() << 1 << 2 << 3);
     }
+}
+
+void C14TestCases::test_assign()
+{
+    QObject* root = createMockObject(this);
+
+    QVERIFY(root);
+
+    /* assign(map, QObject) */
+
+    QVariantMap data;
+    _::assign(data, root);
+
+    QVERIFY(data["objectName"] == "Root");
+    QVERIFY(data["value1"].toInt() == 1);
+    QVERIFY(data["value2"].toString() == "2");
+    QVERIFY(data["value3"].toBool());
+
+    QVERIFY(data["value4"].type() == QVariant::Map);
+    QVERIFY(data["value4"].toMap()["value1"].toInt() == 5);
+
+    /* assign(QObject, map) */
+    data.clear();
+    data["value1"] = 99;
+    QVariantMap value4;
+    value4["value1"] = 32;
+    data["value4"] = value4;
+
+    _::assign(root, data);
+    QVERIFY(root->property("value1").toInt() == 99);
+    QVERIFY(root->property("value4").value<QObject*>()->property("value1").toInt() == 32);
+
+    /* assign(QObject, QJSvalue)*/
+    /*
+    QString content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
+    QJSValue value = engine.evaluate(content);
+
+    _::assign(root, value);
+
+    QCOMPARE(root->property("value1").toInt(), 10);
+    QVERIFY(root->property("value2").toString() == "11");
+    QVERIFY(root->property("value3").toBool() == false);
+    QCOMPARE(root->property("value4").value<QObject*>()->property("value1").toInt(), 21);
+    */
+
+    /* assign(QObject = null, QJSValue) */
+    /*
+    {
+        QString content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
+        QJSValue value = engine.evaluate(content);
+
+        _::assign(0, value);
+    }
+    */
+}
+
+void C14TestCases::test_get()
+{
+    QObject* root = createMockObject(this);
+    QVERIFY(root);
+
+    /* get(QObject*, QString) */
+    QVariant value = _::get(root, "value4.value1");
+    QCOMPARE(value.toInt(), 5);
+
+    value = _::get(root,"value4.valueX", QString("Not Found"));
+    QVERIFY(value.toString() == "Not Found");
+
+    /* get(QVarnaintMap, QString) */
+
+    QVariantMap source;
+    _::assign(source, root);
+    value = _::get(source, "value2");
+    QVERIFY(value.toString() == "2");
+
+    value = _::get(source, "valueX");
+    QVERIFY(value.isNull());
+}
+
+void C14TestCases::test_set()
+{
+    QVariantMap data;
+    _::set(data,"value1", 1);
+    QVERIFY(data.contains("value1"));
+    QVERIFY(data["value1"].toInt() == 1);
+
+    _::set(data,"value2","value2");
+    QVERIFY(data.contains("value1"));
+    QVERIFY(data["value1"].toInt() == 1);
+    QVERIFY(data.contains("value2"));
+    QVERIFY(data["value2"].toString() == "value2");
+
+    _::set(data,"value3.value1",2);
+
+    QVariantMap value3 = data["value3"].toMap();
+    QVERIFY(value3["value1"].toInt() == 2);
+
+    /* Override value */
+    data["value4"] = true;
+    _::set(data,"value4.value1",3);
+    QVariant value4 = data["value4"];
+    QVERIFY(value4.canConvert<QVariantMap>());
+
+    QVERIFY(value4.toMap()["value1"].toInt() == 3);
+}
+
+void C14TestCases::test_pick()
+{
+    QObject* root = createMockObject(this);
+    QVERIFY(root);
+
+    /* _::pick(QObject*, paths) */
+
+    QVariantMap data = _::pick(root, QStringList()
+                                       << "value1"
+                                       << "value4.value1");
+
+    QCOMPARE(data.size(), 2);
+    QVERIFY(data.contains("value1"));
+    QVERIFY(!data.contains("value2"));
+    QVERIFY(data.contains("value4"));
+
+    QVERIFY(data["value4"].toMap()["value1"].toInt() == 5);
+
+    // Pick an QObject
+    data = _::pick(root, QStringList() << "value4");
+    QVERIFY(data["value4"].type() == QVariant::Map);
+
+    /* _::pick(QVariant, paths) */
+    QVariantMap source;
+    _::assign(source, root);
+
+    data = _::pick(source, QStringList() << "value1" << "value4.value1");
+
+    QCOMPARE(data.size(), 2);
+    QVERIFY(data.contains("value1"));
+    QVERIFY(!data.contains("value2"));
+    QVERIFY(data.contains("value4"));
+
+    QVERIFY(data["value4"].toMap()["value1"].toInt() == 5);
+
+}
+
+void C14TestCases::test_omit()
+{
+    QObject* root = createMockObject(this);
+
+    QVERIFY(root);
+
+    QVariantMap data1;
+
+    _::assign(data1, root);
+    QCOMPARE(data1.contains("value2"), true);
+
+    QVariantMap properties;
+    properties["value1"] = true;
+    properties["value3"] = false; // omit do not care the content
+
+    QVariantMap data2 = _::omit(data1, properties);
+
+    QVERIFY(!data2.contains("value1"));
+    QVERIFY(data2.contains("value2"));
+    QVERIFY(!data2.contains("value3"));
+    QVERIFY(data2.contains("value4"));
+    QVERIFY(data2["value4"].type() == QVariant::Map);
 }
 

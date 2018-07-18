@@ -1,4 +1,5 @@
 TEMPLATE = aux
+QT       += core
 
 ROOT_DIR = $$absolute_path($$PWD/..)
 include($$ROOT_DIR/src/underline.pri)

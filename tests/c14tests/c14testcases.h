@@ -16,5 +16,15 @@ private slots:
     void test_some();
 
     void test_map();
+
+    void test_assign();
+
+    void test_set();
+
+    void test_get();
+
+    void test_pick();
+
+    void test_omit();
 };
 

@@ -8,7 +8,9 @@ CONFIG += c++14
 TEMPLATE = app
 
 SOURCES +=     main.cpp \     
-    c14testcases.cpp
+    c14testcases.cpp \
+    dataobject.cpp \
+    dataobject2.cpp
 
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
 DEFINES += QUICK_TEST_SOURCE_DIR=\\\"$$PWD/qmltests\\\"
@@ -29,5 +31,7 @@ DISTFILES +=    \
 }
 
 HEADERS += \
-    c14testcases.h
+    c14testcases.h \
+    dataobject.h \
+    dataobject2.h
 
