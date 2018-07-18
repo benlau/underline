@@ -91,9 +91,9 @@ void TestCases::test_private_invoke()
     QCOMPARE((int) (_::Private::is_args_compatible<decltype(myFunc1),QString, int>::value), 0);
     QCOMPARE((int) (_::Private::is_args_compatible<decltype(myFunc1),QString, int>::value), 0);
 
-    QCOMPARE((std::is_same<decltype(_::Private::func0<decltype(myFunc0)>()), int>::value), true);
+    QCOMPARE((std::is_same<decltype(_::Private::decl_func0<decltype(myFunc0)>()), int>::value), true);
 
-    QCOMPARE((std::is_same<decltype(_::Private::func0<decltype(myFunc1),QString>()), QString>::value), true);
+    QCOMPARE((std::is_same<decltype(_::Private::decl_func0<decltype(myFunc1),QString>()), QString>::value), true);
 
     QCOMPARE((std::is_same<_::Private::ret_func<decltype(myFunc0)>::type,int>::value), true);
 
@@ -111,9 +111,9 @@ void TestCases::test_private_invoke()
 
     QCOMPARE(_::Private::invoke(myFunc2, 2,3) , 2);
 
-    QCOMPARE((std::is_same<decltype(_::Private::invoke0<decltype(myFunc0)>()) , int>::value), true);
+    QCOMPARE((std::is_same<decltype(_::Private::decl_invoke0<decltype(myFunc0)>()) , int>::value), true);
 
-    QCOMPARE((std::is_same<decltype(_::Private::invoke0<decltype(myFunc2), QString, int>()) , QString>::value), true);
+    QCOMPARE((std::is_same<decltype(_::Private::decl_invoke0<decltype(myFunc2), QString, int>()) , QString>::value), true);
 
     QCOMPARE((std::is_same<_::Private::ret_invoke<decltype(myFunc0),QString, int>::type , int>::value), true);
 }
@@ -194,6 +194,17 @@ void TestCases::test_map()
     {
         // generic lambda
         auto func = [](auto item) {
+            return item.toInt();
+        };
+
+        QCOMPARE(_::map(QList<QString>() << "1" << "2" << "3", func), QList<int>() << 1 << 2 << 3);
+        QCOMPARE(_::map(QVector<QString>() << "1" << "2" << "3", func), QVector<int>() << 1 << 2 << 3);
+    }
+
+    {
+        // generic lambda with index parameter
+        auto func = [](auto item, int index) {
+            Q_UNUSED(index);
             return item.toInt();
         };
 
