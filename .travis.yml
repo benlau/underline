@@ -27,6 +27,6 @@ script:
     - source qt-5.7.env
     - qmake
     - make
-    - APP=`find . -name tests`
-    - $APP
+    - tree .
+    - tests/tests
 

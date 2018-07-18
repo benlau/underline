@@ -30,32 +30,35 @@ namespace _ {
             };
         };
 
+        template <typename Type, typename Functor, typename ...Args>
+        using enable_if_args_compatible = typename std::enable_if<is_args_compatible<Functor, Args &&...>::value, Type>;
+
+        template <typename Type, typename Functor, typename ...Args>
+        using enable_if_args_not_compatible = typename std::enable_if<!is_args_compatible<Functor, Args &&...>::value, Type>;
+
         /// Convert to a function with zero paramter. Only the return type remained the same.
         template <typename Functor>
-        typename std::enable_if<is_args_compatible<Functor>::value,
-        decltype(std::declval<Functor>()())>::type
+        typename enable_if_args_compatible<decltype(std::declval<Functor>()()), Functor>::type
         decl_func0();
 
         template <typename Functor>
-        typename std::enable_if<!is_args_compatible<Functor>::value,void>::type
+        typename enable_if_args_not_compatible<void, Functor>::type
         decl_func0();
 
         template <typename Functor, typename Arg1>
-        typename std::enable_if<is_args_compatible<Functor, Arg1>::value,
-        decltype(std::declval<Functor>()(std::declval<Arg1>()))>::type
+        typename enable_if_args_compatible<decltype(std::declval<Functor>()(std::declval<Arg1>())), Functor, Arg1>::type
         decl_func0();
 
         template <typename Functor, typename Arg1>
-        typename std::enable_if<!is_args_compatible<Functor, Arg1>::value, void>::type
+        typename enable_if_args_not_compatible<void, Functor, Arg1>::type
         decl_func0();
 
         template <typename Functor, typename Arg1, typename Arg2>
-        typename std::enable_if<is_args_compatible<Functor, Arg1, Arg2>::value,
-        decltype(std::declval<Functor>()(std::declval<Arg1>(), std::declval<Arg2>()))>::type
+        typename enable_if_args_compatible<decltype(std::declval<Functor>()(std::declval<Arg1>(), std::declval<Arg2>())), Functor, Arg1, Arg2>::type
         decl_func0();
 
         template <typename Functor, typename Arg1, typename Arg2>
-        typename std::enable_if<!is_args_compatible<Functor, Arg1, Arg2>::value,void>::type
+        typename enable_if_args_not_compatible<void, Functor, Arg1, Arg2>::type
         decl_func0();
 
         template <typename Functor, typename ...Args>
