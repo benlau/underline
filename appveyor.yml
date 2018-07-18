@@ -25,7 +25,6 @@ build_script:
   - nmake
   - tree /F /A
   - dir /w
-  - dir release /w
   - cd tests\release
   - dir /w
   - tests.exe
