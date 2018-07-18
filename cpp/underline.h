@@ -75,6 +75,14 @@ namespace _ {
         typename enable_if_args_not_compatible<void, Functor, Arg1, Arg2>::type
         decl_func0();
 
+        template <typename Functor, typename Arg1, typename Arg2, typename Arg3>
+        typename enable_if_args_compatible<decltype(std::declval<Functor>()(std::declval<Arg1>(), std::declval<Arg2>(), std::declval<Arg3>())), Functor, Arg1, Arg2, Arg3>::type
+        decl_func0();
+
+        template <typename Functor, typename Arg1, typename Arg2, typename Arg3>
+        typename enable_if_args_not_compatible<void, Functor, Arg1, Arg2, Arg3>::type
+        decl_func0();
+
         template <typename Functor, typename ...Args>
         struct ret_func {
             using type = decltype(decl_func0<Functor, Args&&...>());
@@ -119,6 +127,36 @@ namespace _ {
         inline auto invoke(Functor functor, A1, A2) ->
             typename std::enable_if<is_args_compatible<Functor>::value,
             typename ret_func<Functor>::type>::type{
+            return functor();
+        }
+
+        /* invokte(functor,A1,A2,A3) */
+
+        template <typename Functor, typename A1, typename A2, typename A3>
+        inline auto invoke(Functor functor, A1 a1, A2 a2, A3 a3) ->
+            typename std::enable_if<is_args_compatible<Functor,A1,A2,A3>::value,
+            typename ret_func<Functor,A1, A2,A3>::type>::type {
+            return functor(a1,a2,a3);
+        }
+
+        template <typename Functor, typename A1, typename A2, typename A3>
+        inline auto invoke(Functor functor, A1 a1, A2 a2, A3 ) ->
+            typename std::enable_if<is_args_compatible<Functor,A1,A2>::value,
+            typename ret_func<Functor,A1, A2>::type>::type {
+            return functor(a1,a2);
+        }
+
+        template <typename Functor, typename A1, typename A2, typename A3>
+        inline auto invoke(Functor functor, A1 a1, A2, A3 ) ->
+            typename std::enable_if<is_args_compatible<Functor,A1>::value,
+            typename ret_func<Functor,A1>::type>::type {
+            return functor(a1);
+        }
+
+        template <typename Functor, typename A1, typename A2, typename A3>
+        inline auto invoke(Functor functor, A1, A2, A3 ) ->
+            typename std::enable_if<is_args_compatible<Functor>::value,
+            typename ret_func<Functor>::type>::type {
             return functor();
         }
 
