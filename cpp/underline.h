@@ -138,13 +138,13 @@ namespace _ {
 
     template <typename T, typename F>
     inline auto map(const T& list, F callback) -> typename Private::rebind<T,
-        typename Private::ret_func<F, typename Private::container_value_type<T>::type>::type
+        typename Private::ret_invoke<F, typename Private::container_value_type<T>::type, int>::type
     >::type {
 
-        typename Private::rebind<T, typename Private::ret_func<F, typename Private::container_value_type<T>::type>::type>::type res;
+        typename Private::rebind<T, typename Private::ret_invoke<F, typename Private::container_value_type<T>::type, int>::type>::type res;
 
         for (int i = 0 ; i < list.size() ; i++) {
-            res << callback(list[i]);
+            res << Private::invoke(callback, list[i], i);
         }
 
         return res;
