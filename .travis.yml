@@ -14,9 +14,8 @@ addons:
 compiler:
   - gcc
 before_install:
-    - export CC=gcc-6
-    - export CXX=g++-6
-    - ${CXX} --version
+    - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90
+    - g++ --version
     - export GOPATH=`pwd`/gosrc
     - export PATH=`pwd`/gosrc/bin:$PATH
     - go get qpm.io/qpm

@@ -34,33 +34,33 @@ namespace _ {
         template <typename Functor>
         typename std::enable_if<is_args_compatible<Functor>::value,
         decltype(std::declval<Functor>()())>::type
-        func0();
+        decl_func0();
 
         template <typename Functor>
         typename std::enable_if<!is_args_compatible<Functor>::value,void>::type
-        func0();
+        decl_func0();
 
         template <typename Functor, typename Arg1>
         typename std::enable_if<is_args_compatible<Functor, Arg1>::value,
         decltype(std::declval<Functor>()(std::declval<Arg1>()))>::type
-        func0();
+        decl_func0();
 
         template <typename Functor, typename Arg1>
         typename std::enable_if<!is_args_compatible<Functor, Arg1>::value, void>::type
-        func0();
+        decl_func0();
 
         template <typename Functor, typename Arg1, typename Arg2>
         typename std::enable_if<is_args_compatible<Functor, Arg1, Arg2>::value,
-        decltype(std::declval<Functor>()(std::declval<Arg1>(),std::declval<Arg2>()))>::type
-        func0();
+        decltype(std::declval<Functor>()(std::declval<Arg1>(), std::declval<Arg2>()))>::type
+        decl_func0();
 
         template <typename Functor, typename Arg1, typename Arg2>
         typename std::enable_if<!is_args_compatible<Functor, Arg1, Arg2>::value,void>::type
-        func0();
+        decl_func0();
 
         template <typename Functor, typename ...Args>
         struct ret_func {
-            using type = decltype(func0<Functor, Args&&...>());
+            using type = decltype(decl_func0<Functor, Args&&...>());
         };
 
         template <typename Functor>
@@ -71,7 +71,7 @@ namespace _ {
         template <typename Functor, typename A1>
         inline auto invoke(Functor functor, A1) ->
             typename std::enable_if<is_args_compatible<Functor>::value,
-            decltype(func0<Functor>())>::type {
+            decltype(decl_func0<Functor>())>::type {
             return functor();
         }
 
@@ -104,6 +104,22 @@ namespace _ {
             typename ret_func<Functor>::type>::type{
             return functor();
         }
+
+        /// Declare a function with same output as invoke but taking zero argument.
+
+        template <typename Functor>
+        inline decltype(invoke<Functor>(std::declval<Functor>())) decl_invoke0();
+
+        template <typename Functor, typename Arg1>
+        inline decltype(invoke<Functor>(std::declval<Functor>(), std::declval<Arg1>())) decl_invoke0();
+
+        template <typename Functor, typename Arg1, typename Arg2>
+        inline decltype(invoke<Functor>(std::declval<Functor>(), std::declval<Arg1>(), std::declval<Arg2>())) decl_invoke0();
+
+        template <typename Functor, typename ...Args>
+        struct ret_invoke {
+            using type = decltype(decl_invoke0<Functor, Args&&...>());
+        };
 
     }
 
