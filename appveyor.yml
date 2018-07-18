@@ -26,4 +26,6 @@ build_script:
   - tree /F /A
   - dir /w
   - dir release /w
-  - tests\release\tests.exe
+  - cd tests\release
+  - dir /w
+  - tests.exe

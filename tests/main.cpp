@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
 {
     XBacktrace::enableBacktraceLogOnUnhandledException();
 
-    QGuiApplication app(argc, argv);
+    QCoreApplication app(argc, argv);
 
     TestRunner runner;
     runner.add<TestCases>();

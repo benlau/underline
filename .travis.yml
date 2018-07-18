@@ -27,6 +27,5 @@ script:
     - source qt-5.7.env
     - qmake
     - make
-    - tree .
     - tests/tests
 
