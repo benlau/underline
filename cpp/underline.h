@@ -171,6 +171,9 @@ namespace _ {
         template <typename Functor, typename Arg1, typename Arg2>
         inline decltype(invoke<Functor>(std::declval<Functor>(), std::declval<Arg1>(), std::declval<Arg2>())) decl_invoke0();
 
+        template <typename Functor, typename Arg1, typename Arg2, typename Arg3>
+        inline decltype(invoke<Functor>(std::declval<Functor>(), std::declval<Arg1>(), std::declval<Arg2>(), std::declval<Arg3>())) decl_invoke0();
+
         template <typename Functor, typename ...Args>
         struct ret_invoke {
             using type = decltype(decl_invoke0<Functor, Args&&...>());
@@ -247,14 +250,14 @@ namespace _ {
     }
 
     template <typename T, typename F>
-    inline auto map(const T& list, F callback) -> typename Private::rebind<T,
-        typename Private::ret_invoke<F, typename Private::container_value_type<T>::type, int>::type
+    inline auto map(const T& collection, F iteratee) -> typename Private::rebind<T,
+        typename Private::ret_invoke<F, typename Private::container_value_type<T>::type, int, T>::type
     >::type {
 
-        typename Private::rebind<T, typename Private::ret_invoke<F, typename Private::container_value_type<T>::type, int>::type>::type res;
+        typename Private::rebind<T, typename Private::ret_invoke<F, typename Private::container_value_type<T>::type, int, T>::type>::type res;
 
-        for (int i = 0 ; i < list.size() ; i++) {
-            res << Private::invoke(callback, list[i], i);
+        for (int i = 0 ; i < collection.size() ; i++) {
+            res << Private::invoke(iteratee, collection[i], i, collection);
         }
 
         return res;
@@ -317,7 +320,7 @@ namespace _ {
 
             int index = meta->indexOfProperty(key.constData());
             if (index < 0) {
-                qWarning() << QString("assign:assign a non-existed property: %1").arg(iter.key());
+                qWarning() << QString("_::assign: assigns an non-existed property: %1").arg(iter.key());
                 iter++;
                 continue;
             }
@@ -358,6 +361,12 @@ namespace _ {
             QVariant value = source->property(property.name());
             dest->setProperty(p.toLocal8Bit().constData(), value);
         }
+    }
+
+    template <typename Dest, typename Source, typename... Args>
+    inline auto assign(Dest& dest, const Source& source, Args... sources) -> typename std::enable_if< (sizeof...(Args) > 0), void>::type {
+        assign(dest, source);
+        assign(dest, sources...);
     }
 
     inline QVariant get(const QObject *object, const QStringList &path, const QVariant& defaultValue)
