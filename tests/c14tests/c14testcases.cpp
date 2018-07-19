@@ -273,6 +273,33 @@ void C14TestCases::test_assign()
     QVERIFY(root->property("value1").toInt() == 99);
     QVERIFY(root->property("value4").value<QObject*>()->property("value1").toInt() == 32);
 
+    {
+        /* assign(map, map) */
+
+        QVariantMap source{{"value1", 1},{"value2", 2.0}};
+        QVariantMap dest{{"value3", "3"}};
+
+        _::assign(dest, source);
+
+        QCOMPARE(dest.size(), 3);
+        QCOMPARE(dest["value1"].toInt(), 1);
+        QCOMPARE(dest["value2"].toDouble(), 2.0);
+        QCOMPARE(dest["value3"].toString(), QString("3"));
+    }
+
+    {
+        /* assign(object, object) */
+        QObject* source = createMockObject(this);
+        QObject* dest = createMockObject(this);
+
+        source->setProperty("value3", "3+");
+        _::assign(dest, source);
+
+        QCOMPARE(dest->property("value3").toString(), QString("3+"));
+
+        QCOMPARE(dest->property("value4").value<QObject*>(), source->property("value4").value<QObject*>());
+    }
+
     /* assign(QObject, QJSvalue)*/
     /*
     QString content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");

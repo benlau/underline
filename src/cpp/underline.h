@@ -176,6 +176,61 @@ namespace _ {
             using type = decltype(decl_invoke0<Functor, Args&&...>());
         };
 
+        inline QVariant _get(const QVariantMap& object, const QStringList &path, const QVariant& defaultValue) ;
+
+        inline QVariant _get(const QObject* object, const QStringList &path, const QVariant& defaultValue) {
+
+            QString key = path[0];
+
+            const QMetaObject* meta = object->metaObject();
+
+            if (meta->indexOfProperty(key.toUtf8().constData()) < 0) {
+                return defaultValue;
+            }
+
+            QVariant value = object->property(key.toUtf8().constData());
+
+            if (path.size() == 1) {
+                return value;
+            }
+
+            QStringList nextPath = path;
+            nextPath.removeFirst();
+
+            if (value.canConvert<QObject*>()) {
+                return _get(qvariant_cast<QObject*>(value), nextPath, defaultValue);
+            } else if (value.type() == QVariant::Map) {
+                return _get(value.toMap(), nextPath, defaultValue);
+            } else {
+                return defaultValue;
+            }
+        }
+
+        inline QVariant _get(const QVariantMap& object, const QStringList &path, const QVariant& defaultValue) {
+
+            QString key = path[0];
+
+            if (!object.contains(key)) {
+                return defaultValue;
+            }
+
+            QVariant value = object[key];
+
+            if (path.size() == 1) {
+                return value;
+            }
+
+            QStringList nextPath = path;
+            nextPath.removeFirst();
+
+            if (value.canConvert<QObject*>()) {
+                return _get(qvariant_cast<QObject*>(value), nextPath, defaultValue);
+            } else if (value.type() == QVariant::Map) {
+                return _get(value.toMap(), nextPath, defaultValue);
+            } else {
+                return defaultValue;
+            }
+        }
     }
 
     template <typename T, typename P>
@@ -285,65 +340,29 @@ namespace _ {
         }
     }
 
-    inline QVariant _get(const QVariantMap& object, const QStringList &path, const QVariant& defaultValue) ;
-
-    inline QVariant _get(const QObject* object, const QStringList &path, const QVariant& defaultValue) {
-
-        QString key = path[0];
-
-        const QMetaObject* meta = object->metaObject();
-
-        if (meta->indexOfProperty(key.toUtf8().constData()) < 0) {
-            return defaultValue;
-        }
-
-        QVariant value = object->property(key.toUtf8().constData());
-
-        if (path.size() == 1) {
-            return value;
-        }
-
-        QStringList nextPath = path;
-        nextPath.removeFirst();
-
-        if (value.canConvert<QObject*>()) {
-            return _get(qvariant_cast<QObject*>(value), nextPath, defaultValue);
-        } else if (value.type() == QVariant::Map) {
-            return _get(value.toMap(), nextPath, defaultValue);
-        } else {
-            return defaultValue;
+    inline void assign(QVariantMap& dest, const QVariantMap& source) {
+        QMap<QString,QVariant>::const_iterator iter = source.begin();
+        while (iter != source.end()) {
+            dest[iter.key()] = iter.value();
+            iter++;
         }
     }
 
-    inline QVariant _get(const QVariantMap& object, const QStringList &path, const QVariant& defaultValue) {
+    inline void assign(QObject* dest, const QObject* source) {
+        const QMetaObject* sourceMeta = source->metaObject();
 
-        QString key = path[0];
+        for (int i = 0 ; i < sourceMeta->propertyCount(); i++) {
+            const QMetaProperty property = sourceMeta->property(i);
+            QString p = property.name();
 
-        if (!object.contains(key)) {
-            return defaultValue;
-        }
-
-        QVariant value = object[key];
-
-        if (path.size() == 1) {
-            return value;
-        }
-
-        QStringList nextPath = path;
-        nextPath.removeFirst();
-
-        if (value.canConvert<QObject*>()) {
-            return _get(qvariant_cast<QObject*>(value), nextPath, defaultValue);
-        } else if (value.type() == QVariant::Map) {
-            return _get(value.toMap(), nextPath, defaultValue);
-        } else {
-            return defaultValue;
+            QVariant value = source->property(property.name());
+            dest->setProperty(p.toLocal8Bit().constData(), value);
         }
     }
 
     inline QVariant get(const QObject *object, const QStringList &path, const QVariant& defaultValue)
     {
-        return _get(object, path, defaultValue);
+        return Private::_get(object, path, defaultValue);
     }
 
     inline QVariant get(const QObject *object, const QString &path, const QVariant& defaultValue = QVariant())
@@ -353,7 +372,7 @@ namespace _ {
 
     inline QVariant get(const QVariantMap &source, const QStringList &path, const QVariant &defaultValue = QVariant())
     {
-        return _get(source, path, defaultValue);
+        return Private::_get(source, path, defaultValue);
     }
 
     inline QVariant get(const QVariantMap &source, const QString &path, const QVariant &defaultValue = QVariant())
