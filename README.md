@@ -1,6 +1,8 @@
 ## Underline
+[![Build Status](https://www.travis-ci.org/benlau/underline.svg?branch=master)](https://www.travis-ci.org/benlau/underline)
+[![Build status](https://ci.appveyor.com/api/projects/status/p6jsldfoj73ep630?svg=true)](https://ci.appveyor.com/project/benlau/underline)
 
-A C++ utility library provides useful functional programming helpers like lodash.js
+A Qt C++ utility library provides useful functional programming helpers like lodash.js
 
 Features:
 -----
@@ -17,14 +19,12 @@ Use-cases
  1) Serialize a QObject
 ```C++
 #include <underline.h>
-  QVariantMap dest;
-  QObject* source;
 
-  // Non-deep copy from object to output
-  _::assign(output, object);
+  // Non-deep copy from object to dest
+  _::assign( /* QVariantMap */ dest, /* QObject* */ source );
 
   // Serialize but ignore the parent field
-  output = _::omit(object, QStringList(){"parent"});
+  dest = _::omit(source, QStringList{"parent"});
 ```
 
 2) Avoid using chaining method to query for a property value.
@@ -132,6 +132,27 @@ QVector<int> output3 = _::map(std::vector<QString>(){"1","2","3"}, [](auto item,
 
 omit
 ----
+
+```
+QVariantMap omit(QVariantMap source, QVariantMap properties)
+```
+
+Creates a new QVariantMap object which is a clone of the source, but the properties listed in the paths are omitted.
+
+Arguments
+
+ * source: The source object
+ * paths: The property paths to omit
+
+Returns
+
+ * QVariantMap: Returns the new object.
+
+TODO:
+```
+QVariantMap omit(QVariantMap source, QStringList properties)
+```
+
 
 pick
 ---
