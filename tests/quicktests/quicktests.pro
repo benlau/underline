@@ -1,16 +1,13 @@
-QT       += testlib
+QT       += testlib qml quick
 
-TARGET = c14tests
+TARGET = quicktests
 CONFIG   += console
 CONFIG   -= app_bundle
-CONFIG += c++14
 
 TEMPLATE = app
 
 SOURCES +=     main.cpp \
-    c14testcases.cpp \
-    dataobject.cpp \
-    dataobject2.cpp
+    quicktests.cpp
 
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
 DEFINES += QUICK_TEST_SOURCE_DIR=\\\"$$PWD/qmltests\\\"
@@ -31,7 +28,5 @@ DISTFILES +=    \
 }
 
 HEADERS += \
-    c14testcases.h \
-    dataobject.h \
-    dataobject2.h
+    quicktests.h
 

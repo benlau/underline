@@ -1,4 +1,4 @@
-QT       += testlib qml
+QT       += testlib
 
 TARGET = c11tests
 CONFIG   += console

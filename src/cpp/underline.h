@@ -1,10 +1,16 @@
 #pragma once
+#include <QtCore>
 #include <QList>
 #include <QStringList>
 #include <QVariantList>
 #include <QVariantMap>
 #include <QObject>
 #include <functional>
+
+#ifdef QT_QUICK_LIB
+#include <QJSValue>
+#include <QJSValueIterator>
+#endif
 
 namespace _ {
 
@@ -363,11 +369,51 @@ namespace _ {
         }
     }
 
+#ifdef QT_QUICK_LIB
+    inline void assign(QObject *dest, const QJSValue &source)
+    {
+        if (dest == 0) {
+            return;
+        }
+
+        const QMetaObject* meta = dest->metaObject();
+        QJSValueIterator iter(source);
+
+        while (iter.hasNext()) {
+            iter.next();
+            QByteArray key = iter.name().toLocal8Bit();
+            int index = meta->indexOfProperty(key.constData());
+            if (index < 0) {
+                qWarning() << QString("QSyncable::assign:assign a non-existed property: %1").arg(iter.name());
+                continue;
+            }
+
+            QVariant orig = dest->property(key.constData());
+
+            if (orig.canConvert<QObject*>()) {
+                if (!iter.value().isObject()) {
+                    qWarning() << QString("QSyncable::assign:expect a object property but it is not: %1");
+                } else {
+                    assign(orig.value<QObject*>(), iter.value());
+                }
+                continue;
+            }
+
+            QVariant value = iter.value().toVariant();
+            if (orig != value) {
+                dest->setProperty(key.constData(), value);
+            }
+        }
+    }
+#endif
+
     template <typename Dest, typename Source, typename... Args>
     inline auto assign(Dest& dest, const Source& source, Args... sources) -> typename std::enable_if< (sizeof...(Args) > 0), void>::type {
         assign(dest, source);
         assign(dest, sources...);
     }
+
+    /* End of assign() */
 
     inline QVariant get(const QObject *object, const QStringList &path, const QVariant& defaultValue)
     {
