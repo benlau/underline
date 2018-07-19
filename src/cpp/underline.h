@@ -256,8 +256,8 @@ namespace _ {
 
         typename Private::rebind<T, typename Private::ret_invoke<F, typename Private::container_value_type<T>::type, int, T>::type>::type res;
 
-        for (int i = 0 ; i < collection.size() ; i++) {
-            res << Private::invoke(iteratee, collection[i], i, collection);
+        for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
+            res.push_back(Private::invoke(iteratee, collection[i], i, collection));
         }
 
         return res;

@@ -3,6 +3,7 @@
 #include <Automator>
 #include <QtShell>
 #include <functional>
+#include <vector>
 #include "c14testcases.h"
 #include "underline.h"
 #include "dataobject.h"
@@ -252,6 +253,19 @@ void C14TestCases::test_map()
 
         QCOMPARE(_::map(QStringList() << "1" << "2" << "3", func), QList<int>() << 1 << 2 << 3);
         QCOMPARE(_::map(QVector<QString>() << "1" << "2" << "3", func), QVector<int>() << 1 << 2 << 3);
+    }
+
+    {
+        auto func = [](QString item, int index, auto collection) {
+            Q_UNUSED(index);
+            Q_UNUSED(collection);
+            return item.toInt();
+        };
+
+        std::vector<QString> l1{"1", "2", "3"};
+        std::vector<int> l2{1, 2, 3};
+
+        QCOMPARE((_::map(l1, func)), l2);
     }
 }
 
