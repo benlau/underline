@@ -29,4 +29,5 @@ script:
     - make
     - tests/c11tests/c11tests
     - tests/c14tests/c14tests
+    - tests/quicktests/quicktests
 

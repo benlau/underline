@@ -277,27 +277,28 @@ void C14TestCases::test_assign()
 
     /* assign(map, QObject) */
 
-    QVariantMap data;
-    _::assign(data, root);
+    {
+        QVariantMap data;
+        _::assign(data, root);
 
-    QVERIFY(data["objectName"] == "Root");
-    QVERIFY(data["value1"].toInt() == 1);
-    QVERIFY(data["value2"].toString() == "2");
-    QVERIFY(data["value3"].toBool());
+        QVERIFY(data["objectName"] == "Root");
+        QVERIFY(data["value1"].toInt() == 1);
+        QVERIFY(data["value2"].toString() == "2");
+        QVERIFY(data["value3"].toBool());
 
-    QVERIFY(data["value4"].type() == QVariant::Map);
-    QVERIFY(data["value4"].toMap()["value1"].toInt() == 5);
+        QVERIFY(data["value4"].type() == QVariant::Map);
+        QVERIFY(data["value4"].toMap()["value1"].toInt() == 5);
+    }
 
-    /* assign(QObject, map) */
-    data.clear();
-    data["value1"] = 99;
-    QVariantMap value4;
-    value4["value1"] = 32;
-    data["value4"] = value4;
 
-    _::assign(root, data);
-    QVERIFY(root->property("value1").toInt() == 99);
-    QVERIFY(root->property("value4").value<QObject*>()->property("value1").toInt() == 32);
+    {
+        /* assign(QObject, map) */
+
+        QVariantMap value4{{"value1", 32}};
+        _::assign(root, QVariantMap{{"value1", 99}, {"value4", value4}});
+        QVERIFY(root->property("value1").toInt() == 99);
+        QVERIFY(root->property("value4").value<QObject*>()->property("value1").toInt() == 32);
+    }
 
     {
         /* assign(map, map) */
