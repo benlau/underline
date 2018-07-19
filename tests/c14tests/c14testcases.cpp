@@ -241,6 +241,18 @@ void C14TestCases::test_map()
         QCOMPARE(_::map(QStringList() << "1" << "2" << "3", func), QList<int>() << 1 << 2 << 3);
         QCOMPARE(_::map(QVector<QString>() << "1" << "2" << "3", func), QVector<int>() << 1 << 2 << 3);
     }
+
+    {
+        // generic lambda with index and collection parameter
+        auto func = [](auto item, int index, auto collection) {
+            Q_UNUSED(index);
+            Q_UNUSED(collection);
+            return item.toInt();
+        };
+
+        QCOMPARE(_::map(QStringList() << "1" << "2" << "3", func), QList<int>() << 1 << 2 << 3);
+        QCOMPARE(_::map(QVector<QString>() << "1" << "2" << "3", func), QVector<int>() << 1 << 2 << 3);
+    }
 }
 
 void C14TestCases::test_assign()
@@ -322,6 +334,19 @@ void C14TestCases::test_assign()
         _::assign(0, value);
     }
     */
+
+    {
+        QVariantMap s1{{"valueA", 1}, {"valueB", 2.0}};
+        QVariantMap s2{{"valueC", "3"}, {"valueD", true}};
+        QObject* object = createMockObject(this);
+
+        QVariantMap output;
+        _::assign(output, s1, s2, object);
+        QCOMPARE(output.size(), 9);
+        QCOMPARE(output["objectName"].toString(), QString("Root"));
+        QCOMPARE(output["valueD"].toBool(), true);
+        QCOMPARE(output["value1"].toInt(), 1);
+    }
 }
 
 void C14TestCases::test_get()

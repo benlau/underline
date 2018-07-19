@@ -1,4 +1,7 @@
 It is still under development
+## Underline
+
+A C++ utility library provides useful functional programming helpers like lodash.js
 
 Features:
 -----
@@ -26,9 +29,20 @@ API
 assign
 -----
 
-Assigns the string-keyed properties from the source object to the destination object.
+Assigns the string-keyed properties from the source object to the destination object. The source objects are applied from left to right. Subsequent sources overwrite property assignments of previous sources.
+
+Arguments
+
+```C++
+_:assign(QVariantMap& object, QObject source, ...)
+_:assign(QObject* object, QObject* source, ...)
+_:assign(QVariantMap& object, QVariantMap object, ...)
+```
+
 
 get
+---
+
 map
 omit
 pick,
