@@ -1,3 +1,4 @@
 TEMPLATE = subdirs
 
-SUBDIRS += c14tests c11tests quicktests
+SUBDIRS += c14tests c11tests quicktests \
+    noqttests

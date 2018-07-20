@@ -28,4 +28,5 @@ build_script:
   - tests\c11tests\release\c11tests
   - tests\c14tests\release\c14tests
   - tests\quicktests\release\quicktests
+  - tests\noqttests\release\noqttests
 
