@@ -1,11 +1,11 @@
 #pragma once
+#include <functional>
 #include <QtCore>
 #include <QList>
 #include <QStringList>
 #include <QVariantList>
 #include <QVariantMap>
 #include <QObject>
-#include <functional>
 
 #ifdef QT_QUICK_LIB
 #include <QJSValue>
