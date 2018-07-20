@@ -1,11 +1,14 @@
 #pragma once
 #include <functional>
+
+#ifdef QT_CORE_LIB
 #include <QtCore>
 #include <QList>
 #include <QStringList>
 #include <QVariantList>
 #include <QVariantMap>
 #include <QObject>
+#endif
 
 #ifdef QT_QUICK_LIB
 #include <QJSValue>
@@ -21,6 +24,7 @@ namespace _ {
         struct rebind {
         };
 
+#ifdef QT_CORE_LIB
         template <class NewType>
         struct rebind<QStringList, NewType> {
             typedef QList<NewType> type;
@@ -30,6 +34,7 @@ namespace _ {
         struct rebind<QVariantList, NewType> {
             typedef QList<NewType> type;
         };
+#endif
 
         template <class ValueType, class... Args, template <class...> class Container, class NewType>
         struct rebind<Container<ValueType, Args...>, NewType>
@@ -185,6 +190,7 @@ namespace _ {
             using type = decltype(decl_invoke0<Functor, Args&&...>());
         };
 
+#ifdef QT_CORE_LIB
         inline QVariant _get(const QVariantMap& object, const QStringList &path, const QVariant& defaultValue) ;
 
         inline QVariant _get(const QObject* object, const QStringList &path, const QVariant& defaultValue) {
@@ -240,6 +246,7 @@ namespace _ {
                 return defaultValue;
             }
         }
+#endif
     }
 
     template <typename T, typename P>
@@ -287,7 +294,7 @@ namespace _ {
      */
 
 
-
+#ifdef QT_CORE_LIB
     /*
      If a property contains QObject pointer, it will be converted to QVariantMap.
 
@@ -368,6 +375,7 @@ namespace _ {
             dest->setProperty(p.toLocal8Bit().constData(), value);
         }
     }
+#endif
 
 #ifdef QT_QUICK_LIB
     inline void assign(QObject *dest, const QJSValue &source)
@@ -415,6 +423,7 @@ namespace _ {
 
     /* End of assign() */
 
+#ifdef QT_CORE_LIB
     inline QVariant get(const QObject *object, const QStringList &path, const QVariant& defaultValue)
     {
         return Private::_get(object, path, defaultValue);
@@ -544,5 +553,5 @@ namespace _ {
 
         return result;
     }
-
+#endif
 }
