@@ -276,14 +276,16 @@ namespace _ {
         return res;
     }
 
-    /// Gets the value at path of object. If the path is not found, the defaultValue is returned.
-    /*
-     Example:
-
-     get(object, "a.b.c");
-
-    */
-
+    template <typename T>
+    T clamp(T number, T lower, T upper) {
+        if (number > upper) {
+            number = upper;
+        }
+        if (lower > number) {
+            number = lower;
+        }
+        return number;
+    }
 
     /// Sets the value at path of object. If a portion of path doesn't exist, it's created.
     /*
