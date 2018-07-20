@@ -20,10 +20,10 @@ Use-cases
 ```C++
 #include <underline.h>
 
-  // Non-deep copy from object to dest
+  // Non-deep copy from source to dest
   _::assign( /* QVariantMap */ dest, /* QObject* */ source );
 
-  // Serialize but ignore the parent field
+  // Serialize but ignore the parent object
   dest = _::omit(source, QStringList{"parent"});
 ```
 
@@ -83,6 +83,10 @@ _::assign(object, QVariantMap{{"objectName", "Test"}});
 _::assign(map, object, QVariantMap{{"objectName", "Test"}});
 ```
 
+TODO
+
+1. Returns the destination object
+
 get
 ---
 
@@ -134,7 +138,7 @@ omit
 ----
 
 ```
-QVariantMap omit(QVariantMap source, QVariantMap properties)
+QVariantMap omit(QVariantMap source, QVariantMap paths)
 ```
 
 Creates a new QVariantMap object which is a clone of the source, but the properties listed in the paths are omitted.
@@ -150,7 +154,7 @@ Returns
 
 TODO:
 ```
-QVariantMap omit(QVariantMap source, QStringList properties)
+QVariantMap omit(QVariantMap source, QStringList paths)
 ```
 
 
