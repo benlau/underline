@@ -9,9 +9,11 @@ Features:
 
 1. It is a C++ 11 library but supports C++14's generic lambda function (using auto as parameter type)
 
-2. Single Header Library
+2. Support Qt types but it is still compilable even the Qt library is missing.
 
-3. All the helper functions are pure, reentrant, and thead-safe
+3. Single Header Library
+
+4. All the helper functions are pure, reentrant, and thead-safe
 
 Use-cases
 -------
@@ -27,7 +29,7 @@ Use-cases
   dest = _::omit(source, QStringList{"parent"});
 ```
 
-2) Avoid using chaining method to query for a property value.
+2) Avoid using method chaining to ask for a property value.
 
 ```C++
 // Obtain the objectName property from object's parent.
@@ -103,6 +105,11 @@ Example:
 // Obtain the objectName property from object's parent
 QVariant property = _::get(object, "parent.objectName");
 ```
+
+clamp
+-----
+
+
 
 map
 ----
