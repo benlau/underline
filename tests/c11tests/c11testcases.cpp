@@ -3,6 +3,7 @@
 #include <Automator>
 #include <QtShell>
 #include <functional>
+#include <QMap>
 #include "c11testcases.h"
 #include "underline.h"
 
@@ -42,6 +43,12 @@ void C11TestCases::test_private_traits()
 
         QVERIFY(ti1 == ti2);
 
+    }
+
+    {
+        const std::type_info& ti1 = typeid(std::remove_reference<QMap<QString,int>>::type::mapped_type);
+        const std::type_info& ti2 = typeid(int);
+        QVERIFY(ti1 == ti2);
     }
 
     {

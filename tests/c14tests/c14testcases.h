@@ -13,6 +13,8 @@ private slots:
 
     void test_private_invoke();
 
+    void test_private_value();
+
     void test_some();
 
     void test_map();

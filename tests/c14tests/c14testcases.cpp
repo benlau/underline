@@ -149,6 +149,39 @@ void C14TestCases::test_private_invoke()
     QCOMPARE((std::is_same<_::Private::ret_invoke<decltype(func0),QString, int>::type , int>::value), true);
 }
 
+void C14TestCases::test_private_value()
+{
+
+    {
+        auto voidFunc = []() {
+        };
+
+        _::Private::Value<void> value;
+        value.invoke(voidFunc);
+        QCOMPARE(value.canConvert<bool>(), false);
+        QCOMPARE(value.canConvert<QString>(), false);
+
+        QCOMPARE(value.equals(true), false);
+        QCOMPARE(value.equals(false), false);
+    }
+
+    {
+        _::Private::Value<bool> value;
+        value.invoke(isOdd, 1);
+        QCOMPARE((std::is_convertible<bool, bool>::value), true);
+        QCOMPARE(value.canConvert<bool>(), true);
+        QCOMPARE(value.canConvert<QString>(), false);
+
+        QCOMPARE(value.equals(true), true);
+        QCOMPARE(value.equals(false), false);
+        QCOMPARE(value.equals(QString("")), false);
+
+        value.invoke(isOdd, 0);
+        QCOMPARE(value.equals(true), false);
+        QCOMPARE(value.equals(false), true);
+    }
+}
+
 void C14TestCases::test_some()
 {
     {

@@ -190,6 +190,56 @@ namespace _ {
             using type = decltype(decl_invoke0<Functor, Args&&...>());
         };
 
+        ///Value is a wrapper of any data structure include <void>.
+        template <typename T>
+        class Value {
+        public:
+            template <typename Functor, typename ...Args>
+            inline void invoke(Functor functor, Args... args) {
+                value = _::Private::invoke(functor, args...);
+            }
+
+            template <typename Other>
+            inline bool canConvert() {
+                return std::is_convertible<T, Other>::value;
+            }
+
+            template <typename Any>
+            inline typename std::enable_if<std::is_convertible<Any, T>::value, bool>::type
+            equals(Any&& other) {
+                return (T) other == value;
+            }
+
+            template <typename Any>
+            inline typename std::enable_if<!std::is_convertible<Any, T>::value, bool>::type
+            equals(Any&& other) {
+                (void) other;
+                return false;
+            }
+
+            T value;
+        };
+
+        template <>
+        class Value<void> {
+        public:
+            template <typename Functor, typename ...Args>
+            inline void invoke(Functor functor, Args... args) {
+                _::Private::invoke(functor, args...);
+            }
+
+            template <typename Other>
+            inline bool canConvert() {
+                return false;
+            }
+
+            template <typename Any>
+            inline bool equals(Any && any) {
+                (void) any;
+                return false;
+            }
+        };
+
 #ifdef QT_CORE_LIB
         inline QVariant _get(const QVariantMap& object, const QStringList &path, const QVariant& defaultValue) ;
 
