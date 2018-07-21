@@ -185,17 +185,6 @@ void C14TestCases::test_private_value()
 void C14TestCases::test_some()
 {
     {
-        /// Standard lambda method
-        auto func = [](int item, int index) {
-            Q_UNUSED(index);
-            return item % 2 == 1;
-        };
-
-        QCOMPARE(_::some(QList<int>() << 0 << 2 << 4, func), false);
-        QCOMPARE(_::some(QList<int>() << 0 << 3 << 4, func), true);
-    }
-
-    {
         /// Standard lambda method without the index parameter
         auto func = [](int item) {
             return item % 2 == 1;
@@ -210,7 +199,6 @@ void C14TestCases::test_some()
         QCOMPARE(_::some(QList<int>() << 0 << 2 << 4, isOdd), false);
         QCOMPARE(_::some(QList<int>() << 0 << 3 << 4, isOdd), true);
     }
-
 
     {
         auto func = [](auto item, auto index) {
@@ -232,16 +220,15 @@ void C14TestCases::test_some()
     }
 
     {
-        /// test non-int function
-        auto func = [](QString item) {
-            return item.size() % 2 == 1;
+        auto func = [](auto item, auto index, auto collection) {
+            Q_UNUSED(index);
+            Q_UNUSED(collection);
+            return item % 2 == 1;
         };
 
-        QCOMPARE(_::some(QStringList() << "0" << "2" << "4", func), true);
-        QCOMPARE(_::some(QStringList() << "01" << "21" << "42", func), false);
-
+        QCOMPARE(_::some(QList<int>() << 0 << 2 << 4, func), false);
+        QCOMPARE(_::some(QList<int>() << 0 << 3 << 4, func), true);
     }
-
 }
 
 void C14TestCases::test_map()

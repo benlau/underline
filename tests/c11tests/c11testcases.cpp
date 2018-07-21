@@ -156,7 +156,6 @@ void C11TestCases::test_some()
         QCOMPARE(_::some(QList<int>() << 0 << 3 << 4, isOdd), true);
     }
 
-
     {
         /// test non-int function
         auto func = [](QString item) {
@@ -165,7 +164,6 @@ void C11TestCases::test_some()
 
         QCOMPARE(_::some(QStringList() << "0" << "2" << "4", func), true);
         QCOMPARE(_::some(QStringList() << "01" << "21" << "42", func), false);
-
     }
 
 }

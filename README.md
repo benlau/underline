@@ -2,20 +2,57 @@
 [![Build Status](https://www.travis-ci.org/benlau/underline.svg?branch=master)](https://www.travis-ci.org/benlau/underline)
 [![Build status](https://ci.appveyor.com/api/projects/status/p6jsldfoj73ep630?svg=true)](https://ci.appveyor.com/project/benlau/underline)
 
-A Qt C++ utility library provides useful functional programming helpers like lodash.js
+A C++ utility library provides useful functional programming helpers like lodash.js
 
 Features:
 -----
 
-1. It is a C++ 11 library but supports C++14's generic lambda function (using auto as parameter type)
+1) C++11 compliant coding. Support C++14 generic lambda function (using auto as parameter) and return type detection.
 
-2. Support Qt types but it is still compilable even the Qt library is missing.
+```C++
 
-3. Eliminate misleading template error messages by using static_assert. Easier to debug template error.
+QVector<int> output1 = _::map(std::vector<QString>(){"1","2","3"},
+                              [](auto item, auto index, auto collection) { return item.toInt();});
 
-4. Single Header Library
+QList<int> output2 = _::map(QList<QString>(){"1","2","3"},
+                            [](auto item) { return item.toInt();});
 
-5. All the helper functions are pure, reentrant, and thead-safe
+QVector<int> output3 = _::map(QVector<QString>() {"1","2","3"},
+                              [](QString item, int index) { return item.toInt();});
+
+```
+
+2) Support Qt types but it is still compilable even the Qt library is missing.
+
+```
+// Serialize a QObject
+// Non-deep copy from source to dest
+_::assign( /* QVariantMap */ dest, /* QObject* */ source );
+
+// Obtain the objectName property from object's parent.
+// It is equivalent to object->parent()->objectName() but _::get will take care null pointer checking
+QVariant property = _::get(object, "parent.objectName");
+```
+
+3) Eliminate misleading template error messages for mismatched argument type. Easier to debug template error.
+
+Example:
+
+```
+    auto output = _::map(QList<QString>{"1","2","3"}, [](auto item, QString index) { return item;});
+```
+
+The 2nd argument of the iteratee function should be an int type but QString is given. Normally, it will trigger a compilation error at somewhere that user has no idea what is it actually doing. The error message is super long and difficult to understand.
+
+Underline captures the argument type mismatched error by using static_assert(). The actual error message on above example will be
+
+```
+error: static_assert failed "_::map(): Mismatched argument types in the iteratee function. Please validate the number of argument and their type."
+```
+
+4) Single Header Library
+
+5) All the helper functions are pure, reentrant, and thead-safe
 
 Use-cases
 -------
@@ -37,16 +74,6 @@ Use-cases
 // Obtain the objectName property from object's parent.
 // It is equivalent to object->parent()->objectName() but _::get will take care null pointer checking
 QVariant property = _::get(object, "parent.objectName");
-```
-
-```C++
-
-QList<int> output1 = _::map(QList<QString>(){"1","2","3"},  [](auto item) { return item.toInt();});
-
-QVector<int> output2 = _::map(QVector<QString>() {"1","2","3"}, [](auto item, int index) { return item.toInt();});
-
-QVector<int> output3 = _::map(std::vector<QString>(){"1","2","3"}, [](auto item, int index, auto collection) { return item.toInt();});
-
 ```
 
 Installation
