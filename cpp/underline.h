@@ -19,7 +19,7 @@ namespace _ {
 
     namespace Private {
 
-        class _NullClass {
+        class Undefined {
         };
 
         /// Source: https://stackoverflow.com/questions/5052211/changing-value-type-of-a-given-stl-container
@@ -122,7 +122,7 @@ namespace _ {
         inline decl_invoke0();
 
         template <typename Functor>
-        typename std::enable_if<!is_invokable0<Functor>::value, _NullClass>::type
+        typename std::enable_if<!is_invokable0<Functor>::value, Undefined>::type
         inline decl_invoke0();
 
         template <typename Functor, typename Arg1>
@@ -151,7 +151,7 @@ namespace _ {
         inline decl_invoke0();
 
         template <typename Functor, typename Arg1>
-        typename std::enable_if<!is_invokable1<Functor, Arg1>::value, _NullClass>::type
+        typename std::enable_if<!is_invokable1<Functor, Arg1>::value, Undefined>::type
         inline decl_invoke0();
 
         template <typename Functor, typename Arg1, typename Arg2>
@@ -187,7 +187,7 @@ namespace _ {
         inline decl_invoke0();
 
         template <typename Functor, typename Arg1, typename Arg2>
-        typename std::enable_if<!is_invokable2<Functor, Arg1, Arg2>::value, _NullClass>::type
+        typename std::enable_if<!is_invokable2<Functor, Arg1, Arg2>::value, Undefined>::type
         inline decl_invoke0();
 
         template <typename Functor, typename Arg1, typename Arg2, typename Arg3>
@@ -230,7 +230,7 @@ namespace _ {
         inline decl_invoke0();
 
         template <typename Functor, typename Arg1, typename Arg2, typename Arg3>
-        typename std::enable_if<!is_invokable3<Functor, Arg1, Arg2, Arg3>::value, _NullClass>::type
+        typename std::enable_if<!is_invokable3<Functor, Arg1, Arg2, Arg3>::value, Undefined>::type
         inline decl_invoke0();
 
         /* End of code-generator */
@@ -288,6 +288,14 @@ namespace _ {
                 (void) any;
                 return false;
             }
+        };
+
+        /// vic_func( VIC = Value,Index,Collection);
+        template <typename Functor, typename Collection>
+        struct is_vic_func_invokable {
+            enum {
+                value = is_invokable3<Functor, typename std::remove_reference<Collection>::type::value_type, int, Collection>::value
+            };
         };
 
 #ifdef QT_CORE_LIB
@@ -625,12 +633,16 @@ namespace _ {
     }
 #endif
 
-    template <typename T, typename P>
-    inline bool some(const T& list, P predicate) {
+    template <typename Collection, typename Predicate>
+    inline bool some(const Collection& collection, Predicate predicate) {
         bool res = false;
 
-        for (unsigned int i = 0 ; i < (unsigned int) list.size() ; i++) {
-            if (Private::invoke(predicate, list[i], i)) {
+        static_assert(Private::is_vic_func_invokable<Predicate, Collection>::value, "_:some(): Mismatched argument types in the iteratee function. Please validate the number of argument and their type.");
+        static_assert(std::is_same<typename Private::ret_invoke<Predicate, typename Private::container_value_type<Collection>::type,int, Collection>::type,bool>::value,
+                      "_::some(): The return type of predicate function must be bool");
+
+        for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
+            if (Private::invoke(predicate, collection[i], i, collection)) {
                 res = true;
                 break;
             }
@@ -638,14 +650,14 @@ namespace _ {
         return res;
     }
 
-    template <typename T, typename F>
-    inline auto map(const T& collection, F iteratee) -> typename Private::rebind<T,
-        typename Private::ret_invoke<F, typename Private::container_value_type<T>::type, int, T>::type
+    template <typename Collection, typename Iteratee>
+    inline auto map(const Collection& collection, Iteratee iteratee) -> typename Private::rebind<Collection,
+        typename Private::ret_invoke<Iteratee, typename Private::container_value_type<Collection>::type, int, Collection>::type
     >::type {
 
-        static_assert(Private::is_invokable3<F,typename Private::container_value_type<T>::type, int, T>::value, "_::map(): Mismatched argument types in the iteratee function. Please validate the number of argument and their type.");
+        static_assert(Private::is_vic_func_invokable<Iteratee, Collection>::value, "_::map(): Mismatched argument types in the iteratee function. Please validate the number of argument and their type.");
 
-        typename Private::rebind<T, typename Private::ret_invoke<F, typename Private::container_value_type<T>::type, int, T>::type>::type res;
+        typename Private::rebind<Collection, typename Private::ret_invoke<Iteratee, typename Private::container_value_type<Collection>::type, int, Collection>::type>::type res;
 
         for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
             res.push_back(Private::invoke(iteratee, collection[i], i, collection));
