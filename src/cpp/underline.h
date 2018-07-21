@@ -297,54 +297,22 @@ namespace _ {
             }
         }
 #endif
-    }
+    } /* End of Private Session */
 
-    template <typename T, typename P>
-    inline bool some(const T& list, P predicate) {
-        bool res = false;
+    template <typename Map, typename Functor>
+    inline void forIn(const Map& object, Functor iteratee) {
+        auto iter = object.begin();
+        while (iter != object.end()) {
 
-        for (int i = 0 ; i < list.size() ; i++) {
-            if (Private::invoke(predicate, list[i], i)) {
-                res = true;
+            Private::Value<typename Private::ret_invoke<Functor, typename std::remove_reference<Map>::type::mapped_type, typename std::remove_reference<Map>::type::key_type, Map>::type> value;
+            value.invoke(iteratee, iter.value(), iter.key(), object);
+
+            if (value.template canConvert<bool>() && value.equals(false)) {
                 break;
             }
+            iter++;
         }
-        return res;
     }
-
-    template <typename T, typename F>
-    inline auto map(const T& collection, F iteratee) -> typename Private::rebind<T,
-        typename Private::ret_invoke<F, typename Private::container_value_type<T>::type, int, T>::type
-    >::type {
-
-        typename Private::rebind<T, typename Private::ret_invoke<F, typename Private::container_value_type<T>::type, int, T>::type>::type res;
-
-        for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
-            res.push_back(Private::invoke(iteratee, collection[i], i, collection));
-        }
-
-        return res;
-    }
-
-    template <typename T>
-    T clamp(T number, T lower, T upper) {
-        if (number > upper) {
-            number = upper;
-        }
-        if (lower > number) {
-            number = lower;
-        }
-        return number;
-    }
-
-    /// Sets the value at path of object. If a portion of path doesn't exist, it's created.
-    /*
-     Example:
-
-     set(data, "a.b", 3); // data["a"] will be a QVariantMap that contains a key of "b".
-
-     */
-
 
 #ifdef QT_CORE_LIB
     /*
@@ -606,4 +574,52 @@ namespace _ {
         return result;
     }
 #endif
+
+    template <typename T, typename P>
+    inline bool some(const T& list, P predicate) {
+        bool res = false;
+
+        for (int i = 0 ; i < list.size() ; i++) {
+            if (Private::invoke(predicate, list[i], i)) {
+                res = true;
+                break;
+            }
+        }
+        return res;
+    }
+
+    template <typename T, typename F>
+    inline auto map(const T& collection, F iteratee) -> typename Private::rebind<T,
+        typename Private::ret_invoke<F, typename Private::container_value_type<T>::type, int, T>::type
+    >::type {
+
+        typename Private::rebind<T, typename Private::ret_invoke<F, typename Private::container_value_type<T>::type, int, T>::type>::type res;
+
+        for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
+            res.push_back(Private::invoke(iteratee, collection[i], i, collection));
+        }
+
+        return res;
+    }
+
+    template <typename T>
+    T clamp(T number, T lower, T upper) {
+        if (number > upper) {
+            number = upper;
+        }
+        if (lower > number) {
+            number = lower;
+        }
+        return number;
+    }
+
+    /// Sets the value at path of object. If a portion of path doesn't exist, it's created.
+    /*
+     Example:
+
+     set(data, "a.b", 3); // data["a"] will be a QVariantMap that contains a key of "b".
+
+     */
+
+
 }

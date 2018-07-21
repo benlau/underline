@@ -28,5 +28,8 @@ private slots:
     void test_pick();
 
     void test_omit();
+
+    void test_forIn();
+
 };
 

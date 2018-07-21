@@ -508,3 +508,43 @@ void C14TestCases::test_omit()
     QVERIFY(data2["value4"].type() == QVariant::Map);
 }
 
+void C14TestCases::test_forIn()
+{
+    {
+        QVariantMap data{{"value1", 1}, {"value2", 2.0}};
+        QList<QString> keys;
+        QVariantList values;
+
+        auto func = [&](auto value, auto key, auto collection) -> void {
+            Q_UNUSED(collection);
+            values << value;
+            keys << key;
+        };
+
+        QCOMPARE((std::is_same<_::Private::ret_invoke<decltype(func), QVariant, QString, QVariantMap>::type, void>::value), true);
+
+        _::Private::Value<_::Private::ret_invoke<decltype(func), QVariant, QString, QVariantMap>> value;
+        QCOMPARE(value.canConvert<bool>(), false);
+
+        _::forIn(data, func);
+
+        QCOMPARE(keys, data.keys());
+        QCOMPARE(values, data.values());
+    }
+
+    {
+        // Early termination
+        QVariantMap data{{"value1", 1}, {"value2", 2.0}};
+        QList<QString> keys;
+        QVariantList values;
+        _::forIn(data, [&](auto value, auto key) {
+            values << value;
+            keys << key;
+            return false;
+        });
+
+        QCOMPARE(keys.size(), 1);
+        QCOMPARE(values.size(), 1);
+    }
+}
+
