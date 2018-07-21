@@ -122,6 +122,9 @@ void C11TestCases::test_private_invoke()
     QCOMPARE((std::is_same<decltype(_::Private::decl_invoke0<decltype(myFunc2), int, int>()) , int>::value), true);
 
     QCOMPARE((std::is_same<_::Private::ret_invoke<decltype(myFunc0),QString, int>::type , int>::value), true);
+
+    QCOMPARE((bool) (_::Private::is_invokable3<decltype(myFunc2), int, int, int>::value), true);
+    QCOMPARE((bool) (_::Private::is_invokable3<decltype(myFunc2), int, QString, int>::value), false);
 }
 
 void C11TestCases::test_some()
