@@ -11,9 +11,11 @@ Features:
 
 2. Support Qt types but it is still compilable even the Qt library is missing.
 
-3. Single Header Library
+3. Eliminate misleading template error messages by using static_assert. Easier to debug template error.
 
-4. All the helper functions are pure, reentrant, and thead-safe
+4. Single Header Library
+
+5. All the helper functions are pure, reentrant, and thead-safe
 
 Use-cases
 -------
