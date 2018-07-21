@@ -19,6 +19,9 @@ namespace _ {
 
     namespace Private {
 
+        class _NullClass {
+        };
+
         /// Source: https://stackoverflow.com/questions/5052211/changing-value-type-of-a-given-stl-container
         template <class Container, class NewType>
         struct rebind {
@@ -114,6 +117,14 @@ namespace _ {
             };
         };
 
+        template <typename Functor>
+        typename std::enable_if<is_invokable0<Functor>::value, decltype(invoke(std::declval<Functor>()))>::type
+        inline decl_invoke0();
+
+        template <typename Functor>
+        typename std::enable_if<!is_invokable0<Functor>::value, _NullClass>::type
+        inline decl_invoke0();
+
         template <typename Functor, typename Arg1>
         inline auto invoke(Functor functor, Arg1) ->
         typename std::enable_if<is_args_compatible<Functor>::value,
@@ -134,6 +145,14 @@ namespace _ {
                value = is_args_compatible<Functor>::value || is_args_compatible<Functor, Arg1>::value
             };
         };
+
+        template <typename Functor, typename Arg1>
+        typename std::enable_if<is_invokable1<Functor, Arg1>::value, decltype(invoke(std::declval<Functor>(),std::declval<Arg1>()))>::type
+        inline decl_invoke0();
+
+        template <typename Functor, typename Arg1>
+        typename std::enable_if<!is_invokable1<Functor, Arg1>::value, _NullClass>::type
+        inline decl_invoke0();
 
         template <typename Functor, typename Arg1, typename Arg2>
         inline auto invoke(Functor functor, Arg1, Arg2) ->
@@ -162,6 +181,14 @@ namespace _ {
                value = is_args_compatible<Functor>::value || is_args_compatible<Functor, Arg1>::value || is_args_compatible<Functor, Arg1, Arg2>::value
             };
         };
+
+        template <typename Functor, typename Arg1, typename Arg2>
+        typename std::enable_if<is_invokable2<Functor, Arg1, Arg2>::value, decltype(invoke(std::declval<Functor>(),std::declval<Arg1>(),std::declval<Arg2>()))>::type
+        inline decl_invoke0();
+
+        template <typename Functor, typename Arg1, typename Arg2>
+        typename std::enable_if<!is_invokable2<Functor, Arg1, Arg2>::value, _NullClass>::type
+        inline decl_invoke0();
 
         template <typename Functor, typename Arg1, typename Arg2, typename Arg3>
         inline auto invoke(Functor functor, Arg1, Arg2, Arg3) ->
@@ -198,21 +225,15 @@ namespace _ {
             };
         };
 
-        /* End of code-generator */
-
-        /// Declare a function with same output as invoke but taking zero argument.
-
-        template <typename Functor>
-        inline decltype(invoke<Functor>(std::declval<Functor>())) decl_invoke0();
-
-        template <typename Functor, typename Arg1>
-        inline decltype(invoke<Functor>(std::declval<Functor>(), std::declval<Arg1>())) decl_invoke0();
-
-        template <typename Functor, typename Arg1, typename Arg2>
-        inline decltype(invoke<Functor>(std::declval<Functor>(), std::declval<Arg1>(), std::declval<Arg2>())) decl_invoke0();
+        template <typename Functor, typename Arg1, typename Arg2, typename Arg3>
+        typename std::enable_if<is_invokable3<Functor, Arg1, Arg2, Arg3>::value, decltype(invoke(std::declval<Functor>(),std::declval<Arg1>(),std::declval<Arg2>(),std::declval<Arg3>()))>::type
+        inline decl_invoke0();
 
         template <typename Functor, typename Arg1, typename Arg2, typename Arg3>
-        inline decltype(invoke<Functor>(std::declval<Functor>(), std::declval<Arg1>(), std::declval<Arg2>(), std::declval<Arg3>())) decl_invoke0();
+        typename std::enable_if<!is_invokable3<Functor, Arg1, Arg2, Arg3>::value, _NullClass>::type
+        inline decl_invoke0();
+
+        /* End of code-generator */
 
         template <typename Functor, typename ...Args>
         struct ret_invoke {
@@ -621,6 +642,8 @@ namespace _ {
     inline auto map(const T& collection, F iteratee) -> typename Private::rebind<T,
         typename Private::ret_invoke<F, typename Private::container_value_type<T>::type, int, T>::type
     >::type {
+
+        static_assert(Private::is_invokable3<F,typename Private::container_value_type<T>::type, int, T>::value, "_::map(): Mismatched argument types in the iteratee function. Please validate the number of argument and their type.");
 
         typename Private::rebind<T, typename Private::ret_invoke<F, typename Private::container_value_type<T>::type, int, T>::type>::type res;
 
