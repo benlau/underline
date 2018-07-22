@@ -15,6 +15,10 @@
 #include <QJSValueIterator>
 #endif
 
+#define UNDERLINE_ITERATEE_MISMATCHED_ERROR "Mismatched argument types in the iteratee function. Please validate the number of argument and their type."
+#define UNDERLINE_PREDICATE_MISMATCHED_ERROR "Mismatched argument types in the predicate function. Please validate the number of argument and their type."
+#define UNDERLINE_PREDICATE_RETURN_TYPE_MISMATCH_ERROR "The return type of predicate function must be bool"
+
 namespace _ {
 
     namespace Private {
@@ -360,13 +364,11 @@ namespace _ {
 #endif
     } /* End of Private Session */
 
-#ifdef QT_CORE_LIB
-    template <typename Functor>
-    inline QObject* forIn(QObject* object, Functor iteratee);
-#endif
-
     template <typename K, typename V, template <typename...> class Map, typename Functor>
     inline Map<K,V>& forIn(Map<K,V> & object, Functor iteratee) {
+
+        static_assert(Private::is_invokable3<Functor, V, K, Map<K,V>>::value, "_::forIn: " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+
         Private::Value<typename Private::ret_invoke<Functor, V, K, Map<K,V>>::type> value;
 
         auto iter = object.begin();
@@ -386,6 +388,27 @@ namespace _ {
     template <typename Functor>
     inline QObject* forIn(QObject* object, Functor iteratee) {
         const QMetaObject* meta = object->metaObject();
+        static_assert(Private::is_invokable3<Functor, QVariant, QString, QObject*>::value, "_::forIn: " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+        Private::Value<typename Private::ret_invoke<Functor, QVariant, QString, QObject*>::type> invokeHelper;
+
+        for (int i = 0 ; i < meta->propertyCount(); i++) {
+            const QMetaProperty property = meta->property(i);
+            QString key = property.name();
+            QVariant value = property.read(object);
+
+            invokeHelper.invoke(iteratee, value, key, object);
+
+            if (invokeHelper.template canConvert<bool>() && invokeHelper.equals(false)) {
+                break;
+            }
+        }
+        return object;
+    }
+
+    template <typename Functor>
+    inline const QObject* forIn(const QObject* object, Functor iteratee) {
+        const QMetaObject* meta = object->metaObject();
+        static_assert(Private::is_invokable3<Functor, QVariant, QString, QObject*>::value, "_::forIn: " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
         Private::Value<typename Private::ret_invoke<Functor, QVariant, QString, QObject*>::type> invokeHelper;
 
         for (int i = 0 ; i < meta->propertyCount(); i++) {
@@ -409,15 +432,9 @@ namespace _ {
      */
 
     /// Assign properties from source object to the destination object.
-    inline void assign(QVariantMap &dest, const QObject *source)
+    inline QVariantMap& assign(QVariantMap &dest, const QObject *source)
     {
-        const QMetaObject* meta = source->metaObject();
-
-        for (int i = 0 ; i < meta->propertyCount(); i++) {
-            const QMetaProperty property = meta->property(i);
-            QString p = property.name();
-
-            QVariant value = source->property(property.name());
+        forIn(source, [&](QVariant value, QString key) {
 
             if (value.canConvert<QObject*>()) {
                 QVariantMap map;
@@ -425,12 +442,12 @@ namespace _ {
                 value = map;
             }
 
-            dest[p] = value;
-        }
-
+            dest[key] = value;
+        });
+        return dest;
     }
 
-    inline void assign(QObject *dest, const QVariantMap & source)
+    inline QObject* assign(QObject *dest, const QVariantMap & source)
     {
         const QMetaObject* meta = dest->metaObject();
 
@@ -461,17 +478,20 @@ namespace _ {
 
             iter++;
         }
+
+        return dest;
     }
 
-    inline void assign(QVariantMap& dest, const QVariantMap& source) {
+    inline QVariantMap& assign(QVariantMap& dest, const QVariantMap& source) {
         QMap<QString,QVariant>::const_iterator iter = source.begin();
         while (iter != source.end()) {
             dest[iter.key()] = iter.value();
             iter++;
         }
+        return dest;
     }
 
-    inline void assign(QObject* dest, const QObject* source) {
+    inline QObject* assign(QObject* dest, const QObject* source) {
         const QMetaObject* sourceMeta = source->metaObject();
 
         for (int i = 0 ; i < sourceMeta->propertyCount(); i++) {
@@ -481,14 +501,15 @@ namespace _ {
             QVariant value = source->property(property.name());
             dest->setProperty(p.toLocal8Bit().constData(), value);
         }
+        return dest;
     }
 #endif
 
 #ifdef QT_QUICK_LIB
-    inline void assign(QObject *dest, const QJSValue &source)
+    inline QObject * assign(QObject *dest, const QJSValue &source)
     {
         if (dest == 0) {
-            return;
+            return dest;
         }
 
         const QMetaObject* meta = dest->metaObject();
@@ -519,13 +540,15 @@ namespace _ {
                 dest->setProperty(key.constData(), value);
             }
         }
+        return dest;
     }
 #endif
 
     template <typename Dest, typename Source, typename... Args>
-    inline auto assign(Dest& dest, const Source& source, Args... sources) -> typename std::enable_if< (sizeof...(Args) > 0), void>::type {
+    inline auto assign(Dest& dest, const Source& source, Args... sources) -> typename std::enable_if< (sizeof...(Args) > 0), Dest&>::type {
         assign(dest, source);
         assign(dest, sources...);
+        return dest;
     }
 
     /* End of assign() */
@@ -666,9 +689,9 @@ namespace _ {
     inline bool some(const Collection& collection, Predicate predicate) {
         bool res = false;
 
-        static_assert(Private::is_vic_func_invokable<Predicate, Collection>::value, "_:some(): Mismatched argument types in the iteratee function. Please validate the number of argument and their type.");
+        static_assert(Private::is_vic_func_invokable<Predicate, Collection>::value, "_:some(): " UNDERLINE_PREDICATE_MISMATCHED_ERROR);
         static_assert(std::is_same<typename Private::ret_invoke<Predicate, typename Private::container_value_type<Collection>::type,int, Collection>::type,bool>::value,
-                      "_::some(): The return type of predicate function must be bool");
+                      "_::some(): " UNDERLINE_PREDICATE_RETURN_TYPE_MISMATCH_ERROR);
 
         for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
             if (Private::invoke(predicate, collection[i], i, collection)) {
@@ -684,7 +707,7 @@ namespace _ {
         typename Private::ret_invoke<Iteratee, typename Private::container_value_type<Collection>::type, int, Collection>::type
     >::type {
 
-        static_assert(Private::is_vic_func_invokable<Iteratee, Collection>::value, "_::map(): Mismatched argument types in the iteratee function. Please validate the number of argument and their type.");
+        static_assert(Private::is_vic_func_invokable<Iteratee, Collection>::value, "_::map(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
 
         typename Private::rebind<Collection, typename Private::ret_invoke<Iteratee, typename Private::container_value_type<Collection>::type, int, Collection>::type>::type res;
 
