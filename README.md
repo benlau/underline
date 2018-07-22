@@ -11,15 +11,14 @@ Features:
 
 ```C++
 
-std::vector<int> output1 = _::map(std::vector<QString>(){"1","2","3"},
-                              [](auto item, auto index, auto collection) { return item.toInt();});
+std::vector<int> output1 = _::map(std::vector<std::string>{"1","2","3"},
+                              [](auto item) { return std::stoi(item);});
 
-QList<int> output2 = _::map(QList<QString>(){"1","2","3"},
-                            [](auto item) { return item.toInt();});
+QList<int> output2 = _::map(QList<QString>{"1","2","3"},
+                            [](auto item, auto index) {  return item.toInt() + index;});
 
-QVector<int> output3 = _::map(QVector<QString>() {"1","2","3"},
-                              [](QString item, int index) { return item.toInt();});
-
+QVector<int> output3 = _::map(QVector<QString>{"1","2","3"},
+                              [](QString, int index, auto collection) { return collection[index].toInt();});
 ```
 
 2) Support Qt types but it is still compilable even the Qt library is missing.
@@ -114,6 +113,23 @@ _::assign(object, QVariantMap{{"objectName", "Test"}});
 _::assign(map, object, QVariantMap{{"objectName", "Test"}});
 ```
 
+clamp
+-----
+
+```
+_::clamp(number, lower, upper)
+```
+
+Clamps number within the inclusive lower and upper bounds.
+
+Arguments:
+ * number: The number to clamp.
+ * lower: The lower bound.
+ * upper: The upper bound.
+
+Returns
+
+ * The clamped number.
 
 get
 ---
@@ -132,23 +148,6 @@ Example:
 QVariant property = _::get(object, "parent.objectName");
 ```
 
-clamp
------
-
-```
-_::clamp(number, lower, upper)
-```
-
-Clamps number within the inclusive lower and upper bounds.
-
-Arguments:
- * number: The number to clamp.
- * lower: The lower bound.
- * upper: The upper bound.
-
-Returns
-
- * The clamped number.
 
 forIn
 -----
@@ -209,7 +208,7 @@ omit
 QVariantMap omit(QVariantMap source, QVariantMap paths)
 ```
 
-Creates a new QVariantMap object which is a clone of the source, but the properties listed in the paths are omitted.
+Creates a new object which is a clone of the source, but the properties listed in the paths are omitted.
 
 Arguments
 
@@ -221,16 +220,71 @@ Returns
  * QVariantMap: Returns the new object.
 
 TODO:
-```
-QVariantMap omit(QVariantMap source, QStringList paths)
-```
 
+ * QVariantMap omit(QVariantMap source, QStringList paths)
+ * omit(Map source, QStringList paths)
+ * omit(QObject* source, QStringList paths)
 
 pick
 ---
 
+```
+QVariantMap _::pick(QObject* source, QStringList &paths);
+QVariantMap _::pick(QVariantMap source, QStringList &paths);
+
+```
+
+Creates a new object which is a clone of the source but only the properties listed in the paths are picked.
+
+Arguments
+
+ * source: The source object
+ * paths: The property paths to pick
+
+Returns
+
+ * QVariantMap: Returns the new object.
+
+
 set
 ---
 
+
+```C++
+void _::set(QVariantMap &object, const QStringList &path, const QVariant &value)
+void _::set(QVariantMap &object, const QString &path, const QVariant &value)
+```
+
+Set the property from the source object at the given path. If the path does not exist, it will do nothinbg.
+
+Arguments
+
+ * source: The input object
+ * paths: The property paths to set
+ * value: The property value to be set
+
+Returns
+
+ * void
+
+
+Example:
+
 some
 ----
+
+```c++
+bool _::some(Collection collection, Predicate predicate)
+```
+
+Check if predicate function returns a truth value for any element in the collection. The iteration is stopped once it got a truth value. The process will terminate once it is a truth value. The predicate function is invoked with one to three arguments: [value, [index, [collection]]].
+
+Arguments
+
+ * collection: The input collection
+ * predicate: The predicate function to be invoked per iteration
+
+Returns
+
+ * bool: Returns true if any element passes to the predicate function, otherwise, it is false.
+

@@ -571,3 +571,25 @@ void C14TestCases::test_forIn()
     }
 }
 
+void C14TestCases::test_example_in_readme()
+{
+    // Example code in documentation
+
+    {
+        // Features 1
+
+        std::vector<int> output1 = _::map(std::vector<std::string>{"1","2","3"},
+                                      [](auto item) { return std::stoi(item);});
+
+        QList<int> output2 = _::map(QList<QString>{"1","2","3"},
+                                    [](auto item, auto index) {  return item.toInt() + index;});
+
+        QVector<int> output3 = _::map(QVector<QString>{"1","2","3"},
+                                      [](QString, int index, auto collection) { return collection[index].toInt();});
+
+        Q_UNUSED(output1);
+        Q_UNUSED(output2);
+        Q_UNUSED(output3);
+    }
+}
+
