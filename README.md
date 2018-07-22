@@ -105,7 +105,7 @@ Arguments:
 
 Returns:
 
- * None
+ * The dest object
 
 Example
 
@@ -114,9 +114,6 @@ _::assign(object, QVariantMap{{"objectName", "Test"}});
 _::assign(map, object, QVariantMap{{"objectName", "Test"}});
 ```
 
-TODO
-
-1. Returns the destination object
 
 get
 ---
@@ -138,11 +135,27 @@ QVariant property = _::get(object, "parent.objectName");
 clamp
 -----
 
+```
+_::clamp(number, lower, upper)
+```
+
+Clamps number within the inclusive lower and upper bounds.
+
+Arguments:
+ * number: The number to clamp.
+ * lower: The lower bound.
+ * upper: The upper bound.
+
+Returns
+
+ * The clamped number.
+
 forIn
 -----
 
 ```
-_.forIn(/*QVariantMap */object, iteratee)
+_::forIn(Map object, iteratee) // std::map, QMap, QVariantMap
+_::forIn(QObject* object, iteratee)
 ```
 
 Iterates all the string keyed proeprties of an object and calls iteratee function. The iteratee is invoked with one to three arguments: [value, [key, [collection]]].
