@@ -7,7 +7,7 @@ A C++ utility library provides useful functional programming helpers like lodash
 Features:
 -----
 
-1) C++11 compliant coding. Support C++14 generic lambda function (using auto as parameter) and return type detection.
+**1) C++11 compliant coding. Support C++14 generic lambda function (using auto as parameter) and return type detection.**
 
 ```C++
 
@@ -21,9 +21,9 @@ QVector<int> output3 = _::map(QVector<QString>{"1","2","3"},
                               [](QString, int index, auto collection) { return collection[index].toInt();});
 ```
 
-2) Support Qt types but it is still compilable even the Qt library is missing.
+**2) Support Qt types but it is still compilable even the Qt library is missing.**
 
-```
+```C++
 // Serialize a QObject
 // Non-deep copy from source to dest
 _::assign( /* QVariantMap */ dest, /* QObject* */ source );
@@ -33,11 +33,11 @@ _::assign( /* QVariantMap */ dest, /* QObject* */ source );
 QVariant property = _::get(object, "parent.objectName");
 ```
 
-3) Eliminate misleading template error messages for mismatched argument type. Easier to debug template error.
+**3) Eliminate misleading template error messages for mismatched argument type. Easier to debug template error.**
 
 Example:
 
-```
+```C++
     auto output = _::map(QList<QString>{"1","2","3"}, [](auto item, QString index) { return item;});
 ```
 
@@ -49,14 +49,15 @@ Underline captures the argument type mismatched error by using static_assert(). 
 error: static_assert failed "_::map(): Mismatched argument types in the iteratee function. Please validate the number of argument and their type."
 ```
 
-4) Single Header Library
+**4) Single Header Library**
 
-5) All the helper functions are pure, reentrant, and thead-safe
+**5) All the helper functions are pure, reentrant, and thead-safe**
 
 Use-cases
 -------
 
  1) Serialize a QObject
+
 ```C++
 #include <underline.h>
 
@@ -78,9 +79,19 @@ QVariant property = _::get(object, "parent.objectName");
 Installation
 -----------
 
+1) Method 1: Download from Web
+
 ```
 wget https://raw.githubusercontent.com/benlau/underline/master/src/cpp/underline.h
 ```
+
+2) Method 2: Git Subtree
+
+```
+git subtree add -P lib/underline --squash https://github.com/benlau/underline.git src-subtree
+```
+
+Remarks: This method may not get the latest version.
 
 API
 ===
