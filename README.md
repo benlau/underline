@@ -11,7 +11,7 @@ Features:
 
 ```C++
 
-QVector<int> output1 = _::map(std::vector<QString>(){"1","2","3"},
+std::vector<int> output1 = _::map(std::vector<QString>(){"1","2","3"},
                               [](auto item, auto index, auto collection) { return item.toInt();});
 
 QList<int> output2 = _::map(QList<QString>(){"1","2","3"},
@@ -138,7 +138,27 @@ QVariant property = _::get(object, "parent.objectName");
 clamp
 -----
 
+forIn
+-----
 
+```
+_.forIn(/*QVariantMap */object, iteratee)
+```
+
+Iterates all the string keyed proeprties of an object and calls iteratee function. The iteratee is invoked with one to three arguments: [value, [key, [collection]]].
+
+Arguments:
+
+ * object: The source of object. Support types: QVariantMap
+ * iteratee: The function invoked per iteration.
+
+Returns:
+
+ * object
+
+Example
+```
+```
 
 map
 ----
@@ -147,8 +167,7 @@ map
 _::map(collection, iteratee)
 ```
 
-Creates an array of values by running each element in collection throught iteratee. The iteratee is invoked with three arguments: (value, index, collection). The index and collection parameters are optional.
-
+Creates an array of values by running each element in collection throught iteratee. The iteratee is invoked with one to three arguments: [value, [index, [collection]]].
 
 Arguments:
 

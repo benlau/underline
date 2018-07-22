@@ -294,7 +294,10 @@ namespace _ {
         template <typename Functor, typename Collection>
         struct is_vic_func_invokable {
             enum {
-                value = is_invokable3<Functor, typename std::remove_reference<Collection>::type::value_type, int, Collection>::value
+                value = is_invokable3<Functor,
+                typename std::remove_reference<Collection>::type::value_type,
+                typename std::remove_reference<Collection>::type::size_type,
+                Collection>::value
             };
         };
 
@@ -357,12 +360,17 @@ namespace _ {
 #endif
     } /* End of Private Session */
 
-    template <typename Map, typename Functor>
-    inline void forIn(const Map& object, Functor iteratee) {
+#ifdef QT_CORE_LIB
+    template <typename Functor>
+    inline QObject* forIn(QObject* object, Functor iteratee);
+#endif
+
+    template <typename K, typename V, template <typename...> class Map, typename Functor>
+    inline Map<K,V>& forIn(Map<K,V> & object, Functor iteratee) {
+        Private::Value<typename Private::ret_invoke<Functor, V, K, Map<K,V>>::type> value;
+
         auto iter = object.begin();
         while (iter != object.end()) {
-
-            Private::Value<typename Private::ret_invoke<Functor, typename std::remove_reference<Map>::type::mapped_type, typename std::remove_reference<Map>::type::key_type, Map>::type> value;
             value.invoke(iteratee, iter.value(), iter.key(), object);
 
             if (value.template canConvert<bool>() && value.equals(false)) {
@@ -370,9 +378,30 @@ namespace _ {
             }
             iter++;
         }
+
+        return object;
     }
 
 #ifdef QT_CORE_LIB
+    template <typename Functor>
+    inline QObject* forIn(QObject* object, Functor iteratee) {
+        const QMetaObject* meta = object->metaObject();
+        Private::Value<typename Private::ret_invoke<Functor, QVariant, QString, QObject*>::type> invokeHelper;
+
+        for (int i = 0 ; i < meta->propertyCount(); i++) {
+            const QMetaProperty property = meta->property(i);
+            QString key = property.name();
+            QVariant value = property.read(object);
+
+            invokeHelper.invoke(iteratee, value, key, object);
+
+            if (invokeHelper.template canConvert<bool>() && invokeHelper.equals(false)) {
+                break;
+            }
+        }
+        return object;
+    }
+
     /*
      If a property contains QObject pointer, it will be converted to QVariantMap.
 
@@ -392,7 +421,7 @@ namespace _ {
 
             if (value.canConvert<QObject*>()) {
                 QVariantMap map;
-                assign(map, value.value<QObject*>()); // nested properties is not supported yet
+                assign(map, value.value<QObject*>()); // nested properties are not supported yet
                 value = map;
             }
 
@@ -676,14 +705,4 @@ namespace _ {
         }
         return number;
     }
-
-    /// Sets the value at path of object. If a portion of path doesn't exist, it's created.
-    /*
-     Example:
-
-     set(data, "a.b", 3); // data["a"] will be a QVariantMap that contains a key of "b".
-
-     */
-
-
 }

@@ -8,9 +8,7 @@ CONFIG += c++14
 TEMPLATE = app
 
 SOURCES +=     main.cpp \
-    c14testcases.cpp \
-    dataobject.cpp \
-    dataobject2.cpp
+    c14testcases.cpp
 
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
 DEFINES += QUICK_TEST_SOURCE_DIR=\\\"$$PWD/qmltests\\\"
@@ -20,6 +18,7 @@ ROOT_DIR = $$absolute_path($$PWD/../..)
 INCLUDEPATH += $$ROOT_DIR/src/cpp
 
 include(../qpm.pri)
+include(../common/common.pri)
 
 DISTFILES +=    \
     ../../.travis.yml \
@@ -31,7 +30,4 @@ DISTFILES +=    \
 }
 
 HEADERS += \
-    c14testcases.h \
-    dataobject.h \
-    dataobject2.h
-
+    c14testcases.h

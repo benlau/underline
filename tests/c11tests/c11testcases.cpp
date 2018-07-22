@@ -6,6 +6,7 @@
 #include <QMap>
 #include "c11testcases.h"
 #include "underline.h"
+#include "dataobject.h"
 
 static bool isOdd(int value) {
     return value % 2 == 1;
@@ -179,5 +180,6 @@ void C11TestCases::test_map()
         QCOMPARE(_::map(QVector<QString>() << "1" << "2" << "3", func), QVector<int>() << 1 << 2 << 3);
     }
 }
+
 
 

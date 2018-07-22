@@ -533,5 +533,41 @@ void C14TestCases::test_forIn()
         QCOMPARE(keys.size(), 1);
         QCOMPARE(values.size(), 1);
     }
+
+    {
+        // _.forIn(QObject*)
+        DataObject* object = new DataObject(this);
+        bool error = false;
+        QVariantList proeprties;
+
+        _::forIn(object, [&](auto value, QString key, auto object) {
+            const QMetaObject* meta = object->metaObject();
+            if (meta->indexOfProperty(key.toUtf8().constData()) < 0) {
+                error = true;
+            }
+            proeprties << value;
+        });
+        QCOMPARE(error, false);
+        QCOMPARE(proeprties.size(), 5);
+    }
+
+    {
+        // _.forIn(QObject*) and early termination
+        DataObject* object = new DataObject(this);
+        bool error = false;
+        QVariantList proeprties;
+
+        _::forIn(object, [&](auto value, QString key, auto object) {
+            const QMetaObject* meta = object->metaObject();
+            if (meta->indexOfProperty(key.toUtf8().constData()) < 0) {
+                error = true;
+            }
+            proeprties << value;
+            return false;
+        });
+
+        QCOMPARE(error, false);
+        QCOMPARE(proeprties.size(), 1);
+    }
 }
 
