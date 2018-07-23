@@ -164,7 +164,7 @@ forIn
 -----
 
 ```
-_::forIn(Map object, iteratee) // std::map, QMap, QVariantMap
+_::forIn(Map<Key,Value> object, iteratee) // std::map, QMap, QVariantMap
 _::forIn(QObject* object, iteratee)
 ```
 
@@ -172,8 +172,8 @@ Iterates all the string keyed proeprties of an object and calls iteratee functio
 
 Arguments:
 
- * object: The source of object. Support types: QVariantMap
- * iteratee: The function invoked per iteration.
+ * object: The source of object. Support types: QObject*, QMap, QVariantMap, std::map
+ * iteratee: The function invoked per iteration. If the source object is a QObject, the data type of key argument is QString.
 
 Returns:
 
@@ -196,7 +196,6 @@ Arguments:
 
  * collection: The input collection. QList/QVector/std::vector are proven to work.
  * iteratee: The function invoked per iteration
-
 
 Returns:
 
