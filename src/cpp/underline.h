@@ -384,6 +384,26 @@ namespace _ {
         return object;
     }
 
+    template <typename K, typename V, template <typename...> class Map, typename Functor>
+    inline const Map<K,V>& forIn(const Map<K,V> & object, Functor iteratee) {
+
+        static_assert(Private::is_invokable3<Functor, V, K, Map<K,V>>::value, "_::forIn: " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+
+        Private::Value<typename Private::ret_invoke<Functor, V, K, Map<K,V>>::type> value;
+
+        auto iter = object.begin();
+        while (iter != object.end()) {
+            value.invoke(iteratee, iter.value(), iter.key(), object);
+
+            if (value.template canConvert<bool>() && value.equals(false)) {
+                break;
+            }
+            iter++;
+        }
+
+        return object;
+    }
+
 #ifdef QT_CORE_LIB
     template <typename Functor>
     inline QObject* forIn(QObject* object, Functor iteratee) {
@@ -451,19 +471,15 @@ namespace _ {
     {
         const QMetaObject* meta = dest->metaObject();
 
-        QMap<QString,QVariant>::const_iterator iter = source.begin();
-        while (iter != source.end()) {
-            QByteArray key = iter.key().toLocal8Bit();
+        forIn(source, [&](QVariant value, QString key) {
 
-            int index = meta->indexOfProperty(key.constData());
+            int index = meta->indexOfProperty(key.toLocal8Bit().constData());
             if (index < 0) {
-                qWarning() << QString("_::assign: assigns an non-existed property: %1").arg(iter.key());
-                iter++;
-                continue;
+                qWarning() << QString("_::assign: assigns an non-existed property: %1").arg(key);
+                return;
             }
 
-            QVariant orig = dest->property(key.constData());
-            QVariant value = source[iter.key()];
+            QVariant orig = dest->property(key.toLocal8Bit().constData());
 
             if (orig.canConvert<QObject*>()) {
                 if (value.type() != QVariant::Map) {
@@ -473,11 +489,9 @@ namespace _ {
                 }
 
             } else if (orig != value) {
-                dest->setProperty(key.constData(), value);
+                dest->setProperty(key.toLocal8Bit().constData(), value);
             }
-
-            iter++;
-        }
+        });
 
         return dest;
     }

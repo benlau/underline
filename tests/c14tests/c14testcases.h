@@ -31,7 +31,5 @@ private slots:
 
     void test_forIn();
 
-    void test_example_in_readme();
-
 };
 
