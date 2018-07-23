@@ -31,5 +31,5 @@ script:
     - tests/c14tests/c14tests
     - tests/quicktests/quicktests
     - tests/noqttests/noqttests
-    - (cd tests/compilererrotests; ./run.sh)
+    - (cd tests/compilererrortests; ./run.sh)
     

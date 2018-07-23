@@ -115,6 +115,13 @@ namespace _ {
         }
 
         template <typename Functor>
+        inline auto invoke(Functor) ->
+        typename std::enable_if<!is_args_compatible<Functor>::value,
+        Undefined>::type {
+            return Undefined();
+        }
+
+        template <typename Functor>
         struct is_invokable0 {
             enum {
                value = is_args_compatible<Functor>::value
@@ -141,6 +148,13 @@ namespace _ {
         typename std::enable_if<is_args_compatible<Functor, Arg1>::value,
         typename ret_func<Functor, Arg1>::type>::type {
             return functor(arg1);
+        }
+
+        template <typename Functor, typename Arg1>
+        inline auto invoke(Functor, Arg1) ->
+        typename std::enable_if<!is_args_compatible<Functor>::value && !is_args_compatible<Functor, Arg1>::value,
+        Undefined>::type {
+            return Undefined();
         }
 
         template <typename Functor, typename Arg1>
@@ -177,6 +191,13 @@ namespace _ {
         typename std::enable_if<is_args_compatible<Functor, Arg1, Arg2>::value,
         typename ret_func<Functor, Arg1, Arg2>::type>::type {
             return functor(arg1, arg2);
+        }
+
+        template <typename Functor, typename Arg1, typename Arg2>
+        inline auto invoke(Functor, Arg1, Arg2) ->
+        typename std::enable_if<!is_args_compatible<Functor>::value && !is_args_compatible<Functor, Arg1>::value && !is_args_compatible<Functor, Arg1, Arg2>::value,
+        Undefined>::type {
+            return Undefined();
         }
 
         template <typename Functor, typename Arg1, typename Arg2>
@@ -220,6 +241,13 @@ namespace _ {
         typename std::enable_if<is_args_compatible<Functor, Arg1, Arg2, Arg3>::value,
         typename ret_func<Functor, Arg1, Arg2, Arg3>::type>::type {
             return functor(arg1, arg2, arg3);
+        }
+
+        template <typename Functor, typename Arg1, typename Arg2, typename Arg3>
+        inline auto invoke(Functor, Arg1, Arg2, Arg3) ->
+        typename std::enable_if<!is_args_compatible<Functor>::value && !is_args_compatible<Functor, Arg1>::value && !is_args_compatible<Functor, Arg1, Arg2>::value && !is_args_compatible<Functor, Arg1, Arg2, Arg3>::value,
+        Undefined>::type {
+            return Undefined();
         }
 
         template <typename Functor, typename Arg1, typename Arg2, typename Arg3>
