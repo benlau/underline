@@ -570,3 +570,36 @@ void C14TestCases::test_forIn()
         QCOMPARE(proeprties.size(), 1);
     }
 }
+
+void C14TestCases::test_forEach()
+{
+    {
+        int count = 0;
+        _::forEach(QStringList{"1","2","3"}, [&]() {count++;});
+        QCOMPARE(count, 3);
+    }
+
+    {
+        int count = 0;
+        _::forEach(std::vector<QString>{"1","2","3"}, [&](auto value) { if (value == "2") count++;});
+        QCOMPARE(count, 1);
+    }
+
+    {
+        int count = 0;
+        _::forEach(QList<QString>{"1","2","3"}, [&](auto, int index) { if (index > 0) count++;});
+        QCOMPARE(count, 2);
+    }
+
+    {
+        int count = 0;
+        _::forEach(QVector<QString>{"1","2","3"}, [&](auto, int index, auto collection) { if (collection[index].toInt() > 1) count++;});
+        QCOMPARE(count, 2);
+    }
+
+    {
+        int count = 0;
+        _::forEach(QStringList{"1","2","3"}, [&](auto, int , auto ) { count++; return false;});
+        QCOMPARE(count, 1);
+    }
+}

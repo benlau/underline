@@ -438,6 +438,21 @@ namespace _ {
         return object;
     }
 
+    template <typename Collection, typename Iteratee>
+    inline const Collection& forEach(const Collection& collection, Iteratee iteratee) {
+        static_assert(Private::is_vic_func_invokable<Iteratee, Collection>::value, "_::forEach(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+
+        Private::Value<typename Private::ret_invoke<Iteratee, typename Private::collection_value_type<Collection>::type, int, Collection >::type> value;
+
+        for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
+            value.invoke(iteratee, collection[i], i, collection);
+            if (value.template canConvert<bool>() && value.equals(false)) {
+                break;
+            }
+        }
+        return collection;
+    }
+
 #ifdef QT_CORE_LIB
     template <typename Functor>
     inline QObject* forIn(QObject* object, Functor iteratee) {
@@ -737,7 +752,7 @@ namespace _ {
     inline bool some(const Collection& collection, Predicate predicate) {
         bool res = false;
 
-        static_assert(Private::is_vic_func_invokable<Predicate, Collection>::value, "_:some(): " UNDERLINE_PREDICATE_MISMATCHED_ERROR);
+        static_assert(Private::is_vic_func_invokable<Predicate, Collection>::value, "_::some(): " UNDERLINE_PREDICATE_MISMATCHED_ERROR);
         static_assert(std::is_same<typename Private::ret_invoke<Predicate, typename Private::collection_value_type<Collection>::type,int, Collection>::type,bool>::value,
                       "_::some(): " UNDERLINE_PREDICATE_RETURN_TYPE_MISMATCH_ERROR);
 

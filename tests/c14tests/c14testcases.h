@@ -31,5 +31,7 @@ private slots:
 
     void test_forIn();
 
+    void test_forEach();
+
 };
 

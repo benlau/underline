@@ -159,6 +159,8 @@ Example:
 QVariant property = _::get(object, "parent.objectName");
 ```
 
+forEach
+-------
 
 forIn
 -----
