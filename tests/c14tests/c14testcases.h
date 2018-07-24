@@ -33,5 +33,7 @@ private slots:
 
     void test_forEach();
 
+    void test_reduce();
+
 };
 

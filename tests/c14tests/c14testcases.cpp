@@ -603,3 +603,22 @@ void C14TestCases::test_forEach()
         QCOMPARE(count, 1);
     }
 }
+
+void C14TestCases::test_reduce()
+{
+    {
+        auto value = _::reduce(std::vector<int>{1,2,3}, [](auto acc, auto value) {
+            return acc + value;
+        },0);
+
+        QCOMPARE(value, 6);
+    }
+
+    {
+        auto value = _::reduce(QList<int>{1,2,3}, [](auto acc, auto value, auto index) {
+            return acc + value + index;
+        }, 0);
+
+        QCOMPARE(value, 9);
+    }
+}
