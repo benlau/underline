@@ -58,7 +58,7 @@ void C14TestCases::test_private_traits()
 
         // container_value_type
 
-        const std::type_info& ti1 = typeid(_::Private::container_value_type<QList<int>>::type);
+        const std::type_info& ti1 = typeid(_::Private::collection_value_type<QList<int>>::type);
         const std::type_info& ti2 = typeid(int);
 
         QVERIFY(ti1 == ti2);
