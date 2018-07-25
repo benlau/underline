@@ -881,7 +881,7 @@ namespace _ {
     Collection range(V1 start, V2 end, V3 step) {
         Collection list;
 
-        int length = abs( (end - start) / (step == 0 ? 1 : step) );
+        int length = std::abs( (end - start) / (step == 0 ? 1 : step) );
 
         list.reserve(length);
 
