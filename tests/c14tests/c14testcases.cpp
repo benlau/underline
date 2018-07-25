@@ -615,7 +615,7 @@ void C14TestCases::test_reduce()
     }
 
     {
-        auto value = _::reduce(QList<int>{1,2,3}, [](auto acc, auto value, auto index) {
+        auto value = _::reduce(QList<int>{1,2,3}, [](auto acc, auto value, auto index, auto) {
             return acc + value + index;
         }, 0);
 

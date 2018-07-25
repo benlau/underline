@@ -4,6 +4,8 @@
 #include <QtShell>
 #include <functional>
 #include <QMap>
+#include <vector>
+#include <QtCore>
 #include "c11testcases.h"
 #include "underline.h"
 #include "dataobject.h"
@@ -118,6 +120,8 @@ void C11TestCases::test_private_invoke()
 
     QCOMPARE(_::Private::invoke(myFunc2, 2,3) , 2);
 
+    QCOMPARE((std::is_same<_::Private::ret_invoke<QString,QString, int>::type , _::Private::Undefined>::value), true);
+
     QCOMPARE((std::is_same<decltype(_::Private::decl_invoke0<decltype(myFunc0)>()) , int>::value), true);
 
     QCOMPARE((std::is_same<decltype(_::Private::decl_invoke0<decltype(myFunc2), int, int>()) , int>::value), true);
@@ -179,6 +183,24 @@ void C11TestCases::test_map()
         QCOMPARE(_::map(QList<QString>() << "1" << "2" << "3", func), QList<int>() << 1 << 2 << 3);
         QCOMPARE(_::map(QVector<QString>() << "1" << "2" << "3", func), QVector<int>() << 1 << 2 << 3);
     }
+}
+
+void C11TestCases::test_range()
+{
+    QCOMPARE(_::range<std::vector<int>>(4), (std::vector<int>{0,1,2,3}));
+
+    QCOMPARE(_::range<QList<int>>(-4), (QList<int>{0,-1,-2,-3}));
+
+    QCOMPARE(_::range<QVector<int>>(1,5), (QVector<int>{1,2,3,4}));
+
+    qDebug() << _::range<QList<int>>(0, 20, 5);
+    QCOMPARE(_::range<QList<int>>(0, 20, 5), (QList<int>{0, 5, 10, 15}));
+    QCOMPARE(_::range<QList<int>>(0, 20, 5.0), (QList<int>{0, 5, 10, 15}));
+
+    QCOMPARE(_::range<std::vector<int>>(1,4,0), (std::vector<int>{1,1,1}));
+
+    QCOMPARE(_::range<QList<int>>(0), (QList<int>{}));
+
 }
 
 

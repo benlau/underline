@@ -16,5 +16,7 @@ private slots:
     void test_some();
 
     void test_map();
+
+    void test_range();
 };
 

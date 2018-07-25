@@ -861,19 +861,49 @@ namespace _ {
 
         typedef typename Private::ret_invoke<Iteratee,Accumulator, typename Private::collection_value_type<Collection>::type, int, Collection>::type RET;
 
+        static_assert(std::is_same<Accumulator, RET>::value, "_::reduce():  Mismatched accumulator type in reduce() and iteratee().");
+
         static_assert(Private::is_invokable4<Iteratee,
                                              Accumulator,
                                              typename Private::collection_value_type<Collection>::type,
                                              int, Collection>::value, "_::reduce(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
-        static_assert(std::is_same<Accumulator, RET>::value, "_::reduce():  Mismatched accumulator type in reduce() and iteratee().");
 
         Accumulator ret = accumulator;
-        Private::Value<Accumulator> value;
+        Private::Value<RET> value;
         for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
             value.invoke(iteratee, ret, collection[i], i, collection);
             ret = value.value;
         }
         return ret;
+    }
+
+    template <typename Collection, typename V1, typename V2, typename V3>
+    Collection range(V1 start, V2 end, V3 step) {
+        Collection list;
+
+        int length = abs( (end - start) / (step == 0 ? 1 : step) );
+
+        list.reserve(length);
+
+        decltype(start+step) value = start;
+
+        while (length--) {
+            list.push_back(value);
+            value+=step;
+        }
+        return list;
+    }
+
+    template <typename Collection, typename V1>
+    Collection range(V1 end) {
+        int step = end > 0 ? 1 : -1;
+        return range<Collection>(0, end, step);
+    }
+
+    template <typename Collection, typename V1, typename V2>
+    Collection range(V1 start, V2 end) {
+        int step = start < end ? 1 : -1;
+        return range<Collection>(start, end, step);
     }
 
 }

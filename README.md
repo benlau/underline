@@ -282,6 +282,13 @@ Returns
 
 Example:
 
+range
+----
+
+reduce
+------
+
+
 some
 ----
 
