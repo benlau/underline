@@ -2,7 +2,7 @@
 [![Build Status](https://www.travis-ci.org/benlau/underline.svg?branch=master)](https://www.travis-ci.org/benlau/underline)
 [![Build status](https://ci.appveyor.com/api/projects/status/p6jsldfoj73ep630?svg=true)](https://ci.appveyor.com/project/benlau/underline)
 
-A C++ utility library provides useful functional programming helpers like lodash.js
+A C++ utility library provides useful functional programming helpers like the lodash.js.
 
 Features:
 -----
@@ -33,7 +33,7 @@ _::assign( /* QVariantMap */ dest, /* QObject* */ source );
 QVariant property = _::get(object, "parent.objectName");
 ```
 
-**3) Eliminate misleading template error messages for mismatched argument type. Easier to debug template error.**
+**3) Get rid of the horrific and misleading template compilation error messages. Debugging is much more comfortable.**
 
 Example:
 
@@ -41,9 +41,9 @@ Example:
     auto output = _::map(QList<QString>{"1","2","3"}, [](auto item, QString index) { return item;});
 ```
 
-The 2nd argument of the iteratee function should be an int type but QString is given. Normally, it will trigger a compilation error at somewhere that user has no idea what is it actually doing. The error message is super long and difficult to understand.
+The 2nd argument of the iteratee function should be an int type, but it got a QString. Usually, it triggers a compilation error at somewhere that user has no idea what is it doing. The error message is super long and hard to understand.
 
-Underline captures the argument type mismatched error by using static_assert(). The actual error message on above example will be
+Underline captures the argument type mismatched error by using static_assert(). The actual error message on above example becomes:
 
 ```
 error: static_assert failed "_::map(): Mismatched argument types in the iteratee function. Please validate the number of argument and their type."
@@ -106,7 +106,7 @@ _:assign(QVariantMap& dest, QVariantMap source, ...)
 _:assign(QObject* dest, QJSValue source, ...) // Available only if `quick` is set in the qmake project file.
 ```
 
-Assigns the string-keyed properties from the source object to the destination object. The source objects are applied from left to right. Subsequent sources overwrite property assignments of previous sources.
+Assigns the string-keyed properties from the source object to the destination object. The sequence to apply source objects is from left to right. Subsequent sources overwrite property assignments of previous sources.
 
 Arguments:
 
@@ -150,7 +150,7 @@ QVariant _::get(const QObject* source, QString path,QVariant defaultValue = QVar
 QVariant _::get(const QVariantMap source, QString path, QVariant defaultValue = QVariant())
 ```
 
-Obtain the value from the source object at the given path. If the path does not exist, it will return the default value.
+Obtain the value from the source object at the given path. If the path does not exist, it returns the default value.
 
 Example:
 
@@ -170,12 +170,12 @@ _::forIn(Map<Key,Value> object, iteratee) // std::map, QMap, QVariantMap
 _::forIn(QObject* object, iteratee)
 ```
 
-Iterates all the string keyed proeprties of an object and calls iteratee function. The iteratee is invoked with one to three arguments: [value, [key, [collection]]].
+Iterates all the string key proeprties of an object and calls the iteratee function. The iteratee function is invoked with one to three arguments: [value, [key, [collection]]].
 
 Arguments:
 
- * object: The source of object. Support types: QObject*, QMap, QVariantMap, std::map
- * iteratee: The function invoked per iteration. If the source object is a QObject, the data type of key argument is QString.
+ * object: The source object. Support types: QObject*, QMap, QVariantMap, std::map
+ * iteratee: The function invoked per iteration. If the source object is a QObject, the data type of the key argument is QString.
 
 Returns:
 
@@ -192,16 +192,16 @@ map
 _::map(collection, iteratee)
 ```
 
-Creates an array of values by running each element in collection throught iteratee. The iteratee is invoked with one to three arguments: [value, [index, [collection]]].
+Iterate all the elements of the collection and call the iteratee function. It creates a new collection obtain the result. The iteratee is invoked with one to three arguments: [value, [index, [collection]]].
 
 Arguments:
 
- * collection: The input collection. QList/QVector/std::vector are proven to work.
- * iteratee: The function invoked per iteration
+ * collection: The input collection. e.g std::vector, std:list, QList, QVector
+ * iteratee: The function invoked per iteration.
 
 Returns:
 
- * (Array) The new mapped array. The container type should be same as the input collection.
+ * (Collection) The new mapped array. The container type is the same as the input collection.
 
 Example:
 
@@ -267,7 +267,7 @@ void _::set(QVariantMap &object, const QStringList &path, const QVariant &value)
 void _::set(QVariantMap &object, const QString &path, const QVariant &value)
 ```
 
-Set the property from the source object at the given path. If the path does not exist, it will do nothinbg.
+Set the property from the source object at the given path. If the path does not exist, it does nothinbg.
 
 Arguments
 
@@ -296,7 +296,7 @@ some
 bool _::some(Collection collection, Predicate predicate)
 ```
 
-Check if predicate function returns a truth value for any element in the collection. The iteration is stopped once it got a truth value. The process will terminate once it is a truth value. The predicate function is invoked with one to three arguments: [value, [index, [collection]]].
+Check if predicate function returns a truth value for any element in the collection. The iteration stops once it got a truth value. The predicate function is invoked with one to three arguments: [value, [index, [collection]]].
 
 Arguments
 

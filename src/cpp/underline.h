@@ -1,5 +1,8 @@
 #pragma once
 #include <functional>
+#include <map>
+#include <list>
+#include <vector>
 
 #ifdef QT_CORE_LIB
 #include <QtCore>
@@ -23,6 +26,7 @@ namespace _ {
 
     namespace Private {
 
+        /// An Undefined class as a default return of invalid function
         class Undefined {
         };
 
@@ -31,22 +35,25 @@ namespace _ {
         struct rebind {
         };
 
-#ifdef QT_CORE_LIB
-        template <class NewType>
-        struct rebind<QStringList, NewType> {
-            typedef QList<NewType> type;
-        };
-
-        template <class NewType>
-        struct rebind<QVariantList, NewType> {
-            typedef QList<NewType> type;
-        };
-#endif
-
         template <class ValueType, class... Args, template <class...> class Container, class NewType>
         struct rebind<Container<ValueType, Args...>, NewType>
         {
             typedef Container<NewType, typename rebind<Args, NewType>::type...> type;
+        };
+
+        template <class Collection, class NewType>
+        struct rebind_to_map {
+            typedef Undefined type;
+        };
+
+        template <class NewType, class ValueType>
+        struct rebind_to_map<std::vector<ValueType>, NewType> {
+            typedef std::map<ValueType, NewType> type;
+        };
+
+        template <class NewType, class ValueType>
+        struct rebind_to_map<std::list<ValueType>, NewType> {
+            typedef std::map<ValueType, NewType> type;
         };
 
         /// Check is the Functor be able to take Args as input. It works with generic lambda.
@@ -404,6 +411,27 @@ namespace _ {
         };
 
 #ifdef QT_CORE_LIB
+
+        template <class NewType>
+        struct rebind<QStringList, NewType> {
+            typedef QList<NewType> type;
+        };
+
+        template <class NewType>
+        struct rebind<QVariantList, NewType> {
+            typedef QList<NewType> type;
+        };
+
+        template <class NewType, class ValueType>
+        struct rebind_to_map<QVector<ValueType>, NewType> {
+            typedef QMap<ValueType, NewType> type;
+        };
+
+        template <class NewType, class ValueType>
+        struct rebind_to_map<QList<ValueType>, NewType> {
+            typedef QMap<ValueType, NewType> type;
+        };
+
         inline QVariant _get(const QVariantMap& object, const QStringList &path, const QVariant& defaultValue) ;
 
         inline QVariant _get(const QObject* object, const QStringList &path, const QVariant& defaultValue) {
@@ -838,6 +866,8 @@ namespace _ {
 
         typename Private::rebind<Collection, typename Private::ret_invoke<Iteratee, typename Private::collection_value_type<Collection>::type, int, Collection>::type>::type res;
 
+        res.reserve((int) collection.size());
+
         for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
             res.push_back(Private::invoke(iteratee, collection[i], i, collection));
         }
@@ -905,5 +935,6 @@ namespace _ {
         int step = start < end ? 1 : -1;
         return range<Collection>(start, end, step);
     }
+
 
 }

@@ -6,6 +6,7 @@
 #include <QMap>
 #include <vector>
 #include <QtCore>
+#include <QVector>
 #include "c11testcases.h"
 #include "underline.h"
 #include "dataobject.h"
@@ -132,6 +133,22 @@ void C11TestCases::test_private_invoke()
     QCOMPARE((bool) (_::Private::is_invokable3<decltype(myFunc2), int, QString, int>::value), false);
 }
 
+void C11TestCases::test_private_rebind_to_map()
+{
+    QCOMPARE((std::is_same<QMap<QString,int>,
+                           _::Private::rebind_to_map<QList<QString>, int>::type
+                           >::value), true);
+
+    QCOMPARE((std::is_same<QMap<std::string,int>,
+                           _::Private::rebind_to_map<QVector<int>, int>::type
+                           >::value), false);
+
+    QCOMPARE((std::is_same<QMap<int,int>,
+                           _::Private::rebind_to_map<QList<int>, int>::type
+                           >::value), true);
+
+}
+
 void C11TestCases::test_some()
 {
     {
@@ -193,7 +210,6 @@ void C11TestCases::test_range()
 
     QCOMPARE(_::range<QVector<int>>(1,5), (QVector<int>{1,2,3,4}));
 
-    qDebug() << _::range<QList<int>>(0, 20, 5);
     QCOMPARE(_::range<QList<int>>(0, 20, 5), (QList<int>{0, 5, 10, 15}));
     QCOMPARE(_::range<QList<int>>(0, 20, 5.0), (QList<int>{0, 5, 10, 15}));
 
