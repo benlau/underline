@@ -15,6 +15,8 @@ private slots:
 
     void test_private_rebind_to_map();
 
+    void test_has_static_meta_object();
+
     void test_some();
 
     void test_map();

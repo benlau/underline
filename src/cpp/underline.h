@@ -64,6 +64,23 @@ namespace _ {
             };
         };
 
+        template <typename C>
+        constexpr auto test_has_static_meta_object(int) -> decltype(C::staticMetaObject, bool()) {
+            return true;
+        }
+
+        template <typename C>
+        constexpr auto test_has_static_meta_object(...) -> bool {
+            return false;
+        }
+
+        template <typename C>
+        struct has_static_meta_object {
+            enum {
+                value = test_has_static_meta_object<C>(0)
+            };
+        };
+
         template <typename Type, typename Functor, typename ...Args>
         using enable_if_args_compatible = typename std::enable_if<is_args_compatible<Functor, Args &&...>::value, Type>;
 

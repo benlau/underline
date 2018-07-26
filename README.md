@@ -79,19 +79,10 @@ QVariant property = _::get(object, "parent.objectName");
 Installation
 -----------
 
-1) Method 1: Download from Web
-
 ```
 wget https://raw.githubusercontent.com/benlau/underline/master/src/cpp/underline.h
 ```
 
-2) Method 2: Git Subtree
-
-```
-git subtree add -P lib/underline --squash https://github.com/benlau/underline.git src-subtree
-```
-
-Remarks: This method may not get the latest version.
 
 API
 ===

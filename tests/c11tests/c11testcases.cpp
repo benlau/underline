@@ -10,6 +10,7 @@
 #include "c11testcases.h"
 #include "underline.h"
 #include "dataobject.h"
+#include "gadgetobject.h"
 
 static bool isOdd(int value) {
     return value % 2 == 1;
@@ -146,6 +147,17 @@ void C11TestCases::test_private_rebind_to_map()
     QCOMPARE((std::is_same<QMap<int,int>,
                            _::Private::rebind_to_map<QList<int>, int>::type
                            >::value), true);
+
+}
+
+void C11TestCases::test_has_static_meta_object()
+{
+    class A {
+
+    };
+
+    QCOMPARE((bool) (_::Private::has_static_meta_object<A>::value), false);
+    QCOMPARE((bool) (_::Private::has_static_meta_object<GadgetObject>::value), true);
 
 }
 

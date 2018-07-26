@@ -3,7 +3,8 @@ DEPENDPATH += $$PWD
 
 HEADERS += \
     $$PWD/dataobject.h \
-    $$PWD/dataobject2.h
+    $$PWD/dataobject2.h \
+    $$PWD/gadgetobject.h
 
 SOURCES += \
     $$PWD/dataobject.cpp \
