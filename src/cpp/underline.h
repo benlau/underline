@@ -65,7 +65,8 @@ namespace _ {
         };
 
         template <typename C>
-        constexpr auto test_has_static_meta_object(int) -> decltype(C::staticMetaObject, bool()) {
+        constexpr auto test_has_static_meta_object(int) ->
+            typename std::enable_if<std::is_same<decltype(C::staticMetaObject), decltype(C::staticMetaObject)>::value, bool>::type {
             return true;
         }
 
