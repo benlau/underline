@@ -22,6 +22,8 @@
 #define UNDERLINE_PREDICATE_MISMATCHED_ERROR "Mismatched argument types in the predicate function. Please validate the number of argument and their type."
 #define UNDERLINE_PREDICATE_RETURN_TYPE_MISMATCH_ERROR "The return type of predicate function must be bool"
 
+#define _GET(member) [](auto ___value___) {return ___value___.member; }
+
 namespace _ {
 
     namespace Private {

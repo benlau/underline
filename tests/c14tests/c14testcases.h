@@ -15,6 +15,8 @@ private slots:
 
     void test_private_value();
 
+    void test_macro_get();
+
     void test_some();
 
     void test_map();
