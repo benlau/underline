@@ -24,15 +24,15 @@ TEST(UnderlineTests, test_clamp) {
 TEST(UnderlineTests, test_private_rebind_to_map) {
 
     ASSERT_EQ((std::is_same<std::map<std::string,int>,
-                           _::Private::rebind_to_map<std::vector<std::string>, int>::type
+                           _::Private::rebind_to_value_map<std::vector<std::string>, int>::type
                            >::value), true);
 
     ASSERT_EQ((std::is_same<std::map<std::string,int>,
-                           _::Private::rebind_to_map<std::vector<int>, int>::type
+                           _::Private::rebind_to_value_map<std::vector<int>, int>::type
                            >::value), false);
 
     ASSERT_EQ((std::is_same<std::map<int,int>,
-                           _::Private::rebind_to_map<std::list<int>, int>::type
+                           _::Private::rebind_to_value_map<std::list<int>, int>::type
                            >::value), true);
 
 }

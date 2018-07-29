@@ -22,6 +22,20 @@
 #define UNDERLINE_PREDICATE_MISMATCHED_ERROR "Mismatched argument types in the predicate function. Please validate the number of argument and their type."
 #define UNDERLINE_PREDICATE_RETURN_TYPE_MISMATCH_ERROR "The return type of predicate function must be bool"
 
+#define UL_REGISTER_REBIND_TO_MAP(CollectionType, MapType) \
+    namespace _ { \
+        namespace Private { \
+            template <class NewType, class ValueType> \
+            struct rebind_to_value_map<CollectionType<ValueType>, NewType> { \
+                typedef MapType<ValueType, NewType> type; \
+            }; \
+            template <class ValueType, class NewKeyType, class NewValueType> \
+            struct rebind_to_key_value_map<CollectionType<ValueType>, NewKeyType, NewValueType> { \
+                typedef MapType<NewKeyType, NewValueType> type; \
+            }; \
+        } \
+    }
+
 #define _GET(member) [](auto ___value___) {return ___value___.member; }
 
 namespace _ {
@@ -44,18 +58,13 @@ namespace _ {
         };
 
         template <class Collection, class NewType>
-        struct rebind_to_map {
+        struct rebind_to_value_map {
             typedef Undefined type;
         };
 
-        template <class NewType, class ValueType>
-        struct rebind_to_map<std::vector<ValueType>, NewType> {
-            typedef std::map<ValueType, NewType> type;
-        };
-
-        template <class NewType, class ValueType>
-        struct rebind_to_map<std::list<ValueType>, NewType> {
-            typedef std::map<ValueType, NewType> type;
+        template <class Collection, class NewKeyType, class NewValueType>
+        struct rebind_to_key_value_map {
+            typedef Undefined type;
         };
 
         /// Check is the Functor be able to take Args as input. It works with generic lambda.
@@ -440,16 +449,6 @@ namespace _ {
         template <class NewType>
         struct rebind<QVariantList, NewType> {
             typedef QList<NewType> type;
-        };
-
-        template <class NewType, class ValueType>
-        struct rebind_to_map<QVector<ValueType>, NewType> {
-            typedef QMap<ValueType, NewType> type;
-        };
-
-        template <class NewType, class ValueType>
-        struct rebind_to_map<QList<ValueType>, NewType> {
-            typedef QMap<ValueType, NewType> type;
         };
 
         inline QVariant _get(const QVariantMap& object, const QStringList &path, const QVariant& defaultValue) ;
@@ -955,6 +954,16 @@ namespace _ {
         int step = start < end ? 1 : -1;
         return range<Collection>(start, end, step);
     }
-
-
 }
+
+/* Type Registration */
+
+UL_REGISTER_REBIND_TO_MAP(std::list, std::map)
+UL_REGISTER_REBIND_TO_MAP(std::vector, std::map)
+
+#ifdef QT_CORE_LIB
+UL_REGISTER_REBIND_TO_MAP(QVector, QMap)
+UL_REGISTER_REBIND_TO_MAP(QList, QMap)
+#endif
+
+/* End of Type Registration */
