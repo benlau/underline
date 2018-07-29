@@ -239,7 +239,18 @@ void C11TestCases::test_range()
     QCOMPARE(_::range<std::vector<int>>(1,4,0), (std::vector<int>{1,1,1}));
 
     QCOMPARE(_::range<QList<int>>(0), (QList<int>{}));
+}
 
+void C11TestCases::test_range_q()
+{
+    QCOMPARE(_::range_q(4), (QList<int>{0,1,2,3}));
+
+    QCOMPARE(_::range_q(-4), (QList<int>{0,-1,-2,-3}));
+    QCOMPARE(_::range_q(1,5), (QList<int>{1,2,3,4}));
+    QCOMPARE(_::range_q(0, 20, 5), (QList<int>{0, 5, 10, 15}));
+    QCOMPARE(_::range_q(0, 20, 5.0), (QList<int>{0, 5, 10, 15}));
+    QCOMPARE(_::range_q(1,4,0), (QList<int>{1,1,1}));
+    QCOMPARE(_::range_q(0), (QList<int>{}));
 }
 
 

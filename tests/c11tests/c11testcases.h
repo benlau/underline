@@ -22,5 +22,7 @@ private slots:
     void test_map();
 
     void test_range();
+
+    void test_range_q();
 };
 
