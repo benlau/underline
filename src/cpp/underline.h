@@ -36,7 +36,7 @@
         } \
     }
 
-#define _GET(member) [](auto ___value___) {return ___value___.member; }
+#define UL_GET(member) [](auto ___value___) {return ___value___.member; }
 
 namespace _ {
 
@@ -889,6 +889,21 @@ namespace _ {
 
         for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
             res.push_back(Private::invoke(iteratee, collection[i], i, collection));
+        }
+
+        return res;
+    }
+
+    template <template<class...> class Collection, typename ValueType,  typename Iteratee>
+    inline auto countBy(const Collection<ValueType>& collection, Iteratee iteratee) -> typename Private::rebind_to_key_value_map<Collection<ValueType>, typename Private::ret_invoke<Iteratee, ValueType>::type, int>::type  {
+
+        typename Private::rebind_to_key_value_map<Collection<ValueType>,typename Private::ret_invoke<Iteratee, ValueType>::type,int>::type res;
+        static_assert(Private::is_invokable1<Iteratee, ValueType>::value, "_::countBy(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+
+        for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
+            auto key = Private::invoke(iteratee, collection[i]);
+            auto c = res[key] + 1;
+            res[key] = c;
         }
 
         return res;

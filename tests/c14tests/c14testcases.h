@@ -37,5 +37,7 @@ private slots:
 
     void test_reduce();
 
+    void test_countBy();
+
 };
 

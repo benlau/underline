@@ -133,6 +133,9 @@ Returns
 
  * The clamped number.
 
+countBy
+-------
+
 get
 ---
 
