@@ -3,6 +3,7 @@
 #include <map>
 #include <list>
 #include <vector>
+#include <unordered_map>
 
 #ifdef QT_CORE_LIB
 #include <QtCore>
@@ -39,6 +40,14 @@
         } \
     }
 
+#define UL_REGISTER_MAP(MapType) \
+    namespace _ { \
+        namespace Private { \
+            template <typename KeyType, typename ValueType> \
+            struct is_map<MapType<KeyType, ValueType>> { enum {value = 1};}; \
+        } \
+    }
+
 #define UL_GET(member) [](auto ___value___) {return ___value___.member; }
 
 namespace _ {
@@ -55,6 +64,18 @@ namespace _ {
                 value = 0
             };
         };
+
+        template <typename T>
+        struct is_map {
+            enum {
+                value = 0
+            };
+        };
+
+        template <typename Map, typename Key>
+        inline Undefined map_value(const Map&&, Key) {
+            return Undefined();
+        }
 
         /// Source: https://stackoverflow.com/questions/5052211/changing-value-type-of-a-given-stl-container
         template <class Container, class NewType>
@@ -438,14 +459,20 @@ namespace _ {
             }            
         };
 
-        template <typename ...Args, typename KeyType, template <class...> class Container, typename InputKeyType>
-        inline auto read(const Container<KeyType, Args...> &&container, InputKeyType key) -> typename std::remove_reference<Container<KeyType, Args...>>::type::mapped_type {
-                                                                                                                                                                                                                                                                                                                          typename std::remove_reference<Container<KeyType, Args...>>::type::mapped_type ret = typename std::remove_reference<Container<KeyType, Args...>>::type::mapped_type();
+        template <typename Key, typename Value>
+        auto map_value(const std::map<Key, Value>& map, Key key) -> Value {
+            Value ret = Value();
             try {
-              ret = container.at(key);
+              ret = map.at(key);
             } catch (std::out_of_range) {
             }
             return ret;
+        }
+
+        template <typename ...Args, typename KeyType, template <class...> class Container, typename InputKeyType>
+        inline auto read(const Container<KeyType, Args...> &&container, InputKeyType key) ->
+            typename std::remove_reference<Container<KeyType, Args...>>::type::mapped_type {
+            return map_value(container, key);
         }
 
         /// vic_func( VIC = Value,Index,Collection);
@@ -1000,10 +1027,13 @@ namespace _ {
 
 /* Type Registration */
 
+UL_REGISTER_MAP(std::map)
+UL_REGISTER_MAP(std::unordered_map)
 UL_REGISTER_REBIND_TO_MAP(std::list, std::map)
 UL_REGISTER_REBIND_TO_MAP(std::vector, std::map)
 
 #ifdef QT_CORE_LIB
+UL_REGISTER_MAP(QMap)
 UL_REGISTER_REBIND_TO_MAP(QVector, QMap)
 UL_REGISTER_REBIND_TO_MAP(QList, QMap)
 #endif

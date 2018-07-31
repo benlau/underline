@@ -36,6 +36,19 @@ void C11TestCases::test_is_collection()
 
 }
 
+void C11TestCases::test_is_map()
+{
+    QCOMPARE((bool)(_::Private::is_map<std::vector<int>>::value), false);
+    QCOMPARE((bool)(_::Private::is_map<std::string>::value), false);
+    QCOMPARE((bool)(_::Private::is_map<std::list<std::string>>::value), false);
+    QCOMPARE((bool)(_::Private::is_map<QVector<int>>::value), false);
+    QCOMPARE((bool)(_::Private::is_map<QList<int>>::value), false);
+
+    QCOMPARE((bool)(_::Private::is_map<std::map<int, std::string>>::value), true);
+    QCOMPARE((bool)(_::Private::is_map<std::unordered_map<int, std::string>>::value), true);
+    QCOMPARE((bool)(_::Private::is_map<QMap<int, QString>>::value), true);
+}
+
 template <typename F, typename T>
 auto wrapper(F functor, T t) -> typename _::Private::ret_func<F,T>::type {
     return functor(t);
@@ -190,7 +203,7 @@ void C11TestCases::test_private_read()
 
     QCOMPARE((_::Private::read(std::map<std::string, int>{{"value1", 1}}, std::string("value0"))), 0);
 
-
+//    QCOMPARE((_::Private::read(QMap<QString, int>{{"value1", 1}}, QString("value1"))), 1);
 }
 
 void C11TestCases::test_some()
