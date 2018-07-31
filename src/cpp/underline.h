@@ -428,6 +428,16 @@ namespace _ {
             }            
         };
 
+        template <typename ...Args, typename KeyType, template <class...> class Container, typename InputKeyType>
+        inline auto read(const Container<KeyType, Args...> &&container, InputKeyType key) -> typename std::remove_reference<Container<KeyType, Args...>>::type::mapped_type {
+                                                                                                                                                                                                                                                                                                                          typename std::remove_reference<Container<KeyType, Args...>>::type::mapped_type ret;
+            try {
+              ret = container.at(key);
+            } catch (std::out_of_range) {
+            }
+            return ret;
+        }
+
         /// vic_func( VIC = Value,Index,Collection);
         template <typename Functor, typename Collection>
         struct is_vic_func_invokable {
@@ -894,25 +904,10 @@ namespace _ {
         return res;
     }
 
-    template <typename ValueType, template<class...> class Collection,  typename Iteratee>
-    inline auto countBy(Collection<ValueType>&& collection, Iteratee iteratee) -> typename Private::rebind_to_key_value_map<Collection<ValueType>, typename Private::ret_invoke<Iteratee, ValueType>::type, int>::type  {
+    template <typename ValueType, typename ...Args, template<class...> class Collection,  typename Iteratee>
+    inline auto countBy(Collection<ValueType, Args...>&& collection, Iteratee iteratee) -> typename Private::rebind_to_key_value_map<Collection<ValueType, Args...>, typename Private::ret_invoke<Iteratee, ValueType>::type, int>::type  {
 
-        typename Private::rebind_to_key_value_map<Collection<ValueType>,typename Private::ret_invoke<Iteratee, ValueType>::type,int>::type res;
-        static_assert(Private::is_invokable1<Iteratee, ValueType>::value, "_::countBy(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
-
-        for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
-            auto key = Private::invoke(iteratee, collection[i]);
-            auto c = res[key] + 1;
-            res[key] = c;
-        }
-
-        return res;
-    }
-
-    template <typename ValueType, template<class...> class Collection,  typename Iteratee>
-    inline auto countBy(Collection<ValueType>& collection, Iteratee iteratee) -> typename Private::rebind_to_key_value_map<Collection<ValueType>, typename Private::ret_invoke<Iteratee, ValueType>::type, int>::type  {
-
-        typename Private::rebind_to_key_value_map<Collection<ValueType>,typename Private::ret_invoke<Iteratee, ValueType>::type,int>::type res;
+        typename Private::rebind_to_key_value_map<Collection<ValueType, Args...>,typename Private::ret_invoke<Iteratee, ValueType>::type,int>::type res;
         static_assert(Private::is_invokable1<Iteratee, ValueType>::value, "_::countBy(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
 
         for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {

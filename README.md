@@ -33,7 +33,7 @@ _::assign( /* QVariantMap */ dest, /* QObject* */ source );
 QVariant property = _::get(object, "parent.objectName");
 ```
 
-**3) Get rid of the horrific and misleading template compilation error messages. Debugging is much more comfortable.**
+**3) Strong static type checking. Get rid of the horrific and misleading template compilation error messages. **
 
 Example:
 
@@ -51,7 +51,7 @@ error: static_assert failed "_::map(): Mismatched argument types in the iteratee
 
 **4) Single Header Library**
 
-**5) All the helper functions are pure, reentrant, and thead-safe**
+**5) All the helper functions are reentrant, and thead-safe**
 
 Use-cases
 -------

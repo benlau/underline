@@ -644,9 +644,8 @@ void C14TestCases::test_countBy()
 
     QCOMPARE(_::countBy(_::range<std::vector<int>>(5), [](auto value) {return value % 2 == 0 ? "even" : "odd"; })["odd"] , 2);
 
-    {
-        auto input = _::range<QList<int>>(5);
-        QCOMPARE(_::countBy(input, [](auto value) {return value % 2 == 0 ? "even" : "odd"; })["odd"] , 2);
-    }
-
+//    {
+//        auto input = _::range<QList<int>>(5);
+//        QCOMPARE(_::countBy(input, [](auto value) {return value % 2 == 0 ? "even" : "odd"; })["odd"] , 2);
+//    }
 }

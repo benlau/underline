@@ -172,6 +172,14 @@ void C11TestCases::test_has_static_meta_object()
 
 }
 
+void C11TestCases::test_private_read()
+{
+    QCOMPARE((_::Private::read(std::map<std::string, int>{{"value1", 1}}, std::string("value1"))), 1);
+
+    QCOMPARE((_::Private::read(std::map<std::string, int>{{"value1", 1}}, std::string("value0"))), 0);
+
+}
+
 void C11TestCases::test_some()
 {
     {
