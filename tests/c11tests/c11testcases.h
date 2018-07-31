@@ -9,6 +9,8 @@ public:
 
 private slots:
 
+    void test_is_collection();
+
     void test_private_traits();
 
     void test_private_invoke();

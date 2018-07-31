@@ -24,6 +24,18 @@ C11TestCases::C11TestCases(QObject *parent) : QObject(parent)
     Q_UNUSED(ref);
 }
 
+void C11TestCases::test_is_collection()
+{
+    QCOMPARE((bool)(_::Private::is_collection<std::vector<int>>::value), true);
+    QCOMPARE((bool)(_::Private::is_collection<std::string>::value), false);
+
+    QCOMPARE((bool)(_::Private::is_collection<std::list<std::string>>::value), true);
+
+    QCOMPARE((bool)(_::Private::is_collection<QVector<int>>::value), true);
+    QCOMPARE((bool)(_::Private::is_collection<QList<int>>::value), true);
+
+}
+
 template <typename F, typename T>
 auto wrapper(F functor, T t) -> typename _::Private::ret_func<F,T>::type {
     return functor(t);
@@ -177,6 +189,7 @@ void C11TestCases::test_private_read()
     QCOMPARE((_::Private::read(std::map<std::string, int>{{"value1", 1}}, std::string("value1"))), 1);
 
     QCOMPARE((_::Private::read(std::map<std::string, int>{{"value1", 1}}, std::string("value0"))), 0);
+
 
 }
 

@@ -22,9 +22,12 @@
 #define UNDERLINE_PREDICATE_MISMATCHED_ERROR "Mismatched argument types in the predicate function. Please validate the number of argument and their type."
 #define UNDERLINE_PREDICATE_RETURN_TYPE_MISMATCH_ERROR "The return type of predicate function must be bool"
 
+/// Register rebind_to_map and test_is_collection
 #define UL_REGISTER_REBIND_TO_MAP(CollectionType, MapType) \
     namespace _ { \
         namespace Private { \
+            template <typename ValueType> \
+            struct is_collection<CollectionType<ValueType>> { enum { value = 1 };}; \
             template <class NewType, class ValueType> \
             struct rebind_to_value_map<CollectionType<ValueType>, NewType> { \
                 typedef MapType<ValueType, NewType> type; \
@@ -44,6 +47,13 @@ namespace _ {
 
         /// An Undefined class as a default return of invalid function
         class Undefined {
+        };
+
+        template <typename T>
+        struct is_collection {
+            enum {
+                value = 0
+            };
         };
 
         /// Source: https://stackoverflow.com/questions/5052211/changing-value-type-of-a-given-stl-container
