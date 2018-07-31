@@ -430,7 +430,7 @@ namespace _ {
 
         template <typename ...Args, typename KeyType, template <class...> class Container, typename InputKeyType>
         inline auto read(const Container<KeyType, Args...> &&container, InputKeyType key) -> typename std::remove_reference<Container<KeyType, Args...>>::type::mapped_type {
-                                                                                                                                                                                                                                                                                                                          typename std::remove_reference<Container<KeyType, Args...>>::type::mapped_type ret;
+                                                                                                                                                                                                                                                                                                                          typename std::remove_reference<Container<KeyType, Args...>>::type::mapped_type ret = typename std::remove_reference<Container<KeyType, Args...>>::type::mapped_type();
             try {
               ret = container.at(key);
             } catch (std::out_of_range) {
