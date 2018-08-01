@@ -66,7 +66,7 @@ namespace _ {
 
     namespace Private {
 
-        /// An Undefined class as a default return of invalid function
+        /// An Undefined class as a default return type of invalid function
         class Undefined {
         };
 
@@ -128,6 +128,15 @@ namespace _ {
                 value = MapInterface<T>::is_map
             };
         };
+
+        template <typename T, typename Ret>
+        using enable_if_is_map = typename std::enable_if<is_map<T>::value, Ret>::type;
+
+        template <typename T>
+        using enable_if_is_map_ret_mapped_type = typename std::enable_if<is_map<T>::value, typename MapInterface<T>::mapped_type>;
+
+        template <typename T>
+        using enable_if_is_collection_ret_value_type = typename std::enable_if< is_collection<typename std::remove_reference<T>::type>::value, typename std::remove_reference<T>::type::value_type>;
 
         /// Source: https://stackoverflow.com/questions/5052211/changing-value-type-of-a-given-stl-container
         template <class Container, class NewType>
@@ -512,13 +521,20 @@ namespace _ {
             }            
         };
 
+
+        /// Read a property from the target container object
         template <typename ...Args, typename KeyType, template <class...> class Container, typename InputKeyType>
         inline auto read(const Container<KeyType, Args...> &&container, InputKeyType key) ->
-            typename std::remove_reference<Container<KeyType, Args...>>::type::mapped_type {
+            typename enable_if_is_map_ret_mapped_type<Container<KeyType, Args...>>::type {
 
             static_assert(MapInterface<Container<KeyType, Args...>>::is_map, "_::Private::read: The container is not a registered map type.");
 
             return MapInterface<Container<KeyType, Args...>>::value(container, key);
+        }
+
+        template <typename ...Args, typename KeyType, template <class...> class Container, typename InputKeyType>
+        inline auto read(const Container<KeyType, Args...> &&container, InputKeyType key) -> typename enable_if_is_collection_ret_value_type<Container<KeyType, Args...>>::type {
+            return container[key];
         }
 
         /// vic_func( VIC = Value,Index,Collection);

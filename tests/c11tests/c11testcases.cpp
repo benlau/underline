@@ -199,11 +199,17 @@ void C11TestCases::test_has_static_meta_object()
 
 void C11TestCases::test_private_read()
 {
+    // Map
     QCOMPARE((_::Private::read(std::map<std::string, int>{{"value1", 1}}, std::string("value1"))), 1);
 
     QCOMPARE((_::Private::read(std::map<std::string, int>{{"value1", 1}}, std::string("value0"))), 0);
 
-//    QCOMPARE((_::Private::read(QMap<QString, int>{{"value1", 1}}, QString("value1"))), 1);
+    QCOMPARE((_::Private::read(QMap<QString, int>{{"value1", 1}}, QString("value1"))), 1);
+
+    // Collection
+    QCOMPARE((_::Private::read(std::vector<int>{0,1,2}, 1)), 1);
+    QCOMPARE((_::Private::read(QVector<int>{0,1,2}, 1)), 1);
+
 }
 
 void C11TestCases::test_some()
