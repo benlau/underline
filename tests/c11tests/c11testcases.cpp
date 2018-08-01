@@ -49,6 +49,13 @@ void C11TestCases::test_is_map()
     QCOMPARE((bool)(_::Private::is_map<QMap<int, QString>>::value), true);
 }
 
+void C11TestCases::test_is_meta_object()
+{
+    QCOMPARE((bool)(_::Private::is_meta_object<QObject*>::value),true);
+    QCOMPARE((bool)(_::Private::is_meta_object<QString>::value),false);
+
+}
+
 template <typename F, typename T>
 auto wrapper(F functor, T t) -> typename _::Private::ret_func<F,T>::type {
     return functor(t);
@@ -208,8 +215,7 @@ void C11TestCases::test_private_read()
 
     // Collection
     QCOMPARE((_::Private::read(std::vector<int>{0,1,2}, 1)), 1);
-    QCOMPARE((_::Private::read(QVector<int>{0,1,2}, 1)), 1);
-
+    QCOMPARE((_::Private::read(QVector<int>{0,1,2}, 1)), 1);    
 }
 
 void C11TestCases::test_some()

@@ -138,6 +138,28 @@ namespace _ {
         template <typename T>
         using enable_if_is_collection_ret_value_type = typename std::enable_if< is_collection<typename std::remove_reference<T>::type>::value, typename std::remove_reference<T>::type::value_type>;
 
+        template <typename Meta>
+        struct MetaObjectInterface {
+            enum {
+                is_meta_object = 0
+            };
+
+            typedef Undefined key_type;
+            typedef Undefined value_type;
+
+            template <typename Key>
+            static inline auto value(const Meta&, Key) -> Undefined {
+                return Undefined();
+            }
+        };
+
+        template <typename Meta>
+        struct is_meta_object {
+            enum {
+                value = MetaObjectInterface<Meta>::is_meta_object
+            };
+        };
+
         /// Source: https://stackoverflow.com/questions/5052211/changing-value-type-of-a-given-stl-container
         template <class Container, class NewType>
         struct rebind {
@@ -1098,6 +1120,20 @@ UL_REGISTER_REBIND_TO_MAP(std::vector, std::map)
 UL_REGISTER_QT_MAP(QMap)
 UL_REGISTER_REBIND_TO_MAP(QVector, QMap)
 UL_REGISTER_REBIND_TO_MAP(QList, QMap)
+namespace _ {
+    namespace Private {
+        template <>
+        struct MetaObjectInterface<QObject*> {
+            enum { is_meta_object = 1 };
+            typedef QString key_type;
+            typedef QVariant value_type;
+            template <typename Key>
+            static inline QVariant value(QObject* object, Key key) {
+                return object ? object->property(key) : QVariant();
+            }
+        };
+    }
+}
 #endif
 
 /* End of Type Registration */
