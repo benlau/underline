@@ -51,9 +51,8 @@ void C11TestCases::test_is_map()
 
 void C11TestCases::test_is_meta_object()
 {
-    QCOMPARE((bool)(_::Private::is_meta_object<QObject*>::value),true);
-    QCOMPARE((bool)(_::Private::is_meta_object<QString>::value),false);
-
+    QCOMPARE((bool)(_::Private::is_meta_object<QObject*>::value), true);
+    QCOMPARE((bool)(_::Private::is_meta_object<QString>::value), false);
 }
 
 template <typename F, typename T>
@@ -193,14 +192,27 @@ void C11TestCases::test_private_rebind_to_map()
 
 }
 
+class DummyClassWithStaticMetaObject {
+public:
+    static int staticMetaObject;
+};
+
 void C11TestCases::test_has_static_meta_object()
 {
     class A {
 
     };
 
+    qDebug() << _::Private::test_has_static_meta_object<DataObject*>(10);
+    qDebug() << GadgetObject::staticMetaObject.className();
+
     QCOMPARE((bool) (_::Private::has_static_meta_object<A>::value), false);
+    QCOMPARE((bool) (_::Private::has_static_meta_object<DataObject*>::value), true);
     QCOMPARE((bool) (_::Private::has_static_meta_object<GadgetObject>::value), true);
+    QCOMPARE((bool) (_::Private::has_static_meta_object<GadgetObject*>::value), true);
+
+
+    QCOMPARE((bool) (_::Private::has_static_meta_object<DummyClassWithStaticMetaObject>::value), false);
 
 }
 

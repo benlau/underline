@@ -37,6 +37,16 @@ TEST(UnderlineTests, test_private_rebind_to_map) {
 
 }
 
+TEST(UnderlineTests, test_has_static_method) {
+
+    class A {
+
+    };
+
+    ASSERT_EQ((bool) (_::Private::has_static_meta_object<A>::value), false);
+
+}
+
 int main(int argc, char** argv) {
 
 #ifdef QT_CORE_LIB

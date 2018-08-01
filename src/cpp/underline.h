@@ -12,6 +12,7 @@
 #include <QVariantList>
 #include <QVariantMap>
 #include <QObject>
+#include <QMetaObject>
 #endif
 
 #ifdef QT_QUICK_LIB
@@ -189,12 +190,13 @@ namespace _ {
             };
         };
 
+#ifdef QT_CORE_LIB
         template <typename C>
         constexpr auto test_has_static_meta_object(int) ->
-            typename std::enable_if<std::is_same<decltype(C::staticMetaObject), decltype(C::staticMetaObject)>::value, bool>::type {
+            typename std::enable_if<std::is_same<typename std::remove_cv<decltype(C::staticMetaObject)>::type, QMetaObject>::value, bool>::type {
             return true;
         }
-
+#endif
         template <typename C>
         constexpr auto test_has_static_meta_object(...) -> bool {
             return false;
@@ -203,7 +205,7 @@ namespace _ {
         template <typename C>
         struct has_static_meta_object {
             enum {
-                value = test_has_static_meta_object<C>(0)
+                value = test_has_static_meta_object<typename std::remove_pointer<C>::type>(0)
             };
         };
 
