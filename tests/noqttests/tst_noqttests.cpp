@@ -47,6 +47,15 @@ TEST(UnderlineTests, test_has_static_method) {
 
 }
 
+TEST(UnderlineTests, is_qobject) {
+
+    class A {
+
+    };
+
+    ASSERT_EQ((bool) (_::Private::is_qobject<A>::value), false);
+}
+
 int main(int argc, char** argv) {
 
 #ifdef QT_CORE_LIB

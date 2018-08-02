@@ -55,6 +55,23 @@ void C11TestCases::test_is_meta_object()
     QCOMPARE((bool)(_::Private::is_meta_object<QString>::value), false);
 }
 
+namespace _ {
+    namespace Private {
+
+    }
+}
+
+void C11TestCases::test_is_qobject()
+{
+    QCOMPARE((bool)_::Private::is_qobject<QObject>::value, true);
+    QCOMPARE((bool)_::Private::is_qobject<QObject*>::value, true);
+
+    QCOMPARE((bool)_::Private::is_qobject<C11TestCases>::value, true);
+    QCOMPARE((bool)_::Private::is_qobject<C11TestCases*>::value, true);
+
+    QCOMPARE((bool)_::Private::is_qobject<GadgetObject>::value, false);
+}
+
 template <typename F, typename T>
 auto wrapper(F functor, T t) -> typename _::Private::ret_func<F,T>::type {
     return functor(t);

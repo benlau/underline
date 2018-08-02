@@ -191,11 +191,25 @@ namespace _ {
         };
 
 #ifdef QT_CORE_LIB
+        template <typename Object>
+        struct is_qobject {
+            enum {
+                value = std::is_convertible<typename std::add_pointer<typename std::remove_pointer<typename std::remove_cv<Object>::type>::type>::type, QObject*>::value
+            };
+        };
+
         template <typename C>
         constexpr auto test_has_static_meta_object(int) ->
             typename std::enable_if<std::is_same<typename std::remove_cv<decltype(C::staticMetaObject)>::type, QMetaObject>::value, bool>::type {
             return true;
         }
+#else
+        template <typename Object>
+        struct is_qobject {
+            enum {
+                value = 0
+            };
+        };
 #endif
         template <typename C>
         constexpr auto test_has_static_meta_object(...) -> bool {
