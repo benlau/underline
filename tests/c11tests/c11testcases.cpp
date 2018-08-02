@@ -52,6 +52,10 @@ void C11TestCases::test_is_map()
 void C11TestCases::test_is_meta_object()
 {
     QCOMPARE((bool)(_::Private::is_meta_object<QObject*>::value), true);
+    QCOMPARE((bool)(_::Private::is_meta_object<QObject>::value), true);
+    QCOMPARE((bool)(_::Private::is_meta_object<GadgetObject>::value), true);
+    QCOMPARE((bool)(_::Private::is_meta_object<GadgetObject*>::value), true);
+
     QCOMPARE((bool)(_::Private::is_meta_object<QString>::value), false);
 }
 

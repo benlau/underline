@@ -71,6 +71,71 @@ namespace _ {
         class Undefined {
         };
 
+#ifdef QT_CORE_LIB
+        template <typename Object>
+        struct is_qobject {
+            enum {
+                value = std::is_convertible<typename std::add_pointer<typename std::remove_pointer<typename std::remove_cv<Object>::type>::type>::type, QObject*>::value
+            };
+        };
+
+        template <typename C>
+        constexpr auto test_has_static_meta_object(int) ->
+            typename std::enable_if<std::is_same<typename std::remove_cv<decltype(C::staticMetaObject)>::type, QMetaObject>::value, bool>::type {
+            return true;
+        }
+#else
+        template <typename Object>
+        struct is_qobject {
+            enum {
+                value = 0
+            };
+        };
+#endif
+        template <typename C>
+        constexpr auto test_has_static_meta_object(...) -> bool {
+            return false;
+        }
+
+        template <typename C>
+        struct has_static_meta_object {
+            enum {
+                value = test_has_static_meta_object<typename std::remove_pointer<C>::type>(0)
+            };
+        };
+
+#ifdef QT_CORE_LIB
+        template <typename Meta>
+        struct MetaObjectInterface {
+            enum {
+                is_meta_object = has_static_meta_object<Meta>::value
+            };
+
+            typedef typename std::conditional<has_static_meta_object<Meta>::value, QString, Undefined>::type key_type;
+            typedef typename std::conditional<has_static_meta_object<Meta>::value, QVariant, Undefined>::type value_type;
+
+            template <typename Key>
+            static inline auto value(const Meta&, Key) -> Undefined {
+                return Undefined();
+            }
+        };
+#else
+        template <typename Meta>
+        struct MetaObjectInterface {
+            enum {
+                is_meta_object = 0
+            };
+
+            typedef Undefined key_type;
+            typedef Undefined value_type;
+
+            template <typename Key>
+            static inline auto value(const Meta&, Key) -> Undefined {
+                return Undefined();
+            }
+        };
+#endif
+
         template <typename T>
         struct is_collection {
             enum {
@@ -139,20 +204,6 @@ namespace _ {
         template <typename T>
         using enable_if_is_collection_ret_value_type = typename std::enable_if< is_collection<typename std::remove_reference<T>::type>::value, typename std::remove_reference<T>::type::value_type>;
 
-        template <typename Meta>
-        struct MetaObjectInterface {
-            enum {
-                is_meta_object = 0
-            };
-
-            typedef Undefined key_type;
-            typedef Undefined value_type;
-
-            template <typename Key>
-            static inline auto value(const Meta&, Key) -> Undefined {
-                return Undefined();
-            }
-        };
 
         template <typename Meta>
         struct is_meta_object {
@@ -187,39 +238,6 @@ namespace _ {
         struct is_args_compatible {
             enum {
                 value = std::is_convertible<Functor, std::function<void(Args...)> >::value
-            };
-        };
-
-#ifdef QT_CORE_LIB
-        template <typename Object>
-        struct is_qobject {
-            enum {
-                value = std::is_convertible<typename std::add_pointer<typename std::remove_pointer<typename std::remove_cv<Object>::type>::type>::type, QObject*>::value
-            };
-        };
-
-        template <typename C>
-        constexpr auto test_has_static_meta_object(int) ->
-            typename std::enable_if<std::is_same<typename std::remove_cv<decltype(C::staticMetaObject)>::type, QMetaObject>::value, bool>::type {
-            return true;
-        }
-#else
-        template <typename Object>
-        struct is_qobject {
-            enum {
-                value = 0
-            };
-        };
-#endif
-        template <typename C>
-        constexpr auto test_has_static_meta_object(...) -> bool {
-            return false;
-        }
-
-        template <typename C>
-        struct has_static_meta_object {
-            enum {
-                value = test_has_static_meta_object<typename std::remove_pointer<C>::type>(0)
             };
         };
 
@@ -1136,20 +1154,6 @@ UL_REGISTER_REBIND_TO_MAP(std::vector, std::map)
 UL_REGISTER_QT_MAP(QMap)
 UL_REGISTER_REBIND_TO_MAP(QVector, QMap)
 UL_REGISTER_REBIND_TO_MAP(QList, QMap)
-namespace _ {
-    namespace Private {
-        template <>
-        struct MetaObjectInterface<QObject*> {
-            enum { is_meta_object = 1 };
-            typedef QString key_type;
-            typedef QVariant value_type;
-            template <typename Key>
-            static inline QVariant value(QObject* object, Key key) {
-                return object ? object->property(key) : QVariant();
-            }
-        };
-    }
-}
 #endif
 
 /* End of Type Registration */
