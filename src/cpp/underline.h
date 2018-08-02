@@ -113,12 +113,18 @@ namespace _ {
 
             typedef typename std::conditional<has_static_meta_object<Meta>::value, QString, Undefined>::type key_type;
             typedef typename std::conditional<has_static_meta_object<Meta>::value, QVariant, Undefined>::type value_type;
-
-            template <typename Key>
-            static inline auto value(const Meta&, Key) -> Undefined {
-                return Undefined();
-            }
         };
+
+        template <typename Meta, typename Key>
+        static inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<(has_static_meta_object<Meta>::value && !is_qobject<Meta>::value), QVariant>::type {
+            auto metaObject = meta->staticMetaObject;
+            int index = metaObject.indexOfProperty(key);
+            if (index < 0 ) {
+                return QVariant();
+            }
+            auto property = metaObject.property(index);
+            return property.readOnGadget(meta);
+        }
 #else
         template <typename Meta>
         struct MetaObjectInterface {
@@ -134,6 +140,11 @@ namespace _ {
                 return Undefined();
             }
         };
+
+        template <typename Meta, typename Key>
+        Undefined meta_object_value(const Meta&, Key) {
+            return Undefined();
+        }
 #endif
 
         template <typename T>
@@ -203,7 +214,6 @@ namespace _ {
 
         template <typename T>
         using enable_if_is_collection_ret_value_type = typename std::enable_if< is_collection<typename std::remove_reference<T>::type>::value, typename std::remove_reference<T>::type::value_type>;
-
 
         template <typename Meta>
         struct is_meta_object {

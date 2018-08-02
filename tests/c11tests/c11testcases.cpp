@@ -65,7 +65,7 @@ namespace _ {
     }
 }
 
-void C11TestCases::test_is_qobject()
+void C11TestCases::test_private_is_qobject()
 {
     QCOMPARE((bool)_::Private::is_qobject<QObject>::value, true);
     QCOMPARE((bool)_::Private::is_qobject<QObject*>::value, true);
@@ -218,7 +218,7 @@ public:
     static int staticMetaObject;
 };
 
-void C11TestCases::test_has_static_meta_object()
+void C11TestCases::test_private_has_static_meta_object()
 {
     class A {
 
@@ -248,7 +248,12 @@ void C11TestCases::test_private_read()
 
     // Collection
     QCOMPARE((_::Private::read(std::vector<int>{0,1,2}, 1)), 1);
-    QCOMPARE((_::Private::read(QVector<int>{0,1,2}, 1)), 1);    
+    QCOMPARE((_::Private::read(QVector<int>{0,1,2}, 1)), 1);
+
+    // Gadget Object
+    GadgetObject gadget;
+    gadget.value = 10;
+    QCOMPARE((_::Private::meta_object_value(&gadget, "value")), QVariant(10));
 }
 
 void C11TestCases::test_some()

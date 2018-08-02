@@ -15,7 +15,7 @@ private slots:
 
     void test_is_meta_object();
 
-    void test_is_qobject();
+    void test_private_is_qobject();
 
     void test_private_traits();
 
@@ -23,7 +23,7 @@ private slots:
 
     void test_private_rebind_to_map();
 
-    void test_has_static_meta_object();
+    void test_private_has_static_meta_object();
 
     void test_private_read();
 
