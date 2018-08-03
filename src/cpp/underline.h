@@ -71,13 +71,11 @@ namespace _ {
         class Undefined {
         };
 
-#ifdef QT_CORE_LIB
+#ifdef QT_CORE_LIB        
         template <typename Object>
-        struct is_qobject {
-            enum {
-                value = std::is_convertible<typename std::add_pointer<typename std::remove_pointer<typename std::remove_cv<Object>::type>::type>::type, QObject*>::value
-            };
-        };
+        constexpr bool is_qobject() {
+            return std::is_convertible<typename std::add_pointer<typename std::remove_pointer<typename std::remove_cv<Object>::type>::type>::type, QObject*>::value;
+        }
 
         template <typename C>
         constexpr auto test_has_static_meta_object(int) ->
@@ -86,11 +84,7 @@ namespace _ {
         }
 #else
         template <typename Object>
-        struct is_qobject {
-            enum {
-                value = 0
-            };
-        };
+        constexpr bool is_qobject() {return false;}
 #endif
         template <typename C>
         constexpr auto test_has_static_meta_object(...) -> bool {
@@ -104,6 +98,10 @@ namespace _ {
             };
         };
 
+        template <typename T> constexpr bool is_gadget() {
+            return has_static_meta_object<T>::value && ! is_qobject<T>();
+        }
+
 #ifdef QT_CORE_LIB
         template <typename Meta>
         struct MetaObjectInterface {
@@ -116,7 +114,7 @@ namespace _ {
         };
 
         template <typename Meta, typename Key>
-        static inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<(has_static_meta_object<Meta>::value && !is_qobject<Meta>::value), QVariant>::type {
+        inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_gadget<Meta>(), QVariant>::type {
             auto metaObject = meta->staticMetaObject;
             int index = metaObject.indexOfProperty(key);
             if (index < 0 ) {
@@ -124,6 +122,11 @@ namespace _ {
             }
             auto property = metaObject.property(index);
             return property.readOnGadget(meta);
+        }
+
+        template <typename Meta, typename Key>
+        inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_qobject<Meta>(), QVariant>::type {
+            return meta->property(key);
         }
 #else
         template <typename Meta>

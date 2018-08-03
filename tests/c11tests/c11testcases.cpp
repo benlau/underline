@@ -67,13 +67,13 @@ namespace _ {
 
 void C11TestCases::test_private_is_qobject()
 {
-    QCOMPARE((bool)_::Private::is_qobject<QObject>::value, true);
-    QCOMPARE((bool)_::Private::is_qobject<QObject*>::value, true);
+    QCOMPARE((bool)_::Private::is_qobject<QObject>(), true);
+    QCOMPARE((bool)_::Private::is_qobject<QObject*>(), true);
 
-    QCOMPARE((bool)_::Private::is_qobject<C11TestCases>::value, true);
-    QCOMPARE((bool)_::Private::is_qobject<C11TestCases*>::value, true);
+    QCOMPARE((bool)_::Private::is_qobject<C11TestCases>(), true);
+    QCOMPARE((bool)_::Private::is_qobject<C11TestCases*>(), true);
 
-    QCOMPARE((bool)_::Private::is_qobject<GadgetObject>::value, false);
+    QCOMPARE((bool)_::Private::is_qobject<GadgetObject>(), false);
 }
 
 template <typename F, typename T>
@@ -254,6 +254,10 @@ void C11TestCases::test_private_read()
     GadgetObject gadget;
     gadget.value = 10;
     QCOMPARE((_::Private::meta_object_value(&gadget, "value")), QVariant(10));
+
+    QObject* object = new QObject(this);
+    object->setObjectName("objectName");
+    QCOMPARE((_::Private::meta_object_value(object, "objectName")), QVariant("objectName"));
 }
 
 void C11TestCases::test_some()
