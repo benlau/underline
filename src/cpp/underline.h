@@ -114,6 +114,17 @@ namespace _ {
             enum { value = has_static_meta_object<T>::value && ! is_qobject<T>::value};
         };
 
+
+        template <typename T>
+        auto inline cast_to_pointer(const T& value) -> typename std::enable_if<std::is_pointer<T>::value, const T&>::type {
+            return value;
+        }
+
+        template <typename T>
+        auto inline cast_to_pointer(const T& value) -> typename std::enable_if<!std::is_pointer<T>::value, const T*>::type {
+            return &value;
+        }
+
         template <typename Meta>
         struct MetaObjectInterface {
             enum {

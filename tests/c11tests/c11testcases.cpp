@@ -59,12 +59,6 @@ void C11TestCases::test_is_meta_object()
     QCOMPARE((bool)(_::Private::is_meta_object<QString>::value), false);
 }
 
-namespace _ {
-    namespace Private {
-
-    }
-}
-
 void C11TestCases::test_private_is_qobject()
 {
     QCOMPARE((bool)_::Private::is_qobject<QObject>::value, true);
@@ -224,9 +218,6 @@ void C11TestCases::test_private_has_static_meta_object()
 
     };
 
-    qDebug() << _::Private::test_has_static_meta_object<DataObject*>(10);
-    qDebug() << GadgetObject::staticMetaObject.className();
-
     QCOMPARE((bool) (_::Private::has_static_meta_object<A>::value), false);
     QCOMPARE((bool) (_::Private::has_static_meta_object<DataObject*>::value), true);
     QCOMPARE((bool) (_::Private::has_static_meta_object<GadgetObject>::value), true);
@@ -258,6 +249,19 @@ void C11TestCases::test_private_read()
     QObject* object = new QObject(this);
     object->setObjectName("objectName");
     QCOMPARE((_::Private::meta_object_value(object, "objectName")), QVariant("objectName"));
+}
+
+void C11TestCases::test_cast_to_pointer()
+{
+    class A {
+    public:
+        int value;
+    };
+
+    A a;
+    a.value = 10;
+    QCOMPARE(_::Private::cast_to_pointer(a)->value, 10);
+    QCOMPARE(_::Private::cast_to_pointer(&a)->value, 10);
 }
 
 void C11TestCases::test_some()
