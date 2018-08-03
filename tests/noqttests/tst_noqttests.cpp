@@ -53,7 +53,7 @@ TEST(UnderlineTests, is_qobject) {
 
     };
 
-    ASSERT_EQ((bool) (_::Private::is_qobject<A>()), false);
+    ASSERT_EQ((bool) (_::Private::is_qobject<A>::value), false);
 }
 
 int main(int argc, char** argv) {

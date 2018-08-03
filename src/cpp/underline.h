@@ -20,6 +20,15 @@
 #include <QJSValueIterator>
 #endif
 
+/** Design Principle and Known Issues
+
+1. Don't use constexpr together with std::enable_if.
+
+c++ - enable_if not working in Visual Studio when using a constexpr function as argument - Stack Overflow
+https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-studio-when-using-a-constexpr-function-as-argume
+
+ */
+
 #define UNDERLINE_ITERATEE_MISMATCHED_ERROR "Mismatched argument types in the iteratee function. Please validate the number of argument and their type."
 #define UNDERLINE_PREDICATE_MISMATCHED_ERROR "Mismatched argument types in the predicate function. Please validate the number of argument and their type."
 #define UNDERLINE_PREDICATE_RETURN_TYPE_MISMATCH_ERROR "The return type of predicate function must be bool"
@@ -79,9 +88,9 @@ namespace _ {
 #endif
 
         template <typename Object>
-        constexpr bool is_qobject() {
-            return std::is_convertible<typename std::add_pointer<typename std::remove_pointer<typename std::remove_cv<Object>::type>::type>::type, QObject*>::value;
-        }
+        struct is_qobject {
+            enum { value = std::is_convertible<typename std::add_pointer<typename std::remove_pointer<typename std::remove_cv<Object>::type>::type>::type, QObject*>::value };
+        };
 
         template <typename C>
         constexpr auto test_has_static_meta_object(int) ->
@@ -101,9 +110,9 @@ namespace _ {
             };
         };
 
-        template <typename T> constexpr bool is_gadget() {
-            return has_static_meta_object<T>::value && ! is_qobject<T>();
-        }
+        template <typename T> struct is_gadget {
+            enum { value = has_static_meta_object<T>::value && ! is_qobject<T>::value};
+        };
 
         template <typename Meta>
         struct MetaObjectInterface {
@@ -116,7 +125,7 @@ namespace _ {
         };
 
         template <typename Meta, typename Key>
-        inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_gadget<Meta>(), QVariant>::type {
+        inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_gadget<Meta>::value, QVariant>::type {
             auto metaObject = meta->staticMetaObject;
             int index = metaObject.indexOfProperty(key);
             if (index < 0 ) {
@@ -127,7 +136,7 @@ namespace _ {
         }
 
         template <typename Meta, typename Key>
-        inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_qobject<Meta>(), QVariant>::type {
+        inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_qobject<Meta>::value, QVariant>::type {
             return meta->property(key);
         }
 

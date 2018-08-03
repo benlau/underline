@@ -7,6 +7,7 @@
 #include "c14testcases.h"
 #include "underline.h"
 #include "dataobject.h"
+#include "gadgetobject.h"
 
 static bool isOdd(int value) {
     return value % 2 == 1;
@@ -27,6 +28,16 @@ C14TestCases::C14TestCases(QObject *parent) : QObject(parent)
         QTest::qExec(this, 0, 0); // Autotest detect available test cases of a QObject by looking for "QTest::qExec" in source code
     };
     Q_UNUSED(ref);
+}
+
+void C14TestCases::test_private_is_qobject()
+{
+    QCOMPARE((bool) _::Private::is_qobject<C14TestCases>::value, true);
+    QCOMPARE((bool) _::Private::is_qobject<GadgetObject>::value, false);
+
+    QCOMPARE((bool) _::Private::is_gadget<C14TestCases>::value, false);
+    QCOMPARE((bool) _::Private::is_gadget<GadgetObject>::value, true);
+
 }
 
 template <typename F, typename T>

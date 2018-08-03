@@ -67,13 +67,13 @@ namespace _ {
 
 void C11TestCases::test_private_is_qobject()
 {
-    QCOMPARE((bool)_::Private::is_qobject<QObject>(), true);
-    QCOMPARE((bool)_::Private::is_qobject<QObject*>(), true);
+    QCOMPARE((bool)_::Private::is_qobject<QObject>::value, true);
+    QCOMPARE((bool)_::Private::is_qobject<QObject*>::value, true);
 
-    QCOMPARE((bool)_::Private::is_qobject<C11TestCases>(), true);
-    QCOMPARE((bool)_::Private::is_qobject<C11TestCases*>(), true);
+    QCOMPARE((bool)_::Private::is_qobject<C11TestCases>::value, true);
+    QCOMPARE((bool)_::Private::is_qobject<C11TestCases*>::value, true);
 
-    QCOMPARE((bool)_::Private::is_qobject<GadgetObject>(), false);
+    QCOMPARE((bool)_::Private::is_qobject<GadgetObject>::value, false);
 }
 
 template <typename F, typename T>
