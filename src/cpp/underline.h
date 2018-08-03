@@ -71,7 +71,13 @@ namespace _ {
         class Undefined {
         };
 
-#ifdef QT_CORE_LIB        
+#ifndef QT_CORE_LIB
+        class QObject{};
+        class QMetaObject{};
+        class QVariant{};
+        class QString{};
+#endif
+
         template <typename Object>
         constexpr bool is_qobject() {
             return std::is_convertible<typename std::add_pointer<typename std::remove_pointer<typename std::remove_cv<Object>::type>::type>::type, QObject*>::value;
@@ -82,10 +88,7 @@ namespace _ {
             typename std::enable_if<std::is_same<typename std::remove_cv<decltype(C::staticMetaObject)>::type, QMetaObject>::value, bool>::type {
             return true;
         }
-#else
-        template <typename Object>
-        constexpr bool is_qobject() {return false;}
-#endif
+
         template <typename C>
         constexpr auto test_has_static_meta_object(...) -> bool {
             return false;
@@ -102,7 +105,6 @@ namespace _ {
             return has_static_meta_object<T>::value && ! is_qobject<T>();
         }
 
-#ifdef QT_CORE_LIB
         template <typename Meta>
         struct MetaObjectInterface {
             enum {
@@ -128,27 +130,6 @@ namespace _ {
         inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_qobject<Meta>(), QVariant>::type {
             return meta->property(key);
         }
-#else
-        template <typename Meta>
-        struct MetaObjectInterface {
-            enum {
-                is_meta_object = 0
-            };
-
-            typedef Undefined key_type;
-            typedef Undefined value_type;
-
-            template <typename Key>
-            static inline auto value(const Meta&, Key) -> Undefined {
-                return Undefined();
-            }
-        };
-
-        template <typename Meta, typename Key>
-        Undefined meta_object_value(const Meta&, Key) {
-            return Undefined();
-        }
-#endif
 
         template <typename T>
         struct is_collection {
