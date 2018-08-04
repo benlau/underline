@@ -51,10 +51,13 @@ void C11TestCases::test_is_map()
 
 void C11TestCases::test_is_meta_object()
 {
-    QCOMPARE((bool)(_::Private::is_meta_object<QObject*>::value), true);
     QCOMPARE((bool)(_::Private::is_meta_object<QObject>::value), true);
+    QCOMPARE((bool)(_::Private::is_meta_object<QObject*>::value), true);
+    QCOMPARE((bool)(_::Private::is_meta_object<QObject**>::value), false);
+
     QCOMPARE((bool)(_::Private::is_meta_object<GadgetObject>::value), true);
     QCOMPARE((bool)(_::Private::is_meta_object<GadgetObject*>::value), true);
+    QCOMPARE((bool)(_::Private::is_meta_object<GadgetObject**>::value), false);
 
     QCOMPARE((bool)(_::Private::is_meta_object<QString>::value), false);
 }
@@ -245,6 +248,12 @@ void C11TestCases::test_private_read()
     GadgetObject gadget;
     gadget.value = 10;
     QCOMPARE((_::Private::meta_object_value(&gadget, "value")), QVariant(10));
+    QCOMPARE((_::Private::meta_object_value(gadget, "value")), QVariant(10));
+    QCOMPARE((_::Private::meta_object_value(gadget, "value1")), QVariant());
+
+    QCOMPARE((_::Private::read(&gadget, "value")), QVariant(10));
+    QCOMPARE((_::Private::read(gadget, "value")), QVariant(10));
+    QCOMPARE((_::Private::read(gadget, "value1")), QVariant());
 
     QObject* object = new QObject(this);
     object->setObjectName("objectName");

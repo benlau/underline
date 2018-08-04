@@ -137,13 +137,14 @@ namespace _ {
 
         template <typename Meta, typename Key>
         inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_gadget<Meta>::value, QVariant>::type {
-            auto metaObject = meta->staticMetaObject;
+            auto ptr = cast_to_pointer<Meta>(meta);
+            auto metaObject = ptr->staticMetaObject;
             int index = metaObject.indexOfProperty(key);
             if (index < 0 ) {
                 return QVariant();
             }
             auto property = metaObject.property(index);
-            return property.readOnGadget(meta);
+            return property.readOnGadget(ptr);
         }
 
         template <typename Meta, typename Key>
@@ -605,6 +606,11 @@ namespace _ {
         template <typename ...Args, typename KeyType, template <class...> class Container, typename InputKeyType>
         inline auto read(const Container<KeyType, Args...> &&container, InputKeyType key) -> typename enable_if_is_collection_ret_value_type<Container<KeyType, Args...>>::type {
             return container[key];
+        }
+
+        template <typename Meta, typename Key>
+        inline auto read(const Meta& meta, const Key &key) -> typename std::enable_if<has_static_meta_object<Meta>::value, QVariant>::type {
+            return meta_object_value(meta, key);
         }
 
         /// vic_func( VIC = Value,Index,Collection);
