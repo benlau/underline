@@ -1,12 +1,12 @@
 {
-    "name": "com.gmail.Qt-Qml-Library-Project",
+    "name": "com.github.underline",
     "author": {
         "name": "Ben Lau",
         "email": "xbenlau@gmail.com"
     },
     "repository": {
         "type": "GITHUB",
-        "url": "git@github.com:e-fever/e-fever-codebase.git"
+        "url": "git@github.com:benlau/underline.git"
     },
     "version": {
         "label": "0.0.1"
@@ -14,5 +14,5 @@
     "dependencies": [
     ],
     "license": "MIT",
-    "priFilename": "com_gmail_Qt-Qml-Library-Project.pri"
+    "priFilename": "src/underline.pri"
 }
