@@ -28,5 +28,6 @@ build_script:
   - tests\c14tests\release\c14tests
   - tests\quicktests\release\quicktests
   - tests\noqttests\release\noqttests
+  - npm install
   - npm run build_compiler_error
 

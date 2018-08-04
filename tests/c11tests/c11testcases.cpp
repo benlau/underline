@@ -24,7 +24,34 @@ C11TestCases::C11TestCases(QObject *parent) : QObject(parent)
     Q_UNUSED(ref);
 }
 
-void C11TestCases::test_is_collection()
+namespace _ {
+    namespace Private {
+
+        template <typename T>
+        struct has_reserve {
+
+            template <typename O>
+            static inline auto test(O*) -> typename std::enable_if<std::is_same<decltype(std::declval<O>().reserve(0)), decltype(std::declval<O>().reserve(0))>::value, bool>::type;
+
+            template <typename>
+            static inline auto test(...) -> Undefined;
+
+            enum {
+                value = std::is_same<decltype(test<T>(nullptr)), bool>::value
+            };
+        };
+    }
+
+}
+
+void C11TestCases::test_private_has()
+{
+    QCOMPARE((bool) _::Private::has_reserve<std::vector<int>>::value, true);
+    QCOMPARE((bool) _::Private::has_reserve<std::string>::value, true);
+    QCOMPARE((bool) _::Private::has_reserve<C11TestCases>::value, false);
+}
+
+void C11TestCases::test_private_is_collection()
 {
     QCOMPARE((bool)(_::Private::is_collection<std::vector<int>>::value), true);
     QCOMPARE((bool)(_::Private::is_collection<std::string>::value), false);
@@ -36,7 +63,7 @@ void C11TestCases::test_is_collection()
 
 }
 
-void C11TestCases::test_is_map()
+void C11TestCases::test_private_is_map()
 {
     QCOMPARE((bool)(_::Private::is_map<std::vector<int>>::value), false);
     QCOMPARE((bool)(_::Private::is_map<std::string>::value), false);
@@ -49,7 +76,7 @@ void C11TestCases::test_is_map()
     QCOMPARE((bool)(_::Private::is_map<QMap<int, QString>>::value), true);
 }
 
-void C11TestCases::test_is_meta_object()
+void C11TestCases::test_private_is_meta_object()
 {
     QCOMPARE((bool)(_::Private::is_meta_object<QObject>::value), true);
     QCOMPARE((bool)(_::Private::is_meta_object<QObject*>::value), true);

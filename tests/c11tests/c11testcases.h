@@ -9,11 +9,13 @@ public:
 
 private slots:
 
-    void test_is_collection();
+    void test_private_has();
 
-    void test_is_map();
+    void test_private_is_collection();
 
-    void test_is_meta_object();
+    void test_private_is_map();
+
+    void test_private_is_meta_object();
 
     void test_private_is_qobject();
 
