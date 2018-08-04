@@ -41,6 +41,18 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
         } \
     }
 
+#define _UNDERLINE_HAS(name, expr1, expr2) \
+        template <typename T> \
+        struct has_##name { \
+            template <typename Type> \
+            static inline auto test(int) -> typename  std::enable_if<std::is_same<expr1, expr2>::value, bool>::type; \
+            template <typename> \
+            static inline auto test(...) -> Undefined; \
+            enum { \
+                value = !std::is_same<decltype(test<T>(0)), Undefined>::value \
+            }; \
+        }; \
+
 /// Register rebind_to_map and test_is_collection
 #define UL_REGISTER_REBIND_TO_MAP(CollectionType, MapType) \
     namespace _ { \
@@ -86,28 +98,13 @@ namespace _ {
         class QVariant{};
         class QString{};
 #endif
+        _UNDERLINE_HAS(reserve, decltype(std::declval<Type>().reserve(0)), void)
+
+        _UNDERLINE_HAS(static_meta_object, typename std::remove_cv<decltype(std::remove_pointer<Type>::type::staticMetaObject)>::type, QMetaObject)
 
         template <typename Object>
         struct is_qobject {
             enum { value = std::is_convertible<typename std::add_pointer<typename std::remove_pointer<typename std::remove_cv<Object>::type>::type>::type, QObject*>::value };
-        };
-
-        template <typename C>
-        constexpr auto test_has_static_meta_object(int) ->
-            typename std::enable_if<std::is_same<typename std::remove_cv<decltype(C::staticMetaObject)>::type, QMetaObject>::value, bool>::type {
-            return true;
-        }
-
-        template <typename C>
-        constexpr auto test_has_static_meta_object(...) -> bool {
-            return false;
-        }
-
-        template <typename C>
-        struct has_static_meta_object {
-            enum {
-                value = test_has_static_meta_object<typename std::remove_pointer<C>::type>(0)
-            };
         };
 
         template <typename T> struct is_gadget {

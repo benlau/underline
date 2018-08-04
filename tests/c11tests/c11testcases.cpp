@@ -24,31 +24,12 @@ C11TestCases::C11TestCases(QObject *parent) : QObject(parent)
     Q_UNUSED(ref);
 }
 
-namespace _ {
-    namespace Private {
-
-        template <typename T>
-        struct has_reserve {
-
-            template <typename O>
-            static inline auto test(O*) -> typename std::enable_if<std::is_same<decltype(std::declval<O>().reserve(0)), decltype(std::declval<O>().reserve(0))>::value, bool>::type;
-
-            template <typename>
-            static inline auto test(...) -> Undefined;
-
-            enum {
-                value = std::is_same<decltype(test<T>(nullptr)), bool>::value
-            };
-        };
-    }
-
-}
-
 void C11TestCases::test_private_has()
 {
     QCOMPARE((bool) _::Private::has_reserve<std::vector<int>>::value, true);
     QCOMPARE((bool) _::Private::has_reserve<std::string>::value, true);
     QCOMPARE((bool) _::Private::has_reserve<C11TestCases>::value, false);
+
 }
 
 void C11TestCases::test_private_is_collection()
