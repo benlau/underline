@@ -36,15 +36,34 @@ void C11TestCases::test_private_has()
 
     QCOMPARE((bool) _::Private::has_reserve<C11TestCases>::value, false);
 
-    QCOMPARE((bool) _::Private::has_operator_equal<std::vector<int>>::value, true);
-    QCOMPARE((bool) _::Private::has_operator_equal<const std::vector<int>>::value, true);
+    /* has_operator_round_backets_int */
 
-    QCOMPARE((bool) _::Private::has_operator_equal<std::string>::value, true);
+    QCOMPARE((bool) _::Private::has_operator_round_backets_int<std::vector<int>>::value, true);
+    QCOMPARE((bool) _::Private::has_operator_round_backets_int<const std::vector<int>>::value, true);
+
+    QCOMPARE((bool) _::Private::has_operator_round_backets_int<std::string>::value, true);
     QCOMPARE((bool)
-    _::Private::has_operator_equal<QVector<int>>::value, true);
+    _::Private::has_operator_round_backets_int<QVector<int>>::value, true);
     QCOMPARE((bool)
-    _::Private::has_operator_equal<const QVector<int>>::value, true);
-    QCOMPARE((bool) _::Private::has_operator_equal<C11TestCases>::value, false);
+    _::Private::has_operator_round_backets_int<const QVector<int>>::value, true);
+    QCOMPARE((bool) _::Private::has_operator_round_backets_int<C11TestCases>::value, false);
+
+    QCOMPARE((bool)( _::Private::has_operator_round_backets_int<std::map<int,int>>::value), false);
+
+    /* has_operator_round_backets_key */
+
+    QCOMPARE((bool)( _::Private::has_operator_round_backets_key<std::map<std::string,int>>::value), true);
+
+    QCOMPARE((bool)( _::Private::has_operator_round_backets_key<C11TestCases>::value), false);
+
+    QCOMPARE((bool)( _::Private::has_operator_round_backets_key<std::vector<int>>::value), false);
+
+    QCOMPARE((bool)( _::Private::has_operator_round_backets_key<QVector<int>>::value), false);
+
+    QCOMPARE((bool)( _::Private::has_operator_round_backets_key<QVariantMap>::value), true);
+
+
+    /* has_push_back */
 
     QCOMPARE((bool) _::Private::has_push_back<QVector<int>>::value, true);
     QCOMPARE((bool) _::Private::has_push_back< QList<QString>>::value, true);
@@ -73,8 +92,6 @@ void C11TestCases::test_private_is_collection()
     QCOMPARE((bool)(_::Private::is_collection<std::map<int, bool>>::value), false);
 
     QCOMPARE((bool)(_::Private::is_collection<QMap<int, bool>>::value), false);
-
-
 }
 
 void C11TestCases::test_private_is_map()
@@ -88,6 +105,9 @@ void C11TestCases::test_private_is_map()
     QCOMPARE((bool)(_::Private::is_map<std::map<int, std::string>>::value), true);
     QCOMPARE((bool)(_::Private::is_map<std::unordered_map<int, std::string>>::value), true);
     QCOMPARE((bool)(_::Private::is_map<QMap<int, QString>>::value), true);
+
+    QCOMPARE((bool)(_::Private::is_map<QVariantMap>::value), true);
+
 }
 
 void C11TestCases::test_private_is_meta_object()
@@ -280,6 +300,8 @@ void C11TestCases::test_private_read()
     QCOMPARE((_::Private::read(std::map<std::string, int>{{"value1", 1}}, std::string("value0"))), 0);
 
     QCOMPARE((_::Private::read(QMap<QString, int>{{"value1", 1}}, QString("value1"))), 1);
+
+    QCOMPARE((_::Private::read(QVariantMap{{"value1", 1}}, QString("value1"))), QVariant(1));
 
     // Collection
     QCOMPARE((_::Private::read(std::vector<int>{0,1,2}, 1)), 1);

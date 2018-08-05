@@ -32,7 +32,9 @@ errors.forEach((errorCode) => {
     var res = shell.exec(make, {silent: true});
 
     var stderr = res.stderr;
-    var output = stderr.toString().split("\n").filter((item) => {return item.indexOf("error:") >= 0});
+//    var output = stderr.toString().split("\n").filter((item) => {return item.indexOf("error:") >= 0});
+    var output = stderr.toString().split("\n");
+
     console.log(errorCode);
     console.log(output.join("\n"));
     console.log("\n");

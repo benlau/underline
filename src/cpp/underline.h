@@ -95,6 +95,12 @@ namespace _ {
         class QMetaObject{};
         class QVariant{};
         class QString{};
+        template <typename Key, typename Value>
+        class QMap {
+        public:
+            class const_iterator{
+            };
+        };
 #endif
         _DECLARE_UNDERLINE_HAS(reserve, decltype(std::declval<Type>().reserve(0)), void)
 
@@ -102,7 +108,9 @@ namespace _ {
 
         _DECLARE_UNDERLINE_HAS(static_meta_object, typename std::remove_cv<decltype(std::remove_pointer<Type>::type::staticMetaObject)>::type, QMetaObject)
 
-        _DECLARE_UNDERLINE_HAS(operator_equal, decltype(std::declval<Type>()[0]), typename std::remove_cv<Type>::type::value_type)
+        _DECLARE_UNDERLINE_HAS(operator_round_backets_int, decltype(std::declval<Type>()[0]), typename std::remove_cv<Type>::type::value_type)
+
+        _DECLARE_UNDERLINE_HAS(operator_round_backets_key, decltype(std::declval<Type>()[std::declval<typename std::remove_cv<Type>::type::key_type>()]), typename std::remove_cv<Type>::type::mapped_type)
 
         template <typename Object>
         struct is_qobject {
@@ -154,7 +162,7 @@ namespace _ {
         struct is_collection {
             enum {
                 value = has_push_back<T>::value &&
-                        has_operator_equal<T>::value &&
+                        has_operator_round_backets_int<T>::value &&
                         has_reserve<T>::value
             };
         };
@@ -173,6 +181,16 @@ namespace _ {
             }
         };
 
+        template <typename Key, typename Value>
+        inline Value map_iterator_value(typename std::map<Key,Value>::const_iterator & iter) {
+            return iter->second;
+        }
+
+        template <typename Key, typename Value>
+        inline Value map_iterator_value(typename QMap<Key,Value>::const_iterator & iter) {
+            return iter.value();
+        }
+
         template <class Map, class Key, class Value>
         struct StdMapInterface {
             enum {is_map= 1};
@@ -181,9 +199,9 @@ namespace _ {
 
             static inline auto value(const Map& map, Key key) -> Value {
                 Value ret = Value();
-                try {
-                  ret = map.at(key);
-                } catch (std::out_of_range) {
+                auto iter = map.find(key);
+                if (iter != map.end()) {
+                    ret = map_iterator_value<Key,Value>(iter);
                 }
                 return ret;
             }
@@ -197,8 +215,9 @@ namespace _ {
 
             static inline auto value(const Map& map, Key key) -> Value {
                 Value ret = Value();
-                if (map.contains(key)) {
-                    ret = map[key];
+                auto iter = map.find(key);
+                if (iter != map.end()) {
+                    ret = map_iterator_value<Key,Value>(iter);
                 }
                 return ret;
             }
@@ -1065,6 +1084,8 @@ namespace _ {
     inline auto map(const Collection& collection, Iteratee iteratee) -> typename Private::rebind<Collection,
         typename Private::ret_invoke<Iteratee, typename Private::collection_value_type<Collection>::type, int, Collection>::type
     >::type {
+
+        static_assert(Private::is_collection<Collection>::value, "_::map(): The input is not a collection type.");
 
         static_assert(Private::is_vic_func_invokable<Iteratee, Collection>::value, "_::map(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
 
