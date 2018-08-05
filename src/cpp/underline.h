@@ -68,18 +68,6 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
         } \
     }
 
-#define UL_REGISTER_STD_MAP(MapType) \
-    UNDERLINE_PRIVATE_NS_BEGIN \
-            template <typename KeyType, typename Value>  \
-            struct MapInterface<MapType<KeyType, Value>> : StdMapInterface<MapType<KeyType,Value> , KeyType, Value> {}; \
-    UNDERLINE_PRIVATE_NS_END
-
-#define UL_REGISTER_QT_MAP(MapType) \
-    UNDERLINE_PRIVATE_NS_BEGIN \
-            template <typename KeyType, typename Value>  \
-            struct MapInterface<MapType<KeyType, Value>> : QtMapInterface<MapType<KeyType,Value> , KeyType, Value> {}; \
-    UNDERLINE_PRIVATE_NS_END
-
 #define UL_GET(member) [](auto ___value___) {return ___value___.member; }
 
 namespace _ {
@@ -111,6 +99,10 @@ namespace _ {
         _DECLARE_UNDERLINE_HAS(operator_round_backets_int, decltype(std::declval<Type>()[0]), typename std::remove_cv<Type>::type::value_type)
 
         _DECLARE_UNDERLINE_HAS(operator_round_backets_key, decltype(std::declval<Type>()[std::declval<typename std::remove_cv<Type>::type::key_type>()]), typename std::remove_cv<Type>::type::mapped_type)
+
+        _DECLARE_UNDERLINE_HAS(mapped_type,typename std::remove_cv<Type>::type::mapped_type,typename std::remove_cv<Type>::type::mapped_type)
+
+        _DECLARE_UNDERLINE_HAS(key_type,typename std::remove_cv<Type>::type::key_type,typename std::remove_cv<Type>::type::key_type)
 
         template <typename Object>
         struct is_qobject {
@@ -168,18 +160,10 @@ namespace _ {
         };
 
         template <typename T>
-        struct MapInterface {
-            enum {
-                is_map = false
-            };
+        using map_key_type_t = typename std::remove_cv<T>::type::key_type;
 
-            typedef Undefined mapped_type;
-
-            template <typename Key>
-            static inline Undefined value(const T&&, Key) {
-                return Undefined();
-            }
-        };
+        template <typename T>
+        using map_mapped_type_t = typename std::remove_cv<T>::type::mapped_type;
 
         template <typename Key, typename Value>
         inline Value map_iterator_value(typename std::map<Key,Value>::const_iterator & iter) {
@@ -191,42 +175,22 @@ namespace _ {
             return iter.value();
         }
 
-        template <class Map, class Key, class Value>
-        struct StdMapInterface {
-            enum {is_map= 1};
-
-            typedef Value mapped_type;
-
-            static inline auto value(const Map& map, Key key) -> Value {
-                Value ret = Value();
-                auto iter = map.find(key);
-                if (iter != map.end()) {
-                    ret = map_iterator_value<Key,Value>(iter);
-                }
-                return ret;
+        template <typename Map>
+        inline auto map_value(const Map& map, const map_key_type_t<Map> &key) -> map_mapped_type_t<Map> {
+            map_mapped_type_t<Map> ret = map_mapped_type_t<Map>();
+            auto iter = map.find(key);
+            if (iter != map.end()) {
+                ret = map_iterator_value<map_key_type_t<Map>, map_mapped_type_t<Map> >(iter);
             }
-        };
-
-        template <class Map, class Key, class Value>
-        struct QtMapInterface {
-            enum {is_map= 1};
-
-            typedef Value mapped_type;
-
-            static inline auto value(const Map& map, Key key) -> Value {
-                Value ret = Value();
-                auto iter = map.find(key);
-                if (iter != map.end()) {
-                    ret = map_iterator_value<Key,Value>(iter);
-                }
-                return ret;
-            }
-        };
+            return ret;
+        }
 
         template <typename T>
         struct is_map {
             enum {
-                value = MapInterface<T>::is_map
+                value = has_key_type<T>::value &&
+                        has_mapped_type<T>::value &&
+                        has_operator_round_backets_key<T>::value
             };
         };
 
@@ -234,7 +198,7 @@ namespace _ {
         using enable_if_is_map = typename std::enable_if<is_map<T>::value, Ret>::type;
 
         template <typename T>
-        using enable_if_is_map_ret_mapped_type = typename std::enable_if<is_map<T>::value, typename MapInterface<T>::mapped_type>;
+        using enable_if_is_map_ret_mapped_type = typename std::enable_if<is_map<T>::value, map_mapped_type_t<T>>;
 
         template <typename T>
         using enable_if_is_collection_ret_value_type = typename std::enable_if< is_collection<typename std::remove_reference<T>::type>::value, typename std::remove_reference<T>::type::value_type>;
@@ -617,9 +581,9 @@ namespace _ {
         inline auto read(const Container<KeyType, Args...> &&container, InputKeyType key) ->
             typename enable_if_is_map_ret_mapped_type<Container<KeyType, Args...>>::type {
 
-            static_assert(MapInterface<Container<KeyType, Args...>>::is_map, "_::Private::read: The container is not a registered map type.");
+            static_assert(is_map<Container<KeyType, Args...>>::value, "_::Private::read: The container is not a registered map type.");
 
-            return MapInterface<Container<KeyType, Args...>>::value(container, key);
+            return map_value<Container<KeyType, Args...>>(container, key);
         }
 
         template <typename ...Args, typename KeyType, template <class...> class Container, typename InputKeyType>
@@ -1186,13 +1150,10 @@ namespace _ {
 
 /* Type Registration */
 
-UL_REGISTER_STD_MAP(std::map)
-UL_REGISTER_STD_MAP(std::unordered_map)
 UL_REGISTER_REBIND_TO_MAP(std::list, std::map)
 UL_REGISTER_REBIND_TO_MAP(std::vector, std::map)
 
 #ifdef QT_CORE_LIB
-UL_REGISTER_QT_MAP(QMap)
 UL_REGISTER_REBIND_TO_MAP(QVector, QMap)
 UL_REGISTER_REBIND_TO_MAP(QList, QMap)
 #endif

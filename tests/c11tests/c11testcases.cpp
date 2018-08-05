@@ -71,6 +71,15 @@ void C11TestCases::test_private_has()
     QCOMPARE((bool) _::Private::has_push_back<std::string>::value, true);
     QCOMPARE((bool) _::Private::has_push_back<C11TestCases>::value, false);
 
+    /* has_mapped_type */
+
+    QCOMPARE((bool) _::Private::has_mapped_type<QVariantMap>::value, true);
+    QCOMPARE((bool) _::Private::has_mapped_type<C11TestCases>::value, false);
+
+    /* has_key_type */
+
+    QCOMPARE((bool) _::Private::has_key_type<QVariantMap>::value, true);
+    QCOMPARE((bool) _::Private::has_key_type<C11TestCases>::value, false);
 }
 
 void C11TestCases::test_private_is_collection()
