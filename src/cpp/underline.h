@@ -41,11 +41,11 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
         } \
     }
 
-#define _UNDERLINE_HAS(name, expr1, expr2) \
+#define _DECLARE_UNDERLINE_HAS(name, expr1, expr2) \
         template <typename T> \
         struct has_##name { \
             template <typename Type> \
-            static inline auto test(int) -> typename  std::enable_if<std::is_same<expr1, expr2>::value, bool>::type; \
+            static inline auto test(int) -> typename  std::enable_if<std::is_convertible<expr1, expr2>::value, bool>::type; \
             template <typename> \
             static inline auto test(...) -> Undefined; \
             enum { \
@@ -57,8 +57,6 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
 #define UL_REGISTER_REBIND_TO_MAP(CollectionType, MapType) \
     namespace _ { \
         namespace Private { \
-            template <typename ValueType> \
-            struct is_collection<CollectionType<ValueType>> { enum { value = 1 };}; \
             template <class NewType, class ValueType> \
             struct rebind_to_value_map<CollectionType<ValueType>, NewType> { \
                 typedef MapType<ValueType, NewType> type; \
@@ -98,9 +96,13 @@ namespace _ {
         class QVariant{};
         class QString{};
 #endif
-        _UNDERLINE_HAS(reserve, decltype(std::declval<Type>().reserve(0)), void)
+        _DECLARE_UNDERLINE_HAS(reserve, decltype(std::declval<Type>().reserve(0)), void)
 
-        _UNDERLINE_HAS(static_meta_object, typename std::remove_cv<decltype(std::remove_pointer<Type>::type::staticMetaObject)>::type, QMetaObject)
+        _DECLARE_UNDERLINE_HAS(push_back, decltype(std::declval<Type>().push_back(std::declval<typename std::remove_reference<typename std::remove_cv<Type>::type::value_type>::type>())), void)
+
+        _DECLARE_UNDERLINE_HAS(static_meta_object, typename std::remove_cv<decltype(std::remove_pointer<Type>::type::staticMetaObject)>::type, QMetaObject)
+
+        _DECLARE_UNDERLINE_HAS(operator_equal, decltype(std::declval<Type>()[0]), typename std::remove_cv<Type>::type::value_type)
 
         template <typename Object>
         struct is_qobject {
@@ -110,7 +112,6 @@ namespace _ {
         template <typename T> struct is_gadget {
             enum { value = has_static_meta_object<T>::value && ! is_qobject<T>::value};
         };
-
 
         template <typename T>
         auto inline cast_to_pointer(const T& value) -> typename std::enable_if<std::is_pointer<T>::value, const T&>::type {
@@ -152,7 +153,9 @@ namespace _ {
         template <typename T>
         struct is_collection {
             enum {
-                value = 0
+                value = has_push_back<T>::value &&
+                        has_operator_equal<T>::value &&
+                        has_reserve<T>::value
             };
         };
 

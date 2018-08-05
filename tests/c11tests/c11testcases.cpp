@@ -26,21 +26,54 @@ C11TestCases::C11TestCases(QObject *parent) : QObject(parent)
 
 void C11TestCases::test_private_has()
 {
+    class A{
+
+    };
+
     QCOMPARE((bool) _::Private::has_reserve<std::vector<int>>::value, true);
     QCOMPARE((bool) _::Private::has_reserve<std::string>::value, true);
+    QCOMPARE((bool) _::Private::has_reserve<QVector<int>>::value, true);
+
     QCOMPARE((bool) _::Private::has_reserve<C11TestCases>::value, false);
+
+    QCOMPARE((bool) _::Private::has_operator_equal<std::vector<int>>::value, true);
+    QCOMPARE((bool) _::Private::has_operator_equal<const std::vector<int>>::value, true);
+
+    QCOMPARE((bool) _::Private::has_operator_equal<std::string>::value, true);
+    QCOMPARE((bool)
+    _::Private::has_operator_equal<QVector<int>>::value, true);
+    QCOMPARE((bool)
+    _::Private::has_operator_equal<const QVector<int>>::value, true);
+    QCOMPARE((bool) _::Private::has_operator_equal<C11TestCases>::value, false);
+
+    QCOMPARE((bool) _::Private::has_push_back<QVector<int>>::value, true);
+    QCOMPARE((bool) _::Private::has_push_back< QList<QString>>::value, true);
+    QCOMPARE((bool) _::Private::has_push_back<std::vector<A>>::value, true);
+    QCOMPARE((bool) _::Private::has_push_back<std::string>::value, true);
+    QCOMPARE((bool) _::Private::has_push_back<C11TestCases>::value, false);
 
 }
 
 void C11TestCases::test_private_is_collection()
 {
     QCOMPARE((bool)(_::Private::is_collection<std::vector<int>>::value), true);
-    QCOMPARE((bool)(_::Private::is_collection<std::string>::value), false);
+    QCOMPARE((bool)(_::Private::is_collection<QStringList>::value), true);
 
-    QCOMPARE((bool)(_::Private::is_collection<std::list<std::string>>::value), true);
+    QCOMPARE((bool)(_::Private::is_collection<QVariantList>::value), true);
+
+    QCOMPARE((bool)(_::Private::is_collection<std::string>::value), true);
+
+    QCOMPARE((bool)(_::Private::is_collection<std::list<std::string>>::value), false);
 
     QCOMPARE((bool)(_::Private::is_collection<QVector<int>>::value), true);
     QCOMPARE((bool)(_::Private::is_collection<QList<int>>::value), true);
+
+    QCOMPARE((bool)(_::Private::is_collection<C11TestCases>::value), false);
+
+    QCOMPARE((bool)(_::Private::is_collection<std::map<int, bool>>::value), false);
+
+    QCOMPARE((bool)(_::Private::is_collection<QMap<int, bool>>::value), false);
+
 
 }
 
