@@ -160,10 +160,31 @@ namespace _ {
         };
 
         template <typename T>
-        using map_key_type_t = typename std::remove_cv<T>::type::key_type;
+        struct is_map {
+            enum {
+                value = has_key_type<T>::value &&
+                        has_mapped_type<T>::value &&
+                        has_operator_round_backets_key<T>::value
+            };
+        };
+
+        template <typename ...Args>
+        struct map_info {
+            typedef Undefined key_type;
+            typedef Undefined mapped_type;
+        };
 
         template <typename T>
-        using map_mapped_type_t = typename std::remove_cv<T>::type::mapped_type;
+        struct map_info<T, typename std::enable_if<is_map<T>::value,  T>::type> {
+            typedef typename T::key_type key_type;
+            typedef typename T::mapped_type mapped_type;
+        };
+
+        template <typename T>
+        using map_key_type_t = typename map_info<T,T>::key_type;
+
+        template <typename T>
+        using map_mapped_type_t = typename map_info<T,T>::mapped_type;
 
         template <typename Key, typename Value>
         inline Value map_iterator_value(typename std::map<Key,Value>::const_iterator & iter) {
@@ -185,20 +206,14 @@ namespace _ {
             return ret;
         }
 
-        template <typename T>
-        struct is_map {
-            enum {
-                value = has_key_type<T>::value &&
-                        has_mapped_type<T>::value &&
-                        has_operator_round_backets_key<T>::value
-            };
-        };
-
         template <typename T, typename Ret>
         using enable_if_is_map = typename std::enable_if<is_map<T>::value, Ret>::type;
 
         template <typename T>
         using enable_if_is_map_ret_mapped_type = typename std::enable_if<is_map<T>::value, map_mapped_type_t<T>>;
+
+        template <typename T, typename Key>
+        using enable_if_is_map_and_key_matched = typename std::enable_if<is_map<T>::value && std::is_convertible<Key,  map_key_type_t<T>>::value, map_mapped_type_t<T>>;
 
         template <typename T>
         using enable_if_is_collection_ret_value_type = typename std::enable_if< is_collection<typename std::remove_reference<T>::type>::value, typename std::remove_reference<T>::type::value_type>;
@@ -577,13 +592,10 @@ namespace _ {
 
 
         /// Read a property from the target container object
-        template <typename ...Args, typename KeyType, template <class...> class Container, typename InputKeyType>
-        inline auto read(const Container<KeyType, Args...> &&container, InputKeyType key) ->
-            typename enable_if_is_map_ret_mapped_type<Container<KeyType, Args...>>::type {
-
-            static_assert(is_map<Container<KeyType, Args...>>::value, "_::Private::read: The container is not a registered map type.");
-
-            return map_value<Container<KeyType, Args...>>(container, key);
+        template <typename Map, typename Key>
+        inline auto read(const Map &&map, Key key) ->
+            typename enable_if_is_map_and_key_matched<Map, Key>::type {
+            return map_value<Map>(map, key);
         }
 
         template <typename ...Args, typename KeyType, template <class...> class Container, typename InputKeyType>

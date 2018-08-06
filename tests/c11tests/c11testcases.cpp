@@ -117,6 +117,14 @@ void C11TestCases::test_private_is_map()
 
     QCOMPARE((bool)(_::Private::is_map<QVariantMap>::value), true);
 
+    QVERIFY((std::is_same<_::Private::map_mapped_type_t<QVariantMap>, QVariant>::value));
+
+    QVERIFY((std::is_same<_::Private::map_info<C11TestCases>::mapped_type, _::Private::Undefined>::value));
+
+    QVERIFY((std::is_same<_::Private::map_info<QVariantMap, QVariantMap>::mapped_type, QVariant>::value));
+
+    QVERIFY(!(std::is_same<_::Private::map_mapped_type_t<C11TestCases>, QVariant>::value));
+
 }
 
 void C11TestCases::test_private_is_meta_object()
