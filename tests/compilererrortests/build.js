@@ -31,13 +31,11 @@ errors.forEach((errorCode) => {
     shell.exec(["qmake", resolve(buildDir, "template.pro")].join(" "))
     var res = shell.exec(make, {silent: true});
 
-    var stderr = res.stderr;
     var output;
     if (process.platform !== "win32") {
-        output = stderr.toString().split("\n").filter((item) => {return item.indexOf("error:") >= 0});
-    } else {     
-        console.log(res.stdout.toString());
-        output = stderr.toString().split("\n");
+        output = res.stderr.toString().split("\n").filter((item) => {return item.indexOf("error:") >= 0});
+    } else {
+        output = res.stdout.stderr.toString().split("\n").filter((item) => {return item.indexOf("error") >= 0});        
     }
 
     console.log(errorCode);
