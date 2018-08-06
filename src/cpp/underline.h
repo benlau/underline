@@ -186,6 +186,13 @@ namespace _ {
         template <typename T>
         using map_mapped_type_t = typename map_info<T,T>::mapped_type;
 
+        template <typename T, typename Key>
+        struct is_map_key_matched {
+            enum {
+                value = is_map<T>::value && std::is_convertible<Key, map_key_type_t<T>>::value
+            };
+        };
+
         template <typename Key, typename Value>
         inline Value map_iterator_value(typename std::map<Key,Value>::const_iterator & iter) {
             return iter->second;
@@ -213,7 +220,7 @@ namespace _ {
         using enable_if_is_map_ret_mapped_type = typename std::enable_if<is_map<T>::value, map_mapped_type_t<T>>;
 
         template <typename T, typename Key>
-        using enable_if_is_map_and_key_matched = typename std::enable_if<is_map<T>::value && std::is_convertible<Key,  map_key_type_t<T>>::value, map_mapped_type_t<T>>;
+        using enable_if_is_map_key_matched = typename std::enable_if<is_map_key_matched<T,Key>::value, map_mapped_type_t<T>>;
 
         template <typename T>
         using enable_if_is_collection_ret_value_type = typename std::enable_if< is_collection<typename std::remove_reference<T>::type>::value, typename std::remove_reference<T>::type::value_type>;
@@ -307,10 +314,10 @@ namespace _ {
         };
 
         template <typename Collection>
-        typename std::enable_if<std::is_class<Collection>::value, typename std::remove_reference<Collection>::type::value_type>::type decl_collection_value_type();
+        typename std::enable_if<is_collection<Collection>::value, typename std::remove_reference<Collection>::type::value_type>::type decl_collection_value_type();
 
         template <typename Collection>
-        typename std::enable_if<!std::is_class<Collection>::value, Undefined>::type decl_collection_value_type();
+        typename std::enable_if<!is_collection<Collection>::value, Undefined>::type decl_collection_value_type();
 
         template <typename Collection>
         struct collection_value_type {
@@ -594,7 +601,7 @@ namespace _ {
         /// Read a property from the target container object
         template <typename Map, typename Key>
         inline auto read(const Map &&map, Key key) ->
-            typename enable_if_is_map_and_key_matched<Map, Key>::type {
+            typename enable_if_is_map_key_matched<Map, Key>::type {
             return map_value<Map>(map, key);
         }
 

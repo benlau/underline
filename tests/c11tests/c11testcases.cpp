@@ -101,6 +101,8 @@ void C11TestCases::test_private_is_collection()
     QCOMPARE((bool)(_::Private::is_collection<std::map<int, bool>>::value), false);
 
     QCOMPARE((bool)(_::Private::is_collection<QMap<int, bool>>::value), false);
+
+    QCOMPARE((bool)(_::Private::is_collection<int>::value), false);
 }
 
 void C11TestCases::test_private_is_map()
