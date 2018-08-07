@@ -35,7 +35,7 @@ errors.forEach((errorCode) => {
     if (process.platform !== "win32") {
         output = res.stderr.toString().split("\n").filter((item) => {return item.indexOf("error:") >= 0});
     } else {
-        output = res.stderr.toString().split("\n").filter((item) => {return item.indexOf("error") >= 0});        
+        output = res.stdout.toString().split("\n").filter((item) => {return item.indexOf("error") >= 0});        
     }
 
     console.log(errorCode);

@@ -344,6 +344,8 @@ void C11TestCases::test_private_read()
     QObject* object = new QObject(this);
     object->setObjectName("objectName");
     QCOMPARE((_::Private::meta_object_value(object, "objectName")), QVariant("objectName"));
+    QCOMPARE((_::Private::read(object, "objectName")), QVariant("objectName"));
+
 }
 
 void C11TestCases::test_cast_to_pointer()

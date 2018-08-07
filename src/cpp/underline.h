@@ -635,11 +635,17 @@ namespace _ {
             return meta_object_value(meta, key);
         }
 
+        template <typename Any, typename Key>
+        struct is_readable {
+            enum {
+                value = is_meta_object_key_matched<Any, Key>::value ||
+                is_map_key_matched<Any, Key>::value ||
+                is_collection_index_matched<Any, Key>::value
+            };
+        };
+
         template <typename Other, typename Key>
-        inline auto read(const Other, Key) -> typename std::enable_if<
-            !is_meta_object_key_matched<Other, Key>::value &&
-            !is_map_key_matched<Other, Key>::value &&
-            !is_collection_index_matched<Other, Key>::value,
+        inline auto read(const Other, Key) -> typename std::enable_if<!is_readable<Other,Key>::value,
             Undefined
         >::type {
             return Undefined();
