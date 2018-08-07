@@ -333,6 +333,10 @@ void C11TestCases::test_private_read()
     QCOMPARE((_::Private::meta_object_value(gadget, "value")), QVariant(10));
     QCOMPARE((_::Private::meta_object_value(gadget, "value1")), QVariant());
 
+    QVERIFY((_::Private::is_meta_object_key_matched<decltype(gadget), decltype("value")>::value));
+    QVERIFY(!(_::Private::is_map_key_matched<decltype(gadget), decltype("value")>::value));
+    QVERIFY(!(_::Private::is_collection_index_matched<decltype(gadget), decltype("value")>::value));
+
     QCOMPARE((_::Private::read(&gadget, "value")), QVariant(10));
     QCOMPARE((_::Private::read(gadget, "value")), QVariant(10));
     QCOMPARE((_::Private::read(gadget, "value1")), QVariant());

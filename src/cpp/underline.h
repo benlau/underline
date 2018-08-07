@@ -635,6 +635,16 @@ namespace _ {
             return meta_object_value(meta, key);
         }
 
+        template <typename Other, typename Key>
+        inline auto read(const Other, Key) -> typename std::enable_if<
+            !is_meta_object_key_matched<Other, Key>::value &&
+            !is_map_key_matched<Other, Key>::value &&
+            !is_collection_index_matched<Other, Key>::value,
+            Undefined
+        >::type {
+            return Undefined();
+        }
+
         /// vic_func( VIC = Value,Index,Collection);
         template <typename Functor, typename Collection>
         struct is_vic_func_invokable {
