@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build_compiler_error": "node ./tests/compilererrortests/build.js"
+    "collect_compiler_error": "node ./tests/compilererrortests/build.js",
+    "remove_generated_code": "node ./tools/remove_generated_code.js",
+    "generate_code": "node ./tools/generate_code.js"
   },
   "repository": {
     "type": "git",
@@ -17,7 +19,9 @@
   },
   "homepage": "https://github.com/benlau/underline#readme",
   "dependencies": {
+    "lodash": "4.17.10",
     "mustache": "2.3.0",
-    "shelljs": "0.8.2"
+    "shelljs": "0.8.2",
+    "sprintf-js": "1.1.1"
   }
 }

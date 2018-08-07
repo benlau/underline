@@ -32,5 +32,5 @@ script:
     - tests/quicktests/quicktests
     - tests/noqttests/noqttests
     - npm install
-    - npm run build_compiler_error
+    - npm run collect_compiler_error
     
