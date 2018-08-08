@@ -109,6 +109,8 @@ _.range(5).forEach( (item) => {
 });
 content.push("/* End of code-generator */");
 
+content = content.map(item => "        " + item);
+
 var source = resolve(__dirname, "../src/cpp/underline.h");
 var text = shell.cat(source).toString()
 

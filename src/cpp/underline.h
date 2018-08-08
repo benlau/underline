@@ -651,6 +651,11 @@ namespace _ {
             return Undefined();
         }
 
+        template <typename Any, typename Key>
+        struct ret_read {
+            typedef decltype(read(std::declval<Any>(), std::declval<Key>())) type;
+        };
+
         /// vic_func( VIC = Value,Index,Collection);
         template <typename Functor, typename Collection>
         struct is_vic_func_invokable {

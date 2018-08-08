@@ -322,6 +322,8 @@ void C11TestCases::test_private_read()
 
     QCOMPARE((_::Private::read(QVariantMap{{"value1", 1}}, QString("value1"))), QVariant(1));
 
+    QVERIFY( (std::is_same<_::Private::ret_read<QVariantMap, QString>::type, QVariant>::value));
+
     // Collection
     QCOMPARE((_::Private::read(std::vector<int>{0,1,2}, 1)), 1);
     QCOMPARE((_::Private::read(QVector<int>{0,1,2}, 1)), 1);
