@@ -263,6 +263,16 @@ void C11TestCases::test_private_invoke()
     QCOMPARE((bool) (_::Private::is_invokable3<decltype(myFunc2), int, QString, int>::value), false);
 }
 
+void C11TestCases::test_private_invoke_by_read()
+{
+    {
+        /* QMap */
+        QMap<QString, int> map{{"value1", 1}};
+
+        QCOMPARE(_::Private::invoke("value1", map), 1);
+    }
+}
+
 void C11TestCases::test_private_rebind_to_map()
 {
     QCOMPARE((std::is_same<QMap<QString,int>,
