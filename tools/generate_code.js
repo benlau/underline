@@ -2,6 +2,7 @@ var sprintf = require("sprintf-js").sprintf;
 var _ = require("lodash");
 var shell = require("shelljs");
 var resolve = require("path").resolve;
+var Mustache = require("mustache");
 
 var content = [];
 
@@ -52,10 +53,17 @@ function create_function_set(count) { // no. of template argument include Functo
         var is_args_compatible = (count) => {
             return sprintf("is_args_compatible<%s>::value", templateArgLine(count));
         };
+        
+        var condition = _.range(count).map(value => is_args_compatible(value+1));
+        
+        if (count > 1) {
+            condition.push("is_readable<Arg1, Functor>::value"); 
+        }
+        
         content.push(templateDeclLine(count));
         content.push(sprintf("struct is_invokable%d {", count - 1));
         content.push("    enum {");
-        content.push(sprintf("       value = %s" , _.range(count).map(value => is_args_compatible(value+1) ).join(" || ")));
+        content.push(sprintf("       value = %s" , condition.join(" || ")));
         content.push("    };");
 
         content.push("};\n");
@@ -81,22 +89,32 @@ function create_function_set(count) { // no. of template argument include Functo
     }
     
     _decl_invoke0 = (count) => {
+        var templ;
         
         declval = (count) => {
             return _.range(count).map( (value) => {
                 return sprintf("std::declval<%s>()",argType(value));
             }).join(",");
         };
-        
-        content.push(templateDeclLine(count));
-        content.push(sprintf("typename std::enable_if<is_invokable%d<%s>::value, decltype(invoke(%s))>::type", 
-                     count - 1, templateArgLine(count), declval(count)));
-        content.push(sprintf("inline decl_invoke0();\n"));
 
+        var values = {
+            invokableArgCount: count - 1, 
+            templateArgLine: templateArgLine(count),
+            templateDeclLine: templateDeclLine(count),
+            declval: declval(count)
+        }        
+                
+        templ = `
+{{{templateDeclLine}}}
+typename std::enable_if<is_invokable{{{invokableArgCount}}}<{{{templateArgLine}}}>::value{{{is_readable}}}, decltype(invoke({{{declval}}}))>::type
+inline decl_invoke0();
+`
+         content = content.concat(Mustache.render(templ, values).split("\n"));
+    
+        content.push(templateDeclLine(count));        
+        var returnType = "typename std::enable_if<!is_invokable{{{invokableArgCount}}}<{{{templateArgLine}}}>::value{{{not_is_readable}}}, Undefined>::type";
         
-        content.push(templateDeclLine(count));
-        content.push(sprintf("typename std::enable_if<!is_invokable%d<%s>::value, Undefined>::type", 
-                     count - 1, templateArgLine(count)));
+        content.push(Mustache.render(returnType, values));
         content.push(sprintf("inline decl_invoke0();\n"));
 
     };

@@ -32,6 +32,7 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
 #define UNDERLINE_ITERATEE_MISMATCHED_ERROR "Mismatched argument types in the iteratee function. Please validate the number of argument and their type."
 #define UNDERLINE_PREDICATE_MISMATCHED_ERROR "Mismatched argument types in the predicate function. Please validate the number of argument and their type."
 #define UNDERLINE_PREDICATE_RETURN_TYPE_MISMATCH_ERROR "The return type of predicate function must be bool"
+#define UNDERLINE_INPUT_TYPE_IS_NOT_COLLECTION "The expected input is a collection class. (e.g std::vector , QList , QVector) "
 
 #define UNDERLINE_PRIVATE_NS_BEGIN \
     namespace _ {\
@@ -362,6 +363,11 @@ namespace _ {
             return collection[index];
         }
 
+        template <typename Collection, typename Index>
+        inline auto read(const Collection& collection, Index index) -> typename enable_if_collection_index_matched<Collection, Index>::type {
+            return collection[index];
+        }
+
         template <typename Meta, typename Key>
         inline auto read(const Meta& meta, const Key &key) -> typename enable_if_is_meta_object_key_matched<Meta, Key>::type {
             return meta_object_value(meta, key);
@@ -388,6 +394,11 @@ namespace _ {
             typedef decltype(read(std::declval<Any>(), std::declval<Key>())) type;
         };
 
+        template <typename Object, typename Key, typename ...Args>
+        inline auto invoke(const Key& key, const Object& object) -> typename std::enable_if<is_readable<Object, Key>::value, typename ret_read<Object,Key>::type>::type {
+            return read(object, key);
+        }
+
         /* BEGIN_GENERATED_CODE */
         template <typename Functor>
         inline auto invoke(Functor functor) -> 
@@ -410,10 +421,11 @@ namespace _ {
             };
         };
 
+        
         template <typename Functor>
         typename std::enable_if<is_invokable0<Functor>::value, decltype(invoke(std::declval<Functor>()))>::type
         inline decl_invoke0();
-
+        
         template <typename Functor>
         typename std::enable_if<!is_invokable0<Functor>::value, Undefined>::type
         inline decl_invoke0();
@@ -442,14 +454,15 @@ namespace _ {
         template <typename Functor, typename Arg1>
         struct is_invokable1 {
             enum {
-               value = is_args_compatible<Functor>::value || is_args_compatible<Functor, Arg1>::value
+               value = is_args_compatible<Functor>::value || is_args_compatible<Functor, Arg1>::value || is_readable<Arg1, Functor>::value
             };
         };
 
+        
         template <typename Functor, typename Arg1>
         typename std::enable_if<is_invokable1<Functor, Arg1>::value, decltype(invoke(std::declval<Functor>(),std::declval<Arg1>()))>::type
         inline decl_invoke0();
-
+        
         template <typename Functor, typename Arg1>
         typename std::enable_if<!is_invokable1<Functor, Arg1>::value, Undefined>::type
         inline decl_invoke0();
@@ -485,14 +498,15 @@ namespace _ {
         template <typename Functor, typename Arg1, typename Arg2>
         struct is_invokable2 {
             enum {
-               value = is_args_compatible<Functor>::value || is_args_compatible<Functor, Arg1>::value || is_args_compatible<Functor, Arg1, Arg2>::value
+               value = is_args_compatible<Functor>::value || is_args_compatible<Functor, Arg1>::value || is_args_compatible<Functor, Arg1, Arg2>::value || is_readable<Arg1, Functor>::value
             };
         };
 
+        
         template <typename Functor, typename Arg1, typename Arg2>
         typename std::enable_if<is_invokable2<Functor, Arg1, Arg2>::value, decltype(invoke(std::declval<Functor>(),std::declval<Arg1>(),std::declval<Arg2>()))>::type
         inline decl_invoke0();
-
+        
         template <typename Functor, typename Arg1, typename Arg2>
         typename std::enable_if<!is_invokable2<Functor, Arg1, Arg2>::value, Undefined>::type
         inline decl_invoke0();
@@ -535,14 +549,15 @@ namespace _ {
         template <typename Functor, typename Arg1, typename Arg2, typename Arg3>
         struct is_invokable3 {
             enum {
-               value = is_args_compatible<Functor>::value || is_args_compatible<Functor, Arg1>::value || is_args_compatible<Functor, Arg1, Arg2>::value || is_args_compatible<Functor, Arg1, Arg2, Arg3>::value
+               value = is_args_compatible<Functor>::value || is_args_compatible<Functor, Arg1>::value || is_args_compatible<Functor, Arg1, Arg2>::value || is_args_compatible<Functor, Arg1, Arg2, Arg3>::value || is_readable<Arg1, Functor>::value
             };
         };
 
+        
         template <typename Functor, typename Arg1, typename Arg2, typename Arg3>
         typename std::enable_if<is_invokable3<Functor, Arg1, Arg2, Arg3>::value, decltype(invoke(std::declval<Functor>(),std::declval<Arg1>(),std::declval<Arg2>(),std::declval<Arg3>()))>::type
         inline decl_invoke0();
-
+        
         template <typename Functor, typename Arg1, typename Arg2, typename Arg3>
         typename std::enable_if<!is_invokable3<Functor, Arg1, Arg2, Arg3>::value, Undefined>::type
         inline decl_invoke0();
@@ -592,29 +607,28 @@ namespace _ {
         template <typename Functor, typename Arg1, typename Arg2, typename Arg3, typename Arg4>
         struct is_invokable4 {
             enum {
-               value = is_args_compatible<Functor>::value || is_args_compatible<Functor, Arg1>::value || is_args_compatible<Functor, Arg1, Arg2>::value || is_args_compatible<Functor, Arg1, Arg2, Arg3>::value || is_args_compatible<Functor, Arg1, Arg2, Arg3, Arg4>::value
+               value = is_args_compatible<Functor>::value || is_args_compatible<Functor, Arg1>::value || is_args_compatible<Functor, Arg1, Arg2>::value || is_args_compatible<Functor, Arg1, Arg2, Arg3>::value || is_args_compatible<Functor, Arg1, Arg2, Arg3, Arg4>::value || is_readable<Arg1, Functor>::value
             };
         };
 
+        
         template <typename Functor, typename Arg1, typename Arg2, typename Arg3, typename Arg4>
         typename std::enable_if<is_invokable4<Functor, Arg1, Arg2, Arg3, Arg4>::value, decltype(invoke(std::declval<Functor>(),std::declval<Arg1>(),std::declval<Arg2>(),std::declval<Arg3>(),std::declval<Arg4>()))>::type
         inline decl_invoke0();
-
+        
         template <typename Functor, typename Arg1, typename Arg2, typename Arg3, typename Arg4>
         typename std::enable_if<!is_invokable4<Functor, Arg1, Arg2, Arg3, Arg4>::value, Undefined>::type
         inline decl_invoke0();
 
         /* END_GENERATED_CODE */
 
-        template <typename Object, typename Key, typename ...Args>
-        inline auto invoke(const Key& key, const Object& object) -> typename std::enable_if<is_readable<Object, Key>::value, typename ret_read<Object,Key>::type>::type {
-            return read(object, key);
-        }
-
         template <typename Functor, typename ...Args>
         struct ret_invoke {
-            using type = decltype(decl_invoke0<Functor, Args&&...>());
+            using type = decltype(decl_invoke0<Functor, Args...>());
         };
+
+        template <typename Iteratee, typename Collection>
+        using ret_invoke_collection_value_type_t = typename ret_invoke<Iteratee, typename collection_value_type<Collection>::type>::type;
 
         ///Value is a wrapper of any data structure include <void>.
         template <typename T>
@@ -1134,11 +1148,14 @@ namespace _ {
         return res;
     }
 
-    template <typename ValueType, typename ...Args, template<class...> class Collection,  typename Iteratee>
-    inline auto countBy(Collection<ValueType, Args...>&& collection, Iteratee iteratee) -> typename Private::rebind_to_key_value_map<Collection<ValueType, Args...>, typename Private::ret_invoke<Iteratee, ValueType>::type, int>::type  {
+    template <typename Collection,  typename Iteratee>
+    inline auto countBy(const Collection& collection, Iteratee iteratee) -> typename Private::rebind_to_key_value_map<Collection,  _::Private::ret_invoke_collection_value_type_t<Iteratee,Collection>, int>::type  {
 
-        typename Private::rebind_to_key_value_map<Collection<ValueType, Args...>,typename Private::ret_invoke<Iteratee, ValueType>::type,int>::type res;
-        static_assert(Private::is_invokable1<Iteratee, ValueType>::value, "_::countBy(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+        static_assert(_::Private::is_collection<Collection>::value, "_::countBy: " UNDERLINE_INPUT_TYPE_IS_NOT_COLLECTION);
+
+        static_assert(Private::is_invokable1<Iteratee, typename _::Private::collection_value_type<Collection>::type>::value, "_::countBy(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+
+        typename Private::rebind_to_key_value_map<Collection,  _::Private::ret_invoke_collection_value_type_t<Iteratee,Collection>, int>::type  res;
 
         for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
             auto key = Private::invoke(iteratee, collection[i]);
