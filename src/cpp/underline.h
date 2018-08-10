@@ -63,7 +63,7 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
                 typedef MapType<ValueType, NewType> type; \
             }; \
             template <class ValueType, class NewKeyType, class NewValueType> \
-            struct rebind_to_key_value_map<CollectionType<ValueType>, NewKeyType, NewValueType> { \
+            struct rebind_to_map_key_value<CollectionType<ValueType>, NewKeyType, NewValueType> { \
                 typedef MapType<NewKeyType, NewValueType> type; \
             }; \
         } \
@@ -246,6 +246,7 @@ namespace _ {
         /// Source: https://stackoverflow.com/questions/5052211/changing-value-type-of-a-given-stl-container
         template <class Container, class NewType>
         struct rebind {
+            using type = Undefined;
         };
 
         template <class ValueType, class... Args, template <class...> class Container, class NewType>
@@ -260,7 +261,7 @@ namespace _ {
         };
 
         template <class Collection, class NewKeyType, class NewValueType>
-        struct rebind_to_key_value_map {
+        struct rebind_to_map_key_value {
             typedef Undefined type;
         };
 
@@ -629,6 +630,9 @@ namespace _ {
 
         template <typename Iteratee, typename Collection>
         using ret_invoke_collection_value_type_t = typename ret_invoke<Iteratee, typename collection_value_type<Collection>::type>::type;
+
+        template <class Collection, typename Iteratee, typename ValueType>
+        using rebind_to_map_collection_iteratee_t = typename rebind_to_map_key_value<Collection,   _::Private::ret_invoke_collection_value_type_t<Iteratee,Collection>, ValueType>::type;
 
         ///Value is a wrapper of any data structure include <void>.
         template <typename T>
@@ -1149,13 +1153,13 @@ namespace _ {
     }
 
     template <typename Collection,  typename Iteratee>
-    inline auto countBy(const Collection& collection, Iteratee iteratee) -> typename Private::rebind_to_key_value_map<Collection,  _::Private::ret_invoke_collection_value_type_t<Iteratee,Collection>, int>::type  {
+    inline auto countBy(const Collection& collection, Iteratee iteratee) -> typename Private::rebind_to_map_collection_iteratee_t<Collection, Iteratee, int>  {
 
         static_assert(_::Private::is_collection<Collection>::value, "_::countBy: " UNDERLINE_INPUT_TYPE_IS_NOT_COLLECTION);
 
         static_assert(Private::is_invokable1<Iteratee, typename _::Private::collection_value_type<Collection>::type>::value, "_::countBy(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
 
-        typename Private::rebind_to_key_value_map<Collection,  _::Private::ret_invoke_collection_value_type_t<Iteratee,Collection>, int>::type  res;
+        typename Private::rebind_to_map_collection_iteratee_t<Collection, Iteratee, int>  res;
 
         for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
             auto key = Private::invoke(iteratee, collection[i]);

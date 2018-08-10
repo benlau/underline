@@ -289,11 +289,11 @@ void C11TestCases::test_private_rebind_to_map()
 
 
     QCOMPARE((std::is_same<std::map<std::string,int>,
-                           _::Private::rebind_to_key_value_map<std::list<int>,std::string, int>::type
+                           _::Private::rebind_to_map_key_value<std::list<int>,std::string, int>::type
                            >::value), true);
 
     QCOMPARE((std::is_same<QMap<QString,int>,
-                           _::Private::rebind_to_key_value_map<QList<int>,QString, int>::type
+                           _::Private::rebind_to_map_key_value<QList<int>,QString, int>::type
                            >::value), true);
 
 
