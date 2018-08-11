@@ -193,21 +193,6 @@ void C14TestCases::test_private_value()
     }
 }
 
-void C14TestCases::test_macro_get()
-{
-    class A {
-    public:
-        int value = 0;
-    };
-
-    auto expected = _::range<QList<int>>(4);
-    auto input = _::map(expected, [](auto value) {A a; a.value = value; return a;});
-
-    auto actual = _::map(input, UL_GET(value));
-
-    QCOMPARE(expected, actual);
-}
-
 void C14TestCases::test_some()
 {
     {

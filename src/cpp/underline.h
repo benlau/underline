@@ -69,8 +69,6 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
         } \
     }
 
-#define UL_GET(member) [](auto ___value___) {return ___value___.member; }
-
 namespace _ {
 
     namespace Private {
