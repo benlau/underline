@@ -105,6 +105,9 @@ namespace _ {
 
         _DECLARE_UNDERLINE_HAS(key_type,typename std::remove_cv<Type>::type::key_type,typename std::remove_cv<Type>::type::key_type)
 
+        template <typename T>
+        using remove_cvref_t = typename std::remove_reference<typename std::remove_cv<T>::type>::type;
+
         template <typename Object>
         struct is_qobject {
             enum { value = std::is_convertible<typename std::add_pointer<typename std::remove_pointer<typename std::remove_cv<Object>::type>::type>::type, QObject*>::value };
@@ -154,9 +157,9 @@ namespace _ {
         template <typename T>
         struct is_collection {
             enum {
-                value = has_push_back<T>::value &&
-                        has_operator_round_backets_int<T>::value &&
-                        has_reserve<T>::value
+                value = has_push_back<remove_cvref_t<T>>::value &&
+                        has_operator_round_backets_int<remove_cvref_t<T>>::value &&
+                        has_reserve<remove_cvref_t<T>>::value
             };
         };
 
@@ -333,7 +336,7 @@ namespace _ {
 
         template <typename Collection>
         struct collection_value_type {
-            using type = decltype(decl_collection_value_type<Collection>());
+            using type = decltype(decl_collection_value_type<remove_cvref_t<Collection>>());
         };
 
         template <typename Collection, typename Index>
@@ -348,20 +351,9 @@ namespace _ {
 
         /// Read a property from the target container object
         template <typename Map, typename Key>
-        inline auto read(const Map &&map, Key key) ->
-            typename enable_if_is_map_key_matched<Map, Key>::type {
-            return map_value<Map>(map, key);
-        }
-
-        template <typename Map, typename Key>
         inline auto read(const Map &map, Key key) ->
             typename enable_if_is_map_key_matched<Map, Key>::type {
             return map_value<Map>(map, key);
-        }
-
-        template <typename Collection, typename Index>
-        inline auto read(const Collection&& collection, Index index) -> typename enable_if_collection_index_matched<Collection, Index>::type {
-            return collection[index];
         }
 
         template <typename Collection, typename Index>
@@ -632,7 +624,7 @@ namespace _ {
         using ret_invoke_collection_value_type_t = typename ret_invoke<Iteratee, typename collection_value_type<Collection>::type>::type;
 
         template <class Collection, typename Iteratee, typename ValueType>
-        using rebind_to_map_collection_iteratee_t = typename rebind_to_map_key_value<Collection,   _::Private::ret_invoke_collection_value_type_t<Iteratee,Collection>, ValueType>::type;
+        using rebind_to_map_collection_iteratee_t = typename rebind_to_map_key_value<remove_cvref_t<Collection>,   _::Private::ret_invoke_collection_value_type_t<Iteratee,remove_cvref_t<Collection>>, ValueType>::type;
 
         ///Value is a wrapper of any data structure include <void>.
         template <typename T>

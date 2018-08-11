@@ -668,5 +668,14 @@ void C14TestCases::test_countBy()
         });
 
         QCOMPARE(_::countBy(input,"isOdd")[true] , 2);
+        QCOMPARE(input.size(), 5);
+    }
+
+    {
+        auto worker = [](const auto input) {
+            return _::countBy(input, [](auto value) {return value % 2 == 0 ? "even" : "odd"; });
+        };
+
+        QCOMPARE(worker(_::range_q(5))["odd"], 2);
     }
 }
