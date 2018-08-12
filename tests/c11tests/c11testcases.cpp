@@ -390,7 +390,13 @@ void C11TestCases::test_private_write()
 
     }
 
+    {
+        std::unique_ptr<DataObject> object(new DataObject(this));
 
+        QCOMPARE(object->value1(), 0);
+        _::Private::write(object.get(), "value1", 1);
+        QCOMPARE(object->value1(), 1);
+    }
 }
 
 void C11TestCases::test_cast_to_pointer()

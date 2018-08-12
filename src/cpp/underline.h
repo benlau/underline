@@ -165,6 +165,12 @@ namespace _ {
             return property.readOnGadget(ptr);
         }
 
+        template <typename Meta, typename Key>
+        inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_qobject<Meta>::value, QVariant>::type {
+            return meta->property(key);
+        }
+
+
         template <typename Meta, typename Key, typename Value>
         inline auto meta_object_set_value(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_gadget<Meta>::value, bool>::type {
             auto ptr = cast_to_pointer<Meta>(meta);
@@ -178,9 +184,9 @@ namespace _ {
             return true;
         }
 
-        template <typename Meta, typename Key>
-        inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_qobject<Meta>::value, QVariant>::type {
-            return meta->property(key);
+        template <typename Meta, typename Key, typename Value>
+        inline auto meta_object_set_value(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_qobject<Meta>::value, bool>::type {
+            return meta->setProperty(key, value);
         }
 
         template <typename T>
@@ -304,7 +310,7 @@ namespace _ {
         /// Source: https://stackoverflow.com/questions/5052211/changing-value-type-of-a-given-stl-container
         template <class Container, class NewType>
         struct rebind {
-            using type = Undefined;
+            using type = std::vector<Undefined>;
         };
 
         template <class ValueType, class... Args, template <class...> class Container, class NewType>
@@ -1237,7 +1243,7 @@ namespace _ {
     template <typename Collection,  typename Iteratee>
     inline auto countBy(const Collection& collection, Iteratee iteratee) -> typename Private::rebind_to_map_collection_iteratee_t<Collection, Iteratee, int>  {
 
-        UNDERLINE_STATIC_ASSERT_IS_ARRAY("_::countBy", Collection);
+        UNDERLINE_STATIC_ASSERT_IS_ARRAY("_::countBy ", Collection);
 
         static_assert(Private::is_invokable1<Iteratee, typename _::Private::array_value_type<Collection>::type>::value, "_::countBy(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
 
