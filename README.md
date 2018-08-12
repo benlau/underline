@@ -33,7 +33,7 @@ _::assign( /* QVariantMap */ dest, /* QObject* */ source );
 QVariant property = _::get(object, "parent.objectName");
 ```
 
-**3) Strong static type checking. Get rid of the horrific and misleading template compilation error messages. **
+**3) Strong static type checking. Get rid of the horrific and misleading template compilation error messages.**
 
 Example:
 

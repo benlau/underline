@@ -82,27 +82,27 @@ void C11TestCases::test_private_has()
     QCOMPARE((bool) _::Private::has_key_type<C11TestCases>::value, false);
 }
 
-void C11TestCases::test_private_is_collection()
+void C11TestCases::test_private_is_array()
 {
-    QCOMPARE((bool)(_::Private::is_collection<std::vector<int>>::value), true);
-    QCOMPARE((bool)(_::Private::is_collection<QStringList>::value), true);
+    QCOMPARE((bool)(_::Private::is_array<std::vector<int>>::value), true);
+    QCOMPARE((bool)(_::Private::is_array<QStringList>::value), true);
 
-    QCOMPARE((bool)(_::Private::is_collection<QVariantList>::value), true);
+    QCOMPARE((bool)(_::Private::is_array<QVariantList>::value), true);
 
-    QCOMPARE((bool)(_::Private::is_collection<std::string>::value), true);
+    QCOMPARE((bool)(_::Private::is_array<std::string>::value), true);
 
-    QCOMPARE((bool)(_::Private::is_collection<std::list<std::string>>::value), false);
+    QCOMPARE((bool)(_::Private::is_array<std::list<std::string>>::value), false);
 
-    QCOMPARE((bool)(_::Private::is_collection<QVector<int>>::value), true);
-    QCOMPARE((bool)(_::Private::is_collection<QList<int>>::value), true);
+    QCOMPARE((bool)(_::Private::is_array<QVector<int>>::value), true);
+    QCOMPARE((bool)(_::Private::is_array<QList<int>>::value), true);
 
-    QCOMPARE((bool)(_::Private::is_collection<C11TestCases>::value), false);
+    QCOMPARE((bool)(_::Private::is_array<C11TestCases>::value), false);
 
-    QCOMPARE((bool)(_::Private::is_collection<std::map<int, bool>>::value), false);
+    QCOMPARE((bool)(_::Private::is_array<std::map<int, bool>>::value), false);
 
-    QCOMPARE((bool)(_::Private::is_collection<QMap<int, bool>>::value), false);
+    QCOMPARE((bool)(_::Private::is_array<QMap<int, bool>>::value), false);
 
-    QCOMPARE((bool)(_::Private::is_collection<int>::value), false);
+    QCOMPARE((bool)(_::Private::is_array<int>::value), false);
 }
 
 void C11TestCases::test_private_is_map()
@@ -172,7 +172,7 @@ void C11TestCases::test_private_traits()
 
         // container_value_type
 
-        const std::type_info& ti1 = typeid(_::Private::collection_value_type<QList<int>>::type);
+        const std::type_info& ti1 = typeid(_::Private::array_value_type<QList<int>>::type);
         const std::type_info& ti2 = typeid(int);
 
         QVERIFY(ti1 == ti2);
@@ -347,7 +347,7 @@ void C11TestCases::test_private_read()
 
     QVERIFY((_::Private::is_meta_object_key_matched<decltype(gadget), decltype("value")>::value));
     QVERIFY(!(_::Private::is_map_key_matched<decltype(gadget), decltype("value")>::value));
-    QVERIFY(!(_::Private::is_collection_index_matched<decltype(gadget), decltype("value")>::value));
+    QVERIFY(!(_::Private::is_array_index_matched<decltype(gadget), decltype("value")>::value));
 
     QCOMPARE((_::Private::read(&gadget, "value")), QVariant(10));
     QCOMPARE((_::Private::read(gadget, "value")), QVariant(10));

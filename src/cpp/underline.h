@@ -32,7 +32,10 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
 #define UNDERLINE_ITERATEE_MISMATCHED_ERROR "Mismatched argument types in the iteratee function. Please validate the number of argument and their type."
 #define UNDERLINE_PREDICATE_MISMATCHED_ERROR "Mismatched argument types in the predicate function. Please validate the number of argument and their type."
 #define UNDERLINE_PREDICATE_RETURN_TYPE_MISMATCH_ERROR "The return type of predicate function must be bool"
-#define UNDERLINE_INPUT_TYPE_IS_NOT_COLLECTION "The expected input is a collection class. (e.g std::vector , QList , QVector) "
+#define UNDERLINE_INPUT_TYPE_IS_NOT_ARRAY "The expected input is an array class, where _::isArray() returns true (e.g std::vector , QList , QVector) "
+
+#define UNDERLINE_STATIC_ASSERT_IS_ARRAY(prefix, type) \
+    static_assert(_::Private::is_array<type>::value, prefix UNDERLINE_INPUT_TYPE_IS_NOT_ARRAY);
 
 #define UNDERLINE_PRIVATE_NS_BEGIN \
     namespace _ {\
@@ -54,7 +57,7 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
             }; \
         }; \
 
-/// Register rebind_to_map and test_is_collection
+/// Register rebind_to_map and test_is_array
 #define UL_REGISTER_REBIND_TO_MAP(CollectionType, MapType) \
     namespace _ { \
         namespace Private { \
@@ -153,9 +156,10 @@ namespace _ {
         }
 
         template <typename T>
-        struct is_collection {
+        struct is_array {
             enum {
-                value = has_push_back<remove_cvref_t<T>>::value &&
+                value = std::is_class<T>::value &&
+                        has_push_back<remove_cvref_t<T>>::value &&
                         has_operator_round_backets_int<remove_cvref_t<T>>::value &&
                         has_reserve<remove_cvref_t<T>>::value
             };
@@ -225,7 +229,7 @@ namespace _ {
         using enable_if_is_map_key_matched = typename std::enable_if<is_map_key_matched<T,Key>::value, map_mapped_type_t<T>>;
 
         template <typename T>
-        using enable_if_is_collection_ret_value_type = typename std::enable_if< is_collection<typename std::remove_reference<T>::type>::value, typename std::remove_reference<T>::type::value_type>;
+        using enable_if_is_array_ret_value_type = typename std::enable_if< is_array<typename std::remove_reference<T>::type>::value, typename std::remove_reference<T>::type::value_type>;
 
         template <typename Meta>
         struct is_meta_object {
@@ -327,25 +331,25 @@ namespace _ {
         };
 
         template <typename Collection>
-        typename std::enable_if<is_collection<Collection>::value, typename std::remove_reference<Collection>::type::value_type>::type decl_collection_value_type();
+        typename std::enable_if<is_array<Collection>::value, typename std::remove_reference<Collection>::type::value_type>::type decl_array_value_type();
 
         template <typename Collection>
-        typename std::enable_if<!is_collection<Collection>::value, Undefined>::type decl_collection_value_type();
+        typename std::enable_if<!is_array<Collection>::value, Undefined>::type decl_array_value_type();
 
         template <typename Collection>
-        struct collection_value_type {
-            using type = decltype(decl_collection_value_type<remove_cvref_t<Collection>>());
+        struct array_value_type {
+            using type = decltype(decl_array_value_type<remove_cvref_t<Collection>>());
         };
 
         template <typename Collection, typename Index>
-        struct is_collection_index_matched {
+        struct is_array_index_matched {
             enum {
-                value = is_collection<Collection>::value && std::is_convertible<Index, int>::value
+                value = is_array<Collection>::value && std::is_convertible<Index, int>::value
             };
         };
 
         template <typename Collection, typename Index>
-        using enable_if_collection_index_matched = std::enable_if<is_collection_index_matched<Collection, Index>::value, typename collection_value_type<Collection>::type>;
+        using enable_if_collection_index_matched = std::enable_if<is_array_index_matched<Collection, Index>::value, typename array_value_type<Collection>::type>;
 
         /// Read a property from the target container object
         template <typename Map, typename Key>
@@ -369,7 +373,7 @@ namespace _ {
             enum {
                 value = is_meta_object_key_matched<Any, Key>::value ||
                 is_map_key_matched<Any, Key>::value ||
-                is_collection_index_matched<Any, Key>::value
+                is_array_index_matched<Any, Key>::value
             };
         };
 
@@ -619,7 +623,7 @@ namespace _ {
         };
 
         template <typename Iteratee, typename Collection>
-        using ret_invoke_collection_value_type_t = typename ret_invoke<Iteratee, typename collection_value_type<Collection>::type>::type;
+        using ret_invoke_collection_value_type_t = typename ret_invoke<Iteratee, typename array_value_type<Collection>::type>::type;
 
         template <class Collection, typename Iteratee, typename ValueType>
         using rebind_to_map_collection_iteratee_t = typename rebind_to_map_key_value<remove_cvref_t<Collection>,   _::Private::ret_invoke_collection_value_type_t<Iteratee,remove_cvref_t<Collection>>, ValueType>::type;
@@ -799,7 +803,7 @@ namespace _ {
     inline const Collection& forEach(const Collection& collection, Iteratee iteratee) {
         static_assert(Private::is_vic_func_invokable<Iteratee, Collection>::value, "_::forEach(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
 
-        Private::Value<typename Private::ret_invoke<Iteratee, typename Private::collection_value_type<Collection>::type, int, Collection >::type> value;
+        Private::Value<typename Private::ret_invoke<Iteratee, typename Private::array_value_type<Collection>::type, int, Collection >::type> value;
 
         for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
             value.invoke(iteratee, collection[i], i, collection);
@@ -1110,7 +1114,7 @@ namespace _ {
         bool res = false;
 
         static_assert(Private::is_vic_func_invokable<Predicate, Collection>::value, "_::some(): " UNDERLINE_PREDICATE_MISMATCHED_ERROR);
-        static_assert(std::is_same<typename Private::ret_invoke<Predicate, typename Private::collection_value_type<Collection>::type,int, Collection>::type,bool>::value,
+        static_assert(std::is_same<typename Private::ret_invoke<Predicate, typename Private::array_value_type<Collection>::type,int, Collection>::type,bool>::value,
                       "_::some(): " UNDERLINE_PREDICATE_RETURN_TYPE_MISMATCH_ERROR);
 
         for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
@@ -1124,14 +1128,14 @@ namespace _ {
 
     template <typename Collection, typename Iteratee>
     inline auto map(const Collection& collection, Iteratee iteratee) -> typename Private::rebind<Collection,
-        typename Private::ret_invoke<Iteratee, typename Private::collection_value_type<Collection>::type, int, Collection>::type
+        typename Private::ret_invoke<Iteratee, typename Private::array_value_type<Collection>::type, int, Collection>::type
     >::type {
 
-        static_assert(Private::is_collection<Collection>::value, "_::map(): The input is not a collection type.");
+        UNDERLINE_STATIC_ASSERT_IS_ARRAY("_::map", Collection);
 
         static_assert(Private::is_vic_func_invokable<Iteratee, Collection>::value, "_::map(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
 
-        typename Private::rebind<Collection, typename Private::ret_invoke<Iteratee, typename Private::collection_value_type<Collection>::type, int, Collection>::type>::type res;
+        typename Private::rebind<Collection, typename Private::ret_invoke<Iteratee, typename Private::array_value_type<Collection>::type, int, Collection>::type>::type res;
 
         res.reserve((int) collection.size());
 
@@ -1145,9 +1149,9 @@ namespace _ {
     template <typename Collection,  typename Iteratee>
     inline auto countBy(const Collection& collection, Iteratee iteratee) -> typename Private::rebind_to_map_collection_iteratee_t<Collection, Iteratee, int>  {
 
-        static_assert(_::Private::is_collection<Collection>::value, "_::countBy: " UNDERLINE_INPUT_TYPE_IS_NOT_COLLECTION);
+        UNDERLINE_STATIC_ASSERT_IS_ARRAY("_::countBy", Collection);
 
-        static_assert(Private::is_invokable1<Iteratee, typename _::Private::collection_value_type<Collection>::type>::value, "_::countBy(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+        static_assert(Private::is_invokable1<Iteratee, typename _::Private::array_value_type<Collection>::type>::value, "_::countBy(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
 
         typename Private::rebind_to_map_collection_iteratee_t<Collection, Iteratee, int>  res;
 
@@ -1174,13 +1178,13 @@ namespace _ {
     template <typename Collection, typename Iteratee, typename Accumulator>
     inline auto reduce(const Collection& collection, Iteratee iteratee, Accumulator accumulator) -> Accumulator {
 
-        typedef typename Private::ret_invoke<Iteratee,Accumulator, typename Private::collection_value_type<Collection>::type, int, Collection>::type RET;
+        typedef typename Private::ret_invoke<Iteratee,Accumulator, typename Private::array_value_type<Collection>::type, int, Collection>::type RET;
 
         static_assert(std::is_same<Accumulator, RET>::value, "_::reduce():  Mismatched accumulator type in reduce() and iteratee().");
 
         static_assert(Private::is_invokable4<Iteratee,
                                              Accumulator,
-                                             typename Private::collection_value_type<Collection>::type,
+                                             typename Private::array_value_type<Collection>::type,
                                              int, Collection>::value, "_::reduce(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
 
         Accumulator ret = accumulator;

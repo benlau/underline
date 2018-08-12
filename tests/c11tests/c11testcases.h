@@ -11,7 +11,7 @@ private slots:
 
     void test_private_has();
 
-    void test_private_is_collection();
+    void test_private_is_array();
 
     void test_private_is_map();
 
