@@ -334,7 +334,7 @@ void C11TestCases::test_private_read()
 
     QVERIFY( (std::is_same<_::Private::ret_read<QVariantMap, QString>::type, QVariant>::value));
 
-    // Collection
+    // Array
     QCOMPARE((_::Private::read(std::vector<int>{0,1,2}, 1)), 1);
     QCOMPARE((_::Private::read(QVector<int>{0,1,2}, 1)), 1);
 
@@ -375,6 +375,21 @@ void C11TestCases::test_private_write()
         _::Private::write(map, "value1", 1);
         QCOMPARE(map["value1"], 1);
     }
+
+    /* Gadget */
+
+    {
+        GadgetObject object;
+        object.value = 0;
+
+        _::Private::write(object, "value", 1);
+        QCOMPARE(object.value, 1);
+
+        _::Private::write(&object, "value", 2);
+        QCOMPARE(object.value, 2);
+
+    }
+
 
 }
 

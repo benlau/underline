@@ -78,6 +78,11 @@ namespace _ {
 
         /// An Undefined class as a default return type of invalid function
         class Undefined {
+            template <typename ...Args>
+            void reserve(Args...) {}
+
+            template <typename ...Args>
+            void push_back(Args...) {}
         };
 
 #ifndef QT_CORE_LIB
@@ -128,6 +133,16 @@ namespace _ {
             return &value;
         }
 
+        template <typename T>
+        auto inline cast_to_pointer(T& value) -> typename std::enable_if<std::is_pointer<T>::value, T&>::type {
+            return value;
+        }
+
+        template <typename T>
+        auto inline cast_to_pointer(T& value) -> typename std::enable_if<!std::is_pointer<T>::value, T*>::type {
+            return &value;
+        }
+
         template <typename Meta>
         struct meta_object_info {
             enum {
@@ -148,6 +163,19 @@ namespace _ {
             }
             auto property = metaObject.property(index);
             return property.readOnGadget(ptr);
+        }
+
+        template <typename Meta, typename Key, typename Value>
+        inline auto meta_object_set_value(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_gadget<Meta>::value, bool>::type {
+            auto ptr = cast_to_pointer<Meta>(meta);
+            auto metaObject = ptr->staticMetaObject;
+            int index = metaObject.indexOfProperty(key);
+            if (index < 0 ) {
+                return false;
+            }
+            auto property = metaObject.property(index);
+            property.writeOnGadget(ptr, value);
+            return true;
         }
 
         template <typename Meta, typename Key>
@@ -253,12 +281,25 @@ namespace _ {
         template <typename Meta,typename Key>
         struct is_meta_object_key_matched {
             enum {
-                value = is_meta_object<Meta>::value && std::is_convertible<Key, typename meta_object_info<Meta>::key_type>::value
+                value = is_meta_object<Meta>::value &&
+                std::is_convertible<Key, typename meta_object_info<Meta>::key_type>::value
+            };
+        };
+
+        template <typename Meta,typename Key, typename Value>
+        struct is_meta_object_key_value_matched {
+            enum {
+                value = is_meta_object<Meta>::value &&
+                std::is_convertible<Key, typename meta_object_info<Meta>::key_type>::value &&
+                std::is_convertible<Value, typename meta_object_info<Meta>::value_type>::value
             };
         };
 
         template <typename Meta, typename Key>
         using enable_if_is_meta_object_key_matched = typename std::enable_if<is_meta_object_key_matched<Meta, Key>::value, typename meta_object_info<Meta>::value_type>;
+
+        template <typename Meta, typename Key, typename Value, typename Ret>
+        using enable_if_is_meta_object_key_value_matched_ret = typename std::enable_if<is_meta_object_key_value_matched<Meta, Key, Value>::value, Ret>;
 
         /// Source: https://stackoverflow.com/questions/5052211/changing-value-type-of-a-given-stl-container
         template <class Container, class NewType>
@@ -412,6 +453,22 @@ namespace _ {
             typename enable_if_is_map_key_value_matched_ret
 <Map, Key, Value, bool>::type {
             map[key] = value;
+            return true;
+        }
+
+        template <typename Map, typename Key, typename Value>
+        inline auto write(Map &map, const Key& key, const Value& value) ->
+            typename enable_if_is_meta_object_key_value_matched_ret
+<Map, Key, Value, bool>::type {
+            meta_object_set_value(map, key, value);
+            return true;
+        }
+
+        template <typename Map, typename Key, typename Value>
+        inline auto write(Map &&map, const Key& key, const Value& value) ->
+            typename enable_if_is_meta_object_key_value_matched_ret
+<Map, Key, Value, bool>::type {
+            meta_object_set_value(map, key, value);
             return true;
         }
 
@@ -1162,7 +1219,7 @@ namespace _ {
         typename Private::ret_invoke<Iteratee, typename Private::array_value_type<Collection>::type, int, Collection>::type
     >::type {
 
-        UNDERLINE_STATIC_ASSERT_IS_ARRAY("_::map", Collection);
+        UNDERLINE_STATIC_ASSERT_IS_ARRAY("_::map(): ", Collection);
 
         static_assert(Private::is_vic_func_invokable<Iteratee, Collection>::value, "_::map(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
 

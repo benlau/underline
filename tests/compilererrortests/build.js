@@ -3,8 +3,8 @@ var resolve = require("path").resolve;
 var Mustache = require("mustache");
 
 var errors =[
-        "_::map(123, [](){});"
-,
+    "_::countBy(123, [](){});",
+    "_::map(123, [](){});",
     "_::map(std::vector<int>{1,2,3}, [](int, std::string) {});"
 ]
 
