@@ -31,6 +31,8 @@ private slots:
 
     void test_private_read();
 
+    void test_private_write();
+
     void test_cast_to_pointer();
 
     void test_some();

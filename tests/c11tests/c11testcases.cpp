@@ -360,6 +360,24 @@ void C11TestCases::test_private_read()
 
 }
 
+void C11TestCases::test_private_write()
+{
+    /* Map */
+
+    {
+        std::map<std::string, int> map;
+        _::Private::write(map, "value1", 1);
+        QCOMPARE(map["value1"], 1);
+    }
+
+    {
+        QMap<QString, int> map;
+        _::Private::write(map, "value1", 1);
+        QCOMPARE(map["value1"], 1);
+    }
+
+}
+
 void C11TestCases::test_cast_to_pointer()
 {
     class A {

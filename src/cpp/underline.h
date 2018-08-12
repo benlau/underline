@@ -199,6 +199,15 @@ namespace _ {
             };
         };
 
+        template <typename T, typename Key, typename Value>
+        struct is_map_key_value_matched {
+            enum {
+                value = is_map<T>::value &&
+                std::is_convertible<Key, map_key_type_t<T>>::value &&
+                std::is_convertible<Value, map_mapped_type_t<T>>::value
+            };
+        };
+
         template <typename Key, typename Value>
         inline Value map_iterator_value(typename std::map<Key,Value>::const_iterator & iter) {
             return iter->second;
@@ -227,6 +236,9 @@ namespace _ {
 
         template <typename T, typename Key>
         using enable_if_is_map_key_matched = typename std::enable_if<is_map_key_matched<T,Key>::value, map_mapped_type_t<T>>;
+
+        template <typename T, typename Key, typename Value, typename Ret>
+        using enable_if_is_map_key_value_matched_ret = typename std::enable_if<is_map_key_value_matched<T, Key, Value>::value, Ret>;
 
         template <typename T>
         using enable_if_is_array_ret_value_type = typename std::enable_if< is_array<typename std::remove_reference<T>::type>::value, typename std::remove_reference<T>::type::value_type>;
@@ -382,6 +394,14 @@ namespace _ {
             Undefined
         >::type {
             return Undefined();
+        }
+
+        template <typename Map, typename Key, typename Value>
+        inline auto write(Map &map, const Key& key, const Value& value) ->
+            typename enable_if_is_map_key_value_matched_ret
+<Map, Key, Value, bool>::type {
+            map[key] = value;
+            return true;
         }
 
         template <typename Any, typename Key>
@@ -683,7 +703,7 @@ namespace _ {
         struct is_vic_func_invokable {
             enum {
                 value = is_invokable3<Functor,
-                typename std::remove_reference<Collection>::type::value_type,
+                typename array_value_type<Collection>::type,
                 typename std::remove_reference<Collection>::type::size_type,
                 Collection>::value
             };
