@@ -39,5 +39,7 @@ private slots:
 
     void test_countBy();
 
+    void test_isArray();
+
 };
 

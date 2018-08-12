@@ -136,23 +136,6 @@ Returns
 countBy
 -------
 
-get
----
-
-```C++
-QVariant _::get(const QObject* source, QString path,QVariant defaultValue = QVariant())
-QVariant _::get(const QVariantMap source, QString path, QVariant defaultValue = QVariant())
-```
-
-Obtain the value from the source object at the given path. If the path does not exist, it returns the default value.
-
-Example:
-
-```
-// Obtain the objectName property from object's parent
-QVariant property = _::get(object, "parent.objectName");
-```
-
 forEach
 -------
 
@@ -177,6 +160,47 @@ Returns:
 
 Example
 ```
+```
+
+get
+---
+
+```C++
+QVariant _::get(const QObject* source, QString path,QVariant defaultValue = QVariant())
+QVariant _::get(const QVariantMap source, QString path, QVariant defaultValue = QVariant())
+```
+
+Obtain the value from the source object at the given path. If the path does not exist, it returns the default value.
+
+Example:
+
+```
+// Obtain the objectName property from object's parent
+QVariant property = _::get(object, "parent.objectName");
+```
+
+isArray
+------
+
+```C++
+bool _::isArray(const T&)
+bool _::isArray<T>()
+```
+
+It is a static type checker to validate is the input type classified as a valid Array class for _.   You rarely need to use this function directly.
+
+Example:
+
+```C++
+QCOMPARE(_::isArray(std::vector<int>{}),    true);
+QCOMPARE(_::isArray(QVector<int>{ }),       true);
+QCOMPARE(_::isArray(QList<int>{ }),         true);
+QCOMPARE(_::isArray(QVariantList{ }),       true);
+QCOMPARE(_::isArray(QString{ }),            true);
+
+QCOMPARE(_::isArray(std::map<bool,int>{}),  false);
+QCOMPARE(_::isArray(QMap<int,int>{}),       false);
+QCOMPARE(_::isArray(10),                    false);
 ```
 
 map

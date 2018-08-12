@@ -32,7 +32,7 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
 #define UNDERLINE_ITERATEE_MISMATCHED_ERROR "Mismatched argument types in the iteratee function. Please validate the number of argument and their type."
 #define UNDERLINE_PREDICATE_MISMATCHED_ERROR "Mismatched argument types in the predicate function. Please validate the number of argument and their type."
 #define UNDERLINE_PREDICATE_RETURN_TYPE_MISMATCH_ERROR "The return type of predicate function must be bool"
-#define UNDERLINE_INPUT_TYPE_IS_NOT_ARRAY "The expected input is an array class, where _::isArray() returns true (e.g std::vector , QList , QVector) "
+#define UNDERLINE_INPUT_TYPE_IS_NOT_ARRAY "The expected input is an valid array class, where _::isArray() returns true (e.g std::vector , QList , QVector) "
 
 #define UNDERLINE_STATIC_ASSERT_IS_ARRAY(prefix, type) \
     static_assert(_::Private::is_array<type>::value, prefix UNDERLINE_INPUT_TYPE_IS_NOT_ARRAY);
@@ -1225,13 +1225,23 @@ namespace _ {
         return range<Collection>(start, end, step);
     }
 
+    template <typename T>
+    inline bool isArray() {
+        return Private::is_array<T>::value;
+    }
+
+    template <typename T>
+    inline bool isArray(const T&) {
+        return isArray<T>();
+    }
+
 #ifdef QT_CORE_LIB
     template <typename ...Args>
     QList<int> range_q(Args ...args) {
         return range<QList<int>>(args...);
     }
 #endif
-}
+} // End of _ namespace
 
 /* Type Registration */
 

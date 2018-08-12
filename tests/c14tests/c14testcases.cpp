@@ -664,3 +664,17 @@ void C14TestCases::test_countBy()
         QCOMPARE(worker(_::range_q(5))["odd"], 2);
     }
 }
+
+void C14TestCases::test_isArray()
+{
+    QCOMPARE(_::isArray(std::vector<int>{}),    true);
+    QCOMPARE(_::isArray(QVector<int>{ }),       true);
+    QCOMPARE(_::isArray(QList<int>{ }),         true);
+    QCOMPARE(_::isArray(QVariantList{ }),       true);
+    QCOMPARE(_::isArray(QString{ }),            true);
+
+    QCOMPARE(_::isArray(std::map<bool,int>{}),  false);
+    QCOMPARE(_::isArray(QMap<int,int>{}),       false);
+    QCOMPARE(_::isArray(10),                    false);
+
+}
