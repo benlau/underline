@@ -342,15 +342,26 @@ namespace _ {
             using type = decltype(decl_func0<Functor, Args&&...>());
         };
 
-        template <typename Collection>
-        typename std::enable_if<is_array<Collection>::value, typename std::remove_reference<Collection>::type::value_type>::type decl_array_value_type();
+        template <typename ...Args>
+        struct array_info {
+            typedef Undefined size_type;
+            typedef Undefined value_type;
+        };
 
-        template <typename Collection>
-        typename std::enable_if<!is_array<Collection>::value, Undefined>::type decl_array_value_type();
+        template <typename T>
+        struct array_info<T, typename std::enable_if<is_array<remove_cvref_t<T>>::value, bool>::type> {
+            using size_type = typename remove_cvref_t<T>::size_type;
+            using value_type = typename remove_cvref_t<T>::value_type;
+        };
 
-        template <typename Collection>
+        template <typename Array>
         struct array_value_type {
-            using type = decltype(decl_array_value_type<remove_cvref_t<Collection>>());
+            using type = typename array_info<Array, bool>::value_type;
+        };
+
+        template <typename Array>
+        struct array_size_type {
+            using type = typename array_info<Array, bool>::size_type;
         };
 
         template <typename Collection, typename Index>
@@ -699,13 +710,13 @@ namespace _ {
         };
 
         /// vic_func( VIC = Value,Index,Collection);
-        template <typename Functor, typename Collection>
+        template <typename Functor, typename Array>
         struct is_vic_func_invokable {
             enum {
                 value = is_invokable3<Functor,
-                typename array_value_type<Collection>::type,
-                typename std::remove_reference<Collection>::type::size_type,
-                Collection>::value
+                typename array_value_type<Array>::type,
+                typename array_size_type<Array>::type,
+                Array>::value
             };
         };
 
