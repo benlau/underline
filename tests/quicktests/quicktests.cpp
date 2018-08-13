@@ -13,6 +13,20 @@ QuickTests::QuickTests(QObject *parent) : QObject(parent)
 
 }
 
+void QuickTests::test_QJSValue()
+{
+    QCOMPARE((bool) _::Private::is_meta_object<QJSValue>::value, true);
+
+    QJSEngine engine;
+    QJSValue value = engine.toScriptValue(QVariantMap{});
+
+    _::Private::write(value, "value1", 1);
+
+    QCOMPARE(value.property("value1").toInt(), 1);
+
+    QCOMPARE(_::Private::read(value, "value1").toInt(), 1);
+}
+
 void QuickTests::test_forIn()
 {
     {

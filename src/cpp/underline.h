@@ -105,6 +105,9 @@ namespace _ {
             };
         };
 #endif
+#ifndef QT_QUICK_LIB
+        class QJSValue{};
+#endif
 
         _DECLARE_UNDERLINE_HAS(reserve, decltype(std::declval<Type>().reserve(0)), void)
 
@@ -132,6 +135,10 @@ namespace _ {
             enum { value = has_static_meta_object<T>::value && ! is_qobject<T>::value};
         };
 
+        template <typename T> struct is_qjsvalue {
+            enum { value = std::is_same<T, QJSValue>::value};
+        };
+
         template <typename T>
         auto inline cast_to_pointer(const T& value) -> typename std::enable_if<std::is_pointer<T>::value, const T&>::type {
             return value;
@@ -152,14 +159,27 @@ namespace _ {
             return &value;
         }
 
-        template <typename Meta>
+        template <typename ...Args>
         struct meta_object_info {
             enum {
-                is_meta_object = has_static_meta_object<Meta>::value
+                is_meta_object = false
             };
+            using key_type = Undefined;
+            using value_type = Undefined;
+        };
 
-            typedef typename std::conditional<has_static_meta_object<Meta>::value, QString, Undefined>::type key_type;
-            typedef typename std::conditional<has_static_meta_object<Meta>::value, QVariant, Undefined>::type value_type;
+        template <typename T>
+        struct meta_object_info<T, typename std::enable_if<has_static_meta_object<T>::value, bool>::type> {
+            enum { is_meta_object = true};
+            using key_type = QString;
+            using value_type = QVariant;
+        };
+
+        template <typename T>
+        struct meta_object_info<T, typename std::enable_if<std::is_same<T, QJSValue>::value, bool>::type> {
+            enum { is_meta_object = true};
+            using key_type = QString;
+            using value_type = QJSValue;
         };
 
         template <typename Meta, typename Key>
@@ -177,6 +197,11 @@ namespace _ {
         template <typename Meta, typename Key>
         inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_qobject<Meta>::value, QVariant>::type {
             return meta->property(key);
+        }
+
+        template <typename Meta, typename Key>
+        inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_qjsvalue<Meta>::value, QJSValue>::type {
+            return meta.property(key);
         }
 
         inline const char * cast_to_const_char(const char * value) {
@@ -204,6 +229,12 @@ namespace _ {
         template <typename Meta, typename Key, typename Value>
         inline auto meta_object_set_value(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_qobject<Meta>::value, bool>::type {
             return meta->setProperty(cast_to_const_char(key), value);
+        }
+
+        template <typename Meta, typename Key, typename Value>
+        inline auto meta_object_set_value(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_qjsvalue<Meta>::value, bool>::type {
+            meta.setProperty(cast_to_const_char(key), value);
+            return true;
         }
 
         template <typename T>
@@ -297,7 +328,7 @@ namespace _ {
         template <typename Meta>
         struct is_meta_object {
             enum {
-                value = meta_object_info<Meta>::is_meta_object
+                value = meta_object_info<Meta, bool>::is_meta_object
             };
         };
 
@@ -305,7 +336,7 @@ namespace _ {
         struct is_meta_object_key_matched {
             enum {
                 value = is_meta_object<Meta>::value &&
-                std::is_convertible<Key, typename meta_object_info<Meta>::key_type>::value
+                std::is_convertible<Key, typename meta_object_info<Meta, bool>::key_type>::value
             };
         };
 
@@ -313,13 +344,13 @@ namespace _ {
         struct is_meta_object_key_value_matched {
             enum {
                 value = is_meta_object<Meta>::value &&
-                std::is_convertible<Key, typename meta_object_info<Meta>::key_type>::value &&
-                std::is_convertible<Value, typename meta_object_info<Meta>::value_type>::value
+                std::is_convertible<Key, typename meta_object_info<Meta, bool>::key_type>::value &&
+                std::is_convertible<Value, typename meta_object_info<Meta, bool>::value_type>::value
             };
         };
 
         template <typename Meta, typename Key>
-        using enable_if_is_meta_object_key_matched = typename std::enable_if<is_meta_object_key_matched<Meta, Key>::value, typename meta_object_info<Meta>::value_type>;
+        using enable_if_is_meta_object_key_matched = typename std::enable_if<is_meta_object_key_matched<Meta, Key>::value, typename meta_object_info<Meta,bool >::value_type>;
 
         template <typename Meta, typename Key, typename Value, typename Ret>
         using enable_if_is_meta_object_key_value_matched_ret = typename std::enable_if<is_meta_object_key_value_matched<Meta, Key, Value>::value, Ret>;
@@ -1260,7 +1291,7 @@ namespace _ {
 
     template <typename Collection, typename Iteratee>
     inline auto map(const Collection& collection, Iteratee iteratee) -> typename Private::rebind<Collection,
-        typename Private::ret_invoke<Iteratee, typename Private::array_value_type<Collection>::type, int, Collection>::type
+        typename Private::via_func_info<Iteratee, Collection>::non_void_ret_type
     >::type {
 
         using func_info = Private::via_func_info<Iteratee, Collection>;
