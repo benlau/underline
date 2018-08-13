@@ -6,7 +6,7 @@ var errors =[
     "_::countBy(\"\", [](){});",
     "_::map(123, [](){});",
     "_::map(std::vector<int>{1,2,3}, [](int, std::string) -> bool {});",
-    "_::map(std::vector<int>{1,2,3}, [](int, std::string) {});"
+    "_::map(std::vector<int>{1,2,3}, [](int) {});"
 ]
 
 var buildDir = resolve(__dirname, "../../build-compilererrortests")

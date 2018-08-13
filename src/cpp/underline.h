@@ -33,6 +33,7 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
 #define UNDERLINE_PREDICATE_MISMATCHED_ERROR "Mismatched argument types in the predicate function. Please validate the number of argument and their type."
 #define UNDERLINE_PREDICATE_RETURN_TYPE_MISMATCH_ERROR "The return type of predicate function must be bool"
 #define UNDERLINE_INPUT_TYPE_IS_NOT_ARRAY "The expected input is an valid array class, where _::isArray() returns true (e.g std::vector , QList , QVector) "
+#define UNDERLINE_ITERATEE_VOID_RET_ERROR "The return from iteratee function cannot be void"
 
 #define UNDERLINE_STATIC_ASSERT_IS_ARRAY(prefix, type) \
     static_assert(_::Private::is_array<type>::value, prefix UNDERLINE_INPUT_TYPE_IS_NOT_ARRAY);
@@ -170,6 +171,14 @@ namespace _ {
             return meta->property(key);
         }
 
+        inline const char * cast_to_const_char(const char * value) {
+            return value;
+        }
+
+        template <typename T>
+        inline auto cast_to_const_char(const T& string) -> typename std::enable_if<std::is_same<T, QString>::value, const char*>::type {
+            return string.toUtf8().constData();
+        }
 
         template <typename Meta, typename Key, typename Value>
         inline auto meta_object_set_value(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_gadget<Meta>::value, bool>::type {
@@ -186,7 +195,7 @@ namespace _ {
 
         template <typename Meta, typename Key, typename Value>
         inline auto meta_object_set_value(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_qobject<Meta>::value, bool>::type {
-            return meta->setProperty(key, value);
+            return meta->setProperty(cast_to_const_char(key), value);
         }
 
         template <typename T>
@@ -769,18 +778,22 @@ namespace _ {
             inline bool equals(Any && any) {
                 (void) any;
                 return false;
-            }            
+            }
         };
 
         /// vic_func( VIC = Value,Index,Collection);
         template <typename Functor, typename Array>
-        struct is_vic_func_invokable {
+        struct via_func_info {
             enum {
-                value = is_invokable3<Functor,
+                is_invokable = is_invokable3<Functor,
+                    typename array_value_type<Array>::type,
+                    typename array_size_type<Array>::type,
+                    Array>::value,
+                is_void_ret = std::is_same<typename ret_invoke<Functor,
                 typename array_value_type<Array>::type,
                 typename array_size_type<Array>::type,
-                Array>::value
-            };
+                Array>::type, void>::value
+            };            
         };
 
 #ifdef QT_CORE_LIB
@@ -895,7 +908,7 @@ namespace _ {
 
     template <typename Collection, typename Iteratee>
     inline const Collection& forEach(const Collection& collection, Iteratee iteratee) {
-        static_assert(Private::is_vic_func_invokable<Iteratee, Collection>::value, "_::forEach(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+        static_assert(Private::via_func_info<Iteratee, Collection>::is_invokable, "_::forEach(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
 
         Private::Value<typename Private::ret_invoke<Iteratee, typename Private::array_value_type<Collection>::type, int, Collection >::type> value;
 
@@ -958,15 +971,16 @@ namespace _ {
     /// Assign properties from source object to the destination object.
     inline QVariantMap& assign(QVariantMap &dest, const QObject *source)
     {
-        forIn(source, [&](QVariant value, QString key) {
+        forIn(source, [&](const QVariant& value, const QString& key) {
+            QVariant v = value;
 
             if (value.canConvert<QObject*>()) {
                 QVariantMap map;
                 assign(map, value.value<QObject*>()); // nested properties are not supported yet
-                value = map;
+                v = map;
             }
 
-            dest[key] = value;
+            dest[key] = v;
         });
         return dest;
     }
@@ -1001,24 +1015,16 @@ namespace _ {
     }
 
     inline QVariantMap& assign(QVariantMap& dest, const QVariantMap& source) {
-        QMap<QString,QVariant>::const_iterator iter = source.begin();
-        while (iter != source.end()) {
-            dest[iter.key()] = iter.value();
-            iter++;
-        }
+        forIn(source, [&](const QVariant& value , const QString& key) {
+            dest[key] = value;
+        });
         return dest;
     }
 
     inline QObject* assign(QObject* dest, const QObject* source) {
-        const QMetaObject* sourceMeta = source->metaObject();
-
-        for (int i = 0 ; i < sourceMeta->propertyCount(); i++) {
-            const QMetaProperty property = sourceMeta->property(i);
-            QString p = property.name();
-
-            QVariant value = source->property(property.name());
-            dest->setProperty(p.toLocal8Bit().constData(), value);
-        }
+        forIn(source, [&](const QVariant& value , const QString& key) {
+            Private::write(dest, key, value);
+        });
         return dest;
     }
 #endif
@@ -1207,7 +1213,7 @@ namespace _ {
     inline bool some(const Collection& collection, Predicate predicate) {
         bool res = false;
 
-        static_assert(Private::is_vic_func_invokable<Predicate, Collection>::value, "_::some(): " UNDERLINE_PREDICATE_MISMATCHED_ERROR);
+        static_assert(Private::via_func_info<Predicate, Collection>::is_invokable, "_::some(): " UNDERLINE_PREDICATE_MISMATCHED_ERROR);
         static_assert(std::is_same<typename Private::ret_invoke<Predicate, typename Private::array_value_type<Collection>::type,int, Collection>::type,bool>::value,
                       "_::some(): " UNDERLINE_PREDICATE_RETURN_TYPE_MISMATCH_ERROR);
 
@@ -1225,9 +1231,13 @@ namespace _ {
         typename Private::ret_invoke<Iteratee, typename Private::array_value_type<Collection>::type, int, Collection>::type
     >::type {
 
+        using func_info = Private::via_func_info<Iteratee, Collection>;
+
         UNDERLINE_STATIC_ASSERT_IS_ARRAY("_::map(): ", Collection);
 
-        static_assert(Private::is_vic_func_invokable<Iteratee, Collection>::value, "_::map(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+        static_assert(func_info::is_invokable, "_::map(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+
+        static_assert(!func_info::is_void_ret, "_::map(): " UNDERLINE_ITERATEE_VOID_RET_ERROR);
 
         typename Private::rebind<Collection, typename Private::ret_invoke<Iteratee, typename Private::array_value_type<Collection>::type, int, Collection>::type>::type res;
 

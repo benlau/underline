@@ -7,6 +7,7 @@
 #include <vector>
 #include <QtCore>
 #include <QVector>
+#include <memory>
 #include "c11testcases.h"
 #include "underline.h"
 #include "dataobject.h"
@@ -393,7 +394,7 @@ void C11TestCases::test_private_write()
     {
         std::unique_ptr<DataObject> object(new DataObject(this));
 
-        QCOMPARE(object->value1(), 0);
+        object->setValue1(0);
         _::Private::write(object.get(), "value1", 1);
         QCOMPARE(object->value1(), 1);
     }
