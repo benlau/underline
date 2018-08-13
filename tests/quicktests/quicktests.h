@@ -14,6 +14,7 @@ signals:
 public slots:
 
 private slots:
+    void test_forIn();
     void test_assign_QJSValue();
 };
 

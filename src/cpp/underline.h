@@ -33,10 +33,17 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
 #define UNDERLINE_PREDICATE_MISMATCHED_ERROR "Mismatched argument types in the predicate function. Please validate the number of argument and their type."
 #define UNDERLINE_PREDICATE_RETURN_TYPE_MISMATCH_ERROR "The return type of predicate function must be bool"
 #define UNDERLINE_INPUT_TYPE_IS_NOT_ARRAY "The expected input is an valid array class, where _::isArray() returns true (e.g std::vector , QList , QVector) "
-#define UNDERLINE_ITERATEE_VOID_RET_ERROR "The return from iteratee function cannot be void"
+#define UNDERLINE_ITERATEE_VOID_RET_ERROR "The return type of iteratee function cannot be void"
 
 #define UNDERLINE_STATIC_ASSERT_IS_ARRAY(prefix, type) \
-    static_assert(_::Private::is_array<type>::value, prefix UNDERLINE_INPUT_TYPE_IS_NOT_ARRAY);
+    static_assert(_::Private::is_array<type>::value, prefix UNDERLINE_INPUT_TYPE_IS_NOT_ARRAY)
+
+#define UNDERLINE_STATIC_ASSERT_IS_ITERATEE_INVOKABLE(prefix, value) \
+    static_assert(value, prefix UNDERLINE_ITERATEE_MISMATCHED_ERROR)
+
+#define UNDERLINE_STATIC_ASSERT_IS_ITERATEE_NOT_VOID(prefix, value) \
+    static_assert(value, prefix UNDERLINE_ITERATEE_VOID_RET_ERROR)
+
 
 #define UNDERLINE_PRIVATE_NS_BEGIN \
     namespace _ {\
@@ -98,6 +105,7 @@ namespace _ {
             };
         };
 #endif
+
         _DECLARE_UNDERLINE_HAS(reserve, decltype(std::declval<Type>().reserve(0)), void)
 
         _DECLARE_UNDERLINE_HAS(push_back, decltype(std::declval<Type>().push_back(std::declval<typename std::remove_reference<typename std::remove_cv<Type>::type::value_type>::type>())), void)
@@ -781,19 +789,22 @@ namespace _ {
             }
         };
 
-        /// vic_func( VIC = Value,Index,Collection);
+        /// via_func( VIA = Value,Index,Array);
         template <typename Functor, typename Array>
         struct via_func_info {
+
+            using value_type = typename array_value_type<Array>::type;
+            using size_type = typename array_size_type<Array>::type;
+
+            using ret_type = typename ret_invoke<Functor, value_type, size_type, Array>::type;
+
+            using non_void_ret_type = typename std::conditional<std::is_same<void, ret_type>::value, Undefined, ret_type>::type;
+
             enum {
-                is_invokable = is_invokable3<Functor,
-                    typename array_value_type<Array>::type,
-                    typename array_size_type<Array>::type,
-                    Array>::value,
-                is_void_ret = std::is_same<typename ret_invoke<Functor,
-                typename array_value_type<Array>::type,
-                typename array_size_type<Array>::type,
-                Array>::type, void>::value
-            };            
+                is_invokable = is_invokable3<Functor, value_type, size_type, Array>::value,
+                is_void_ret = std::is_same<typename ret_invoke<Functor,value_type,size_type,Array>::type, void>::value
+            };
+
         };
 
 #ifdef QT_CORE_LIB
@@ -905,6 +916,27 @@ namespace _ {
 
         return object;
     }
+
+#ifdef QT_QUICK_LIB
+    template <typename Value, typename Iteratee>
+    inline auto forIn(const Value& object, Iteratee iteratee)
+    -> typename std::enable_if<std::is_same<Value,QJSValue>::value, const Value&>::type
+    {
+        QJSValueIterator iter(object);
+        Private::Value<typename Private::ret_invoke<Iteratee, Value, QString, Value>::type> value;
+
+        while (iter.hasNext()) {
+            iter.next();
+            value.invoke(iteratee, iter.value(), iter.name(), object);
+
+            if (value.template canConvert<bool>() && value.equals(false)) {
+                break;
+            }
+        }
+
+        return object;
+    }
+#endif
 
     template <typename Collection, typename Iteratee>
     inline const Collection& forEach(const Collection& collection, Iteratee iteratee) {
@@ -1235,11 +1267,11 @@ namespace _ {
 
         UNDERLINE_STATIC_ASSERT_IS_ARRAY("_::map(): ", Collection);
 
-        static_assert(func_info::is_invokable, "_::map(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+        UNDERLINE_STATIC_ASSERT_IS_ITERATEE_INVOKABLE("_::map(): ", func_info::is_invokable);
 
-        static_assert(!func_info::is_void_ret, "_::map(): " UNDERLINE_ITERATEE_VOID_RET_ERROR);
+        UNDERLINE_STATIC_ASSERT_IS_ITERATEE_NOT_VOID("_::map() ", !func_info::is_void_ret);
 
-        typename Private::rebind<Collection, typename Private::ret_invoke<Iteratee, typename Private::array_value_type<Collection>::type, int, Collection>::type>::type res;
+        typename Private::rebind<Collection, typename func_info::non_void_ret_type>::type res;
 
         res.reserve((int) collection.size());
 

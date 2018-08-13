@@ -13,6 +13,27 @@ QuickTests::QuickTests(QObject *parent) : QObject(parent)
 
 }
 
+void QuickTests::test_forIn()
+{
+    {
+        QQmlApplicationEngine engine;
+
+        QString content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
+        QJSValue value = engine.evaluate(content);
+
+        QVariantMap map;
+
+        _::forIn(value, [&](const QJSValue& value, const QString& key) {
+            map[key] = value.toVariant();
+        });
+
+        QCOMPARE(map["value1"].toInt()  , 10);
+        QCOMPARE(map["value3"].toBool() , false);
+        QCOMPARE(map["value4"].toMap()["value1"].toInt() , 21);
+    }
+
+}
+
 void QuickTests::test_assign_QJSValue()
 {
     {

@@ -21,7 +21,8 @@ include(../qpm.pri)
 DISTFILES +=    \
     ../../.travis.yml \
     ../../README.md \
-    ../../appveyor.yml
+    ../../appveyor.yml \
+    SampleData1.json
 
 !win32 {
     QMAKE_CXXFLAGS += -Werror
