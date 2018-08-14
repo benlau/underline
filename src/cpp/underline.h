@@ -71,11 +71,11 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
         namespace Private { \
             template <class NewType, class ValueType> \
             struct rebind_to_value_map<CollectionType<ValueType>, NewType> { \
-                typedef MapType<ValueType, NewType> type; \
+                typedef MapType<ValueType, avoid_void_t<NewType>> type; \
             }; \
             template <class ValueType, class NewKeyType, class NewValueType> \
             struct rebind_to_map_key_value<CollectionType<ValueType>, NewKeyType, NewValueType> { \
-                typedef MapType<NewKeyType, NewValueType> type; \
+                typedef MapType<avoid_void_t<NewKeyType>, avoid_void_t<NewValueType>> type; \
             }; \
         } \
     }
@@ -84,10 +84,11 @@ namespace _ {
 
     namespace Private {
 
-        /// An Undefined class as a default return type of invalid function
+        /// An Undefined class as a default return type of invalid function to keep compiler happy
         class Undefined {
         };
 
+        /// A dummy class to keep compiler happy
         template <typename Value>
         class NullArray {
             template <typename ...Args>
@@ -97,6 +98,7 @@ namespace _ {
             void push_back(Args...) {}
         };
 
+        /// A dummy class to keep compiler happy
         template <typename Key, typename Value>
         class NullMap {
         };
@@ -130,6 +132,9 @@ namespace _ {
         _DECLARE_UNDERLINE_HAS(mapped_type,typename std::remove_cv<Type>::type::mapped_type,typename std::remove_cv<Type>::type::mapped_type)
 
         _DECLARE_UNDERLINE_HAS(key_type,typename std::remove_cv<Type>::type::key_type,typename std::remove_cv<Type>::type::key_type)
+
+        template <typename T>
+        using avoid_void_t = typename std::conditional<std::is_same<T,void>::value, Undefined, T>::type;
 
         template <typename T>
         using remove_cvref_t = typename std::remove_reference<typename std::remove_cv<T>::type>::type;
@@ -168,7 +173,7 @@ namespace _ {
         }
 
         template <typename ...Args>
-        struct meta_object_info {
+        struct _meta_object_info {
             enum {
                 is_meta_object = false
             };
@@ -177,18 +182,21 @@ namespace _ {
         };
 
         template <typename T>
-        struct meta_object_info<T, typename std::enable_if<has_static_meta_object<T>::value, bool>::type> {
+        struct _meta_object_info<T, typename std::enable_if<has_static_meta_object<T>::value, std::true_type>::type> {
             enum { is_meta_object = true};
             using key_type = QString;
             using value_type = QVariant;
         };
 
         template <typename T>
-        struct meta_object_info<T, typename std::enable_if<std::is_same<T, QJSValue>::value, bool>::type> {
+        struct _meta_object_info<T, typename std::enable_if<std::is_same<T, QJSValue>::value, std::true_type>::type> {
             enum { is_meta_object = true};
             using key_type = QString;
             using value_type = QJSValue;
         };
+
+        template <typename T>
+        struct meta_object_info : _meta_object_info<T, std::true_type>{};
 
         template <typename Meta, typename Key>
         inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_gadget<Meta>::value, QVariant>::type {
@@ -336,7 +344,7 @@ namespace _ {
         template <typename Meta>
         struct is_meta_object {
             enum {
-                value = meta_object_info<Meta, bool>::is_meta_object
+                value = meta_object_info<Meta>::is_meta_object
             };
         };
 
@@ -344,7 +352,7 @@ namespace _ {
         struct is_meta_object_key_matched {
             enum {
                 value = is_meta_object<Meta>::value &&
-                std::is_convertible<Key, typename meta_object_info<Meta, bool>::key_type>::value
+                std::is_convertible<Key, typename meta_object_info<Meta>::key_type>::value
             };
         };
 
@@ -352,13 +360,13 @@ namespace _ {
         struct is_meta_object_key_value_matched {
             enum {
                 value = is_meta_object<Meta>::value &&
-                std::is_convertible<Key, typename meta_object_info<Meta, bool>::key_type>::value &&
-                std::is_convertible<Value, typename meta_object_info<Meta, bool>::value_type>::value
+                std::is_convertible<Key, typename meta_object_info<Meta>::key_type>::value &&
+                std::is_convertible<Value, typename meta_object_info<Meta>::value_type>::value
             };
         };
 
         template <typename Meta, typename Key>
-        using enable_if_is_meta_object_key_matched = typename std::enable_if<is_meta_object_key_matched<Meta, Key>::value, typename meta_object_info<Meta,bool >::value_type>;
+        using enable_if_is_meta_object_key_matched = typename std::enable_if<is_meta_object_key_matched<Meta, Key>::value, typename meta_object_info<Meta>::value_type>;
 
         template <typename Meta, typename Key, typename Value, typename Ret>
         using enable_if_is_meta_object_key_value_matched_ret = typename std::enable_if<is_meta_object_key_value_matched<Meta, Key, Value>::value, Ret>;
