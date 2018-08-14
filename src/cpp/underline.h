@@ -86,11 +86,19 @@ namespace _ {
 
         /// An Undefined class as a default return type of invalid function
         class Undefined {
+        };
+
+        template <typename Value>
+        class NullArray {
             template <typename ...Args>
             void reserve(Args...) {}
 
             template <typename ...Args>
             void push_back(Args...) {}
+        };
+
+        template <typename Key, typename Value>
+        class NullMap {
         };
 
 #ifndef QT_CORE_LIB
@@ -358,7 +366,7 @@ namespace _ {
         /// Source: https://stackoverflow.com/questions/5052211/changing-value-type-of-a-given-stl-container
         template <class Container, class NewType>
         struct rebind {
-            using type = std::vector<Undefined>;
+            using type = NullArray<Undefined>;
         };
 
         template <class ValueType, class... Args, template <class...> class Container, class NewType>
@@ -369,12 +377,12 @@ namespace _ {
 
         template <class Collection, class NewType>
         struct rebind_to_value_map {
-            typedef Undefined type;
+            typedef NullMap<int,NewType> type;
         };
 
         template <class Collection, class NewKeyType, class NewValueType>
         struct rebind_to_map_key_value {
-            typedef Undefined type;
+            using type = NullMap<NewKeyType, NewValueType>;
         };
 
         /// Check is the Functor be able to take Args as input. It works with generic lambda.
@@ -453,6 +461,9 @@ namespace _ {
         struct array_value_type {
             using type = typename array_info<Array, bool>::value_type;
         };
+
+        template <typename Array>
+        using array_value_type_t = typename array_info<Array, bool>::value_type;
 
         template <typename Array>
         struct array_size_type {
@@ -764,6 +775,13 @@ namespace _ {
             using type = decltype(decl_invoke0<Functor, Args...>());
         };
 
+        template <typename Functor, typename ...Args>
+        struct ret_invoke_is_not_void {
+            enum{
+                value = !std::is_same<void, typename ret_invoke<Functor, Args...>::type>::value
+            };
+        };
+
         template <typename Iteratee, typename Collection>
         using ret_invoke_collection_value_type_t = typename ret_invoke<Iteratee, typename array_value_type<Collection>::type>::type;
 
@@ -792,9 +810,12 @@ namespace _ {
 
             template <typename Any>
             inline typename std::enable_if<!std::is_convertible<Any, T>::value, bool>::type
-            equals(Any&& other) {
-                (void) other;
+            equals(Any&&) {
                 return false;
+            }
+
+            inline T get() {
+                return value;
             }
 
             T value;
@@ -814,9 +835,12 @@ namespace _ {
             }
 
             template <typename Any>
-            inline bool equals(Any && any) {
-                (void) any;
+            inline bool equals(const Any&) {
                 return false;
+            }
+
+            inline Undefined get() {
+                return Undefined();
             }
         };
 
@@ -1318,12 +1342,17 @@ namespace _ {
 
         UNDERLINE_STATIC_ASSERT_IS_ARRAY("_::countBy ", Collection);
 
-        static_assert(Private::is_invokable1<Iteratee, typename _::Private::array_value_type<Collection>::type>::value, "_::countBy(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+        UNDERLINE_STATIC_ASSERT_IS_ITERATEE_INVOKABLE("_::countBy ", (Private::is_invokable1<Iteratee, _::Private::array_value_type_t<Collection>>::value));
+
+        UNDERLINE_STATIC_ASSERT_IS_ITERATEE_NOT_VOID("_::countBy ", (Private::ret_invoke_is_not_void<Iteratee, _::Private::array_value_type_t<Collection>>::value));
 
         typename Private::rebind_to_map_collection_iteratee_t<Collection, Iteratee, int>  res;
 
+        Private::Value<typename Private::ret_invoke<Iteratee, _::Private::array_value_type_t<Collection>>::type> wrapper;
+
         for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
-            auto key = Private::invoke(iteratee, collection[i]);
+            wrapper.invoke(iteratee, collection[i]);
+            auto key = wrapper.get();
             auto c = res[key] + 1;
             res[key] = c;
         }

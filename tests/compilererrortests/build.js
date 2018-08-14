@@ -4,6 +4,8 @@ var Mustache = require("mustache");
 
 var errors =[
     "_::countBy(\"\", [](){});",
+    "_::countBy(std::vector<int>(), [](std::string){ return 0;});",
+    "_::countBy(std::vector<int>(), [](int){});",
     "_::map(123, [](){});",
     "_::map(std::vector<int>{1,2,3}, [](int, std::string) -> bool {});",
     "_::map(std::vector<int>{1,2,3}, [](int) {});"
