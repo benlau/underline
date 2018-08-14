@@ -154,6 +154,21 @@ void C11TestCases::test_private_is_qobject()
     QCOMPARE((bool)_::Private::is_qobject<GadgetObject>::value, false);
 }
 
+void C11TestCases::test_private_is_key_value_type()
+{
+    QCOMPARE((bool)_::Private::is_key_value_type<QObject>::value, true);
+    QCOMPARE((bool)_::Private::is_key_value_type<QObject*>::value, true);
+
+    QCOMPARE((bool)_::Private::is_key_value_type<C11TestCases>::value, true);
+    QCOMPARE((bool)_::Private::is_key_value_type<C11TestCases*>::value, true);
+
+    QCOMPARE((bool)_::Private::is_key_value_type<GadgetObject>::value, true);
+    QCOMPARE((bool)_::Private::is_key_value_type<QVariantMap>::value, true);
+
+    QCOMPARE((bool)_::Private::is_key_value_type<int>::value, false);
+
+}
+
 template <typename F, typename T>
 auto wrapper(F functor, T t) -> typename _::Private::ret_func<F,T>::type {
     return functor(t);
@@ -276,18 +291,6 @@ void C11TestCases::test_private_invoke_by_read()
 
 void C11TestCases::test_private_rebind_to_map()
 {
-    QCOMPARE((std::is_same<QMap<QString,int>,
-                           _::Private::rebind_to_value_map<QList<QString>, int>::type
-                           >::value), true);
-
-    QCOMPARE((std::is_same<QMap<std::string,int>,
-                           _::Private::rebind_to_value_map<QVector<int>, int>::type
-                           >::value), false);
-
-    QCOMPARE((std::is_same<QMap<int,int>,
-                           _::Private::rebind_to_value_map<QList<int>, int>::type
-                           >::value), true);
-
 
     QCOMPARE((std::is_same<std::map<std::string,int>,
                            _::Private::rebind_to_map_key_value<std::list<int>,std::string, int>::type

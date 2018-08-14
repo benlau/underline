@@ -22,27 +22,29 @@
 
 /** Design Principle and Known Issues
 
-1. Don't use constexpr together with std::enable_if.
+1. Get rid of horrific template compilation error message
+
+2. Don't use constexpr together with std::enable_if.
 
 c++ - enable_if not working in Visual Studio when using a constexpr function as argument - Stack Overflow
 https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-studio-when-using-a-constexpr-function-as-argume
 
  */
 
-#define UNDERLINE_ITERATEE_MISMATCHED_ERROR "Mismatched argument types in the iteratee function. Please validate the number of argument and their type."
-#define UNDERLINE_PREDICATE_MISMATCHED_ERROR "Mismatched argument types in the predicate function. Please validate the number of argument and their type."
-#define UNDERLINE_PREDICATE_RETURN_TYPE_MISMATCH_ERROR "The return type of predicate function must be bool"
-#define UNDERLINE_INPUT_TYPE_IS_NOT_ARRAY "The expected input is an valid array class, where _::isArray() returns true (e.g std::vector , QList , QVector) "
-#define UNDERLINE_ITERATEE_VOID_RET_ERROR "The return type of iteratee function cannot be void"
+#define __UNDERLINE_ITERATEE_MISMATCHED_ERROR "Mismatched argument types in the iteratee function. Please validate the number of argument and their type."
+#define __UNDERLINE_PREDICATE_MISMATCHED_ERROR "Mismatched argument types in the predicate function. Please validate the number of argument and their type."
+#define __UNDERLINE_PREDICATE_RETURN_TYPE_MISMATCH_ERROR "The return type of predicate function must be bool"
+#define __UNDERLINE_INPUT_TYPE_IS_NOT_ARRAY "The expected input is an valid array class, where _::isArray() returns true (e.g std::vector , QList , QVector) "
+#define __UNDERLINE_ITERATEE_VOID_RET_ERROR "The return type of iteratee function cannot be void"
 
-#define UNDERLINE_STATIC_ASSERT_IS_ARRAY(prefix, type) \
-    static_assert(_::Private::is_array<type>::value, prefix UNDERLINE_INPUT_TYPE_IS_NOT_ARRAY)
+#define __UNDERLINE_STATIC_ASSERT_IS_ARRAY(prefix, type) \
+    static_assert(_::Private::is_array<type>::value, prefix __UNDERLINE_INPUT_TYPE_IS_NOT_ARRAY)
 
-#define UNDERLINE_STATIC_ASSERT_IS_ITERATEE_INVOKABLE(prefix, value) \
-    static_assert(value, prefix UNDERLINE_ITERATEE_MISMATCHED_ERROR)
+#define __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_INVOKABLE(prefix, value) \
+    static_assert(value, prefix __UNDERLINE_ITERATEE_MISMATCHED_ERROR)
 
-#define UNDERLINE_STATIC_ASSERT_IS_ITERATEE_NOT_VOID(prefix, value) \
-    static_assert(value, prefix UNDERLINE_ITERATEE_VOID_RET_ERROR)
+#define __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_NOT_VOID(prefix, value) \
+    static_assert(value, prefix __UNDERLINE_ITERATEE_VOID_RET_ERROR)
 
 
 #define UNDERLINE_PRIVATE_NS_BEGIN \
@@ -66,7 +68,7 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
         }; \
 
 /// Register rebind_to_map and test_is_array
-#define UL_REGISTER_REBIND_TO_MAP(CollectionType, MapType) \
+#define __UNDERLINE_REGISTER_REBIND_TO_MAP(CollectionType, MapType) \
     namespace _ { \
         namespace Private { \
             template <class NewType, class ValueType> \
@@ -370,6 +372,37 @@ namespace _ {
 
         template <typename Meta, typename Key, typename Value, typename Ret>
         using enable_if_is_meta_object_key_value_matched_ret = typename std::enable_if<is_meta_object_key_value_matched<Meta, Key, Value>::value, Ret>;
+
+        template <typename ...Args>
+        struct _key_value_type_info {
+            enum {
+                is_key_value_type = false
+            };
+            using key_type = Undefined;
+            using value_type = Undefined;
+        };
+
+        template <typename T>
+        struct _key_value_type_info<T, typename std::enable_if<is_meta_object<T>::value, std::true_type>::type> {
+            enum { is_key_value_type = true};
+            using key_type = typename meta_object_info<T>::key_type;
+            using value_type = typename meta_object_info<T>::value_type;
+        };
+
+        template <typename T>
+        struct _key_value_type_info<T, typename std::enable_if<is_map<T>::value, std::true_type>::type> {
+            enum { is_key_value_type = true};
+            using key_type = typename map_info<T>::key_type;
+            using value_type = typename map_info<T>::mapped_type;
+        };
+
+        template <typename T>
+        struct key_value_type: public _key_value_type_info<T, std::true_type> {};
+
+        template <typename T>
+        struct is_key_value_type {
+            enum { value = key_value_type<T>::is_key_value_type};
+        };
 
         /// Source: https://stackoverflow.com/questions/5052211/changing-value-type-of-a-given-stl-container
         template <class Container, class NewType>
@@ -943,7 +976,7 @@ namespace _ {
     template <typename K, typename V, template <typename...> class Map, typename Functor>
     inline Map<K,V>& forIn(Map<K,V> & object, Functor iteratee) {
 
-        static_assert(Private::is_invokable3<Functor, V, K, Map<K,V>>::value, "_::forIn: " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+        static_assert(Private::is_invokable3<Functor, V, K, Map<K,V>>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
 
         Private::Value<typename Private::ret_invoke<Functor, V, K, Map<K,V>>::type> value;
 
@@ -963,7 +996,7 @@ namespace _ {
     template <typename K, typename V, template <typename...> class Map, typename Functor>
     inline const Map<K,V>& forIn(const Map<K,V> & object, Functor iteratee) {
 
-        static_assert(Private::is_invokable3<Functor, V, K, Map<K,V>>::value, "_::forIn: " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+        static_assert(Private::is_invokable3<Functor, V, K, Map<K,V>>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
 
         Private::Value<typename Private::ret_invoke<Functor, V, K, Map<K,V>>::type> value;
 
@@ -1003,7 +1036,7 @@ namespace _ {
 
     template <typename Collection, typename Iteratee>
     inline const Collection& forEach(const Collection& collection, Iteratee iteratee) {
-        static_assert(Private::via_func_info<Iteratee, Collection>::is_invokable, "_::forEach(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+        static_assert(Private::via_func_info<Iteratee, Collection>::is_invokable, "_::forEach(): " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
 
         Private::Value<typename Private::ret_invoke<Iteratee, typename Private::array_value_type<Collection>::type, int, Collection >::type> value;
 
@@ -1020,7 +1053,7 @@ namespace _ {
     template <typename Functor>
     inline QObject* forIn(QObject* object, Functor iteratee) {
         const QMetaObject* meta = object->metaObject();
-        static_assert(Private::is_invokable3<Functor, QVariant, QString, QObject*>::value, "_::forIn: " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+        static_assert(Private::is_invokable3<Functor, QVariant, QString, QObject*>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
         Private::Value<typename Private::ret_invoke<Functor, QVariant, QString, QObject*>::type> invokeHelper;
 
         for (int i = 0 ; i < meta->propertyCount(); i++) {
@@ -1040,7 +1073,7 @@ namespace _ {
     template <typename Functor>
     inline const QObject* forIn(const QObject* object, Functor iteratee) {
         const QMetaObject* meta = object->metaObject();
-        static_assert(Private::is_invokable3<Functor, QVariant, QString, QObject*>::value, "_::forIn: " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+        static_assert(Private::is_invokable3<Functor, QVariant, QString, QObject*>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
         Private::Value<typename Private::ret_invoke<Functor, QVariant, QString, QObject*>::type> invokeHelper;
 
         for (int i = 0 ; i < meta->propertyCount(); i++) {
@@ -1308,9 +1341,9 @@ namespace _ {
     inline bool some(const Collection& collection, Predicate predicate) {
         bool res = false;
 
-        static_assert(Private::via_func_info<Predicate, Collection>::is_invokable, "_::some(): " UNDERLINE_PREDICATE_MISMATCHED_ERROR);
+        static_assert(Private::via_func_info<Predicate, Collection>::is_invokable, "_::some(): " __UNDERLINE_PREDICATE_MISMATCHED_ERROR);
         static_assert(std::is_same<typename Private::ret_invoke<Predicate, typename Private::array_value_type<Collection>::type,int, Collection>::type,bool>::value,
-                      "_::some(): " UNDERLINE_PREDICATE_RETURN_TYPE_MISMATCH_ERROR);
+                      "_::some(): " __UNDERLINE_PREDICATE_RETURN_TYPE_MISMATCH_ERROR);
 
         for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
             if (Private::invoke(predicate, collection[i], i, collection)) {
@@ -1328,11 +1361,11 @@ namespace _ {
 
         using func_info = Private::via_func_info<Iteratee, Collection>;
 
-        UNDERLINE_STATIC_ASSERT_IS_ARRAY("_::map(): ", Collection);
+        __UNDERLINE_STATIC_ASSERT_IS_ARRAY("_::map(): ", Collection);
 
-        UNDERLINE_STATIC_ASSERT_IS_ITERATEE_INVOKABLE("_::map(): ", func_info::is_invokable);
+        __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_INVOKABLE("_::map(): ", func_info::is_invokable);
 
-        UNDERLINE_STATIC_ASSERT_IS_ITERATEE_NOT_VOID("_::map() ", !func_info::is_void_ret);
+        __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_NOT_VOID("_::map() ", !func_info::is_void_ret);
 
         typename Private::rebind<Collection, typename func_info::non_void_ret_type>::type res;
 
@@ -1348,11 +1381,11 @@ namespace _ {
     template <typename Collection,  typename Iteratee>
     inline auto countBy(const Collection& collection, Iteratee iteratee) -> typename Private::rebind_to_map_collection_iteratee_t<Collection, Iteratee, int>  {
 
-        UNDERLINE_STATIC_ASSERT_IS_ARRAY("_::countBy ", Collection);
+        __UNDERLINE_STATIC_ASSERT_IS_ARRAY("_::countBy: ", Collection);
 
-        UNDERLINE_STATIC_ASSERT_IS_ITERATEE_INVOKABLE("_::countBy ", (Private::is_invokable1<Iteratee, _::Private::array_value_type_t<Collection>>::value));
+        __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_INVOKABLE("_::countBy: ", (Private::is_invokable1<Iteratee, _::Private::array_value_type_t<Collection>>::value));
 
-        UNDERLINE_STATIC_ASSERT_IS_ITERATEE_NOT_VOID("_::countBy ", (Private::ret_invoke_is_not_void<Iteratee, _::Private::array_value_type_t<Collection>>::value));
+        __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_NOT_VOID("_::countBy: ", (Private::ret_invoke_is_not_void<Iteratee, _::Private::array_value_type_t<Collection>>::value));
 
         typename Private::rebind_to_map_collection_iteratee_t<Collection, Iteratee, int>  res;
 
@@ -1389,7 +1422,7 @@ namespace _ {
         static_assert(Private::is_invokable4<Iteratee,
                                              Accumulator,
                                              typename Private::array_value_type<Collection>::type,
-                                             int, Collection>::value, "_::reduce(): " UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+                                             int, Collection>::value, "_::reduce(): " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
 
         Accumulator ret = accumulator;
         Private::Value<RET> value;
@@ -1449,12 +1482,12 @@ namespace _ {
 
 /* Type Registration */
 
-UL_REGISTER_REBIND_TO_MAP(std::list, std::map)
-UL_REGISTER_REBIND_TO_MAP(std::vector, std::map)
+__UNDERLINE_REGISTER_REBIND_TO_MAP(std::list, std::map)
+__UNDERLINE_REGISTER_REBIND_TO_MAP(std::vector, std::map)
 
 #ifdef QT_CORE_LIB
-UL_REGISTER_REBIND_TO_MAP(QVector, QMap)
-UL_REGISTER_REBIND_TO_MAP(QList, QMap)
+__UNDERLINE_REGISTER_REBIND_TO_MAP(QVector, QMap)
+__UNDERLINE_REGISTER_REBIND_TO_MAP(QList, QMap)
 #endif
 
 /* End of Type Registration */

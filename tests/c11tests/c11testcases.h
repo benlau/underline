@@ -19,6 +19,8 @@ private slots:
 
     void test_private_is_qobject();
 
+    void test_private_is_key_value_type();
+
     void test_private_traits();
 
     void test_private_invoke();
