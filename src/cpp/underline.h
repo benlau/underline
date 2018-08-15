@@ -271,22 +271,26 @@ namespace _ {
         };
 
         template <typename ...Args>
-        struct map_info {
+        struct _map_info {
             typedef Undefined key_type;
             typedef Undefined mapped_type;
         };
 
         template <typename T>
-        struct map_info<T, typename std::enable_if<is_map<T>::value,  T>::type> {
+        struct _map_info<T, typename std::enable_if<is_map<T>::value,  std::true_type>::type> {
             typedef typename T::key_type key_type;
             typedef typename T::mapped_type mapped_type;
         };
 
         template <typename T>
-        using map_key_type_t = typename map_info<T,T>::key_type;
+        struct map_info: public _map_info<T, std::true_type> {
+        };
 
         template <typename T>
-        using map_mapped_type_t = typename map_info<T,T>::mapped_type;
+        using map_key_type_t = typename map_info<T>::key_type;
+
+        template <typename T>
+        using map_mapped_type_t = typename map_info<T>::mapped_type;
 
         template <typename T, typename Key>
         struct is_map_key_matched {

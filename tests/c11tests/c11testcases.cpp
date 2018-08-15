@@ -124,7 +124,7 @@ void C11TestCases::test_private_is_map()
 
     QVERIFY((std::is_same<_::Private::map_info<C11TestCases>::mapped_type, _::Private::Undefined>::value));
 
-    QVERIFY((std::is_same<_::Private::map_info<QVariantMap, QVariantMap>::mapped_type, QVariant>::value));
+    QVERIFY((std::is_same<_::Private::map_info<QVariantMap>::mapped_type, QVariant>::value));
 
     QVERIFY(!(std::is_same<_::Private::map_mapped_type_t<C11TestCases>, QVariant>::value));
 
