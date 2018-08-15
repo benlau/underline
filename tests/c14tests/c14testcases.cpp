@@ -59,7 +59,7 @@ void C14TestCases::test_private_traits()
 
     {
         // rebind
-        const std::type_info& ti1 = typeid(_::Private::rebind<QList<int>, QString>::type);
+        const std::type_info& ti1 = typeid(_::Private::array_rebinder<QList<int>, QString>::type);
         const std::type_info& ti2 = typeid(QList<QString>);
 
         QVERIFY(ti1 == ti2);
@@ -78,7 +78,7 @@ void C14TestCases::test_private_traits()
 
     {
         // rebind
-        const std::type_info& ti1 = typeid(_::Private::rebind<QList<int>, QString>::type);
+        const std::type_info& ti1 = typeid(_::Private::array_rebinder<QList<int>, QString>::type);
         const std::type_info& ti2 = typeid(QList<QString>);
 
         QVERIFY(ti1 == ti2);
@@ -86,7 +86,7 @@ void C14TestCases::test_private_traits()
     }
 
     {
-        const std::type_info& ti1 = typeid(_::Private::rebind<QStringList, int>::type);
+        const std::type_info& ti1 = typeid(_::Private::array_rebinder<QStringList, int>::type);
         const std::type_info& ti2 = typeid(QList<int>);
 
         QVERIFY(ti1 == ti2);

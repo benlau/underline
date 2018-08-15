@@ -71,12 +71,8 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
 #define __UNDERLINE_REGISTER_REBIND_TO_MAP(CollectionType, MapType) \
     namespace _ { \
         namespace Private { \
-            template <class NewType, class ValueType> \
-            struct rebind_to_value_map<CollectionType<ValueType>, NewType> { \
-                typedef MapType<ValueType, avoid_void_t<NewType>> type; \
-            }; \
             template <class ValueType, class NewKeyType, class NewValueType> \
-            struct rebind_to_map_key_value<CollectionType<ValueType>, NewKeyType, NewValueType> { \
+            struct array_to_map_rebinder<CollectionType<ValueType>, NewKeyType, NewValueType> { \
                 typedef MapType<avoid_void_t<NewKeyType>, avoid_void_t<NewValueType>> type; \
             }; \
         } \
@@ -406,23 +402,18 @@ namespace _ {
 
         /// Source: https://stackoverflow.com/questions/5052211/changing-value-type-of-a-given-stl-container
         template <class Container, class NewType>
-        struct rebind {
+        struct array_rebinder {
             using type = NullArray<Undefined>;
         };
 
         template <class ValueType, class... Args, template <class...> class Container, class NewType>
-        struct rebind<Container<ValueType, Args...>, NewType>
+        struct array_rebinder<Container<ValueType, Args...>, NewType>
         {
-            typedef Container<NewType, typename rebind<Args, NewType>::type...> type;
-        };
-
-        template <class Collection, class NewType>
-        struct rebind_to_value_map {
-            typedef NullMap<int,NewType> type;
+            using type = Container<NewType, typename array_rebinder<Args, NewType>::type...>;
         };
 
         template <class Collection, class NewKeyType, class NewValueType>
-        struct rebind_to_map_key_value {
+        struct array_to_map_rebinder {
             using type = NullMap<NewKeyType, NewValueType>;
         };
 
@@ -827,7 +818,7 @@ namespace _ {
         using ret_invoke_collection_value_type_t = typename ret_invoke<Iteratee, typename array_value_type<Collection>::type>::type;
 
         template <class Collection, typename Iteratee, typename ValueType>
-        using rebind_to_map_collection_iteratee_t = typename rebind_to_map_key_value<remove_cvref_t<Collection>,   _::Private::ret_invoke_collection_value_type_t<Iteratee,remove_cvref_t<Collection>>, ValueType>::type;
+        using rebind_to_map_collection_iteratee_t = typename array_to_map_rebinder<remove_cvref_t<Collection>,   _::Private::ret_invoke_collection_value_type_t<Iteratee,remove_cvref_t<Collection>>, ValueType>::type;
 
         ///Value is a wrapper of any data structure include <void>.
         template <typename T>
@@ -906,12 +897,12 @@ namespace _ {
 #ifdef QT_CORE_LIB
 
         template <class NewType>
-        struct rebind<QStringList, NewType> {
+        struct array_rebinder<QStringList, NewType> {
             typedef QList<NewType> type;
         };
 
         template <class NewType>
-        struct rebind<QVariantList, NewType> {
+        struct array_rebinder<QVariantList, NewType> {
             typedef QList<NewType> type;
         };
 
@@ -1355,7 +1346,7 @@ namespace _ {
     }
 
     template <typename Collection, typename Iteratee>
-    inline auto map(const Collection& collection, Iteratee iteratee) -> typename Private::rebind<Collection,
+    inline auto map(const Collection& collection, Iteratee iteratee) -> typename Private::array_rebinder<Collection,
         typename Private::via_func_info<Iteratee, Collection>::non_void_ret_type
     >::type {
 
@@ -1367,7 +1358,7 @@ namespace _ {
 
         __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_NOT_VOID("_::map() ", !func_info::is_void_ret);
 
-        typename Private::rebind<Collection, typename func_info::non_void_ret_type>::type res;
+        typename Private::array_rebinder<Collection, typename func_info::non_void_ret_type>::type res;
 
         res.reserve((int) collection.size());
 

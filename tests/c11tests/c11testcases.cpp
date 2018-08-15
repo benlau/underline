@@ -178,7 +178,7 @@ void C11TestCases::test_private_traits()
 {
     {
         // rebind
-        const std::type_info& ti1 = typeid(_::Private::rebind<QList<int>, QString>::type);
+        const std::type_info& ti1 = typeid(_::Private::array_rebinder<QList<int>, QString>::type);
         const std::type_info& ti2 = typeid(QList<QString>);
 
         QVERIFY(ti1 == ti2);
@@ -203,7 +203,7 @@ void C11TestCases::test_private_traits()
 
     {
         // rebind
-        const std::type_info& ti1 = typeid(_::Private::rebind<QList<int>, QString>::type);
+        const std::type_info& ti1 = typeid(_::Private::array_rebinder<QList<int>, QString>::type);
         const std::type_info& ti2 = typeid(QList<QString>);
 
         QVERIFY(ti1 == ti2);
@@ -211,7 +211,7 @@ void C11TestCases::test_private_traits()
     }
 
     {
-        const std::type_info& ti1 = typeid(_::Private::rebind<QStringList, int>::type);
+        const std::type_info& ti1 = typeid(_::Private::array_rebinder<QStringList, int>::type);
         const std::type_info& ti2 = typeid(QList<int>);
 
         QVERIFY(ti1 == ti2);
@@ -293,11 +293,11 @@ void C11TestCases::test_private_rebind_to_map()
 {
 
     QCOMPARE((std::is_same<std::map<std::string,int>,
-                           _::Private::rebind_to_map_key_value<std::list<int>,std::string, int>::type
+                           _::Private::array_to_map_rebinder<std::list<int>,std::string, int>::type
                            >::value), true);
 
     QCOMPARE((std::is_same<QMap<QString,int>,
-                           _::Private::rebind_to_map_key_value<QList<int>,QString, int>::type
+                           _::Private::array_to_map_rebinder<QList<int>,QString, int>::type
                            >::value), true);
 
 
