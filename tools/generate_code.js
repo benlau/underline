@@ -128,7 +128,7 @@ inline decl_invoke0();
 }
 
 content.push("/* BEGIN_GENERATED_CODE */");
-_.range(5).forEach( (item) => {
+_.range(6).forEach( (item) => {
     create_function_set(item+1);
 });
 content.push("/* END_GENERATED_CODE */");

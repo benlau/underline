@@ -497,5 +497,19 @@ void C11TestCases::test_range_q()
     QCOMPARE(_::range_q(0), (QList<int>{}));
 }
 
+void C11TestCases::test_isMap()
+{
+    QCOMPARE(_::isMap(std::vector<int>{}),    false);
+    QCOMPARE(_::isMap(QVector<int>{ }),       false);
+    QCOMPARE(_::isMap(QList<int>{ }),         false);
+    QCOMPARE(_::isMap(QVariantList{ }),       false);
+    QCOMPARE(_::isMap(QString{ }),            false);
+    QCOMPARE(_::isMap(10),                    false);
+
+    QCOMPARE(_::isMap(std::map<bool,int>{}),  true);
+    QCOMPARE(_::isMap(QMap<int,int>{}),       true);
+    QCOMPARE(_::isMap(new C11TestCases(this)),          true);
+}
+
 
 

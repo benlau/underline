@@ -44,5 +44,7 @@ private slots:
     void test_range();
 
     void test_range_q();
+
+    void test_isMap();
 };
 

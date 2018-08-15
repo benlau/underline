@@ -800,6 +800,71 @@ namespace _ {
         typename std::enable_if<!is_invokable4<Functor, Arg1, Arg2, Arg3, Arg4>::value, Undefined>::type
         inline decl_invoke0();
 
+        template <typename Functor, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5>
+        inline auto invoke(Functor functor, Arg1, Arg2, Arg3, Arg4, Arg5) -> 
+        typename std::enable_if<is_args_compatible<Functor>::value,
+        typename ret_func<Functor>::type>::type {
+            return functor();
+        }
+
+        template <typename Functor, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5>
+        inline auto invoke(Functor functor, Arg1 arg1, Arg2, Arg3, Arg4, Arg5) -> 
+        typename std::enable_if<is_args_compatible<Functor, Arg1>::value,
+        typename ret_func<Functor, Arg1>::type>::type {
+            return functor(arg1);
+        }
+
+        template <typename Functor, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5>
+        inline auto invoke(Functor functor, Arg1 arg1, Arg2 arg2, Arg3, Arg4, Arg5) -> 
+        typename std::enable_if<is_args_compatible<Functor, Arg1, Arg2>::value,
+        typename ret_func<Functor, Arg1, Arg2>::type>::type {
+            return functor(arg1, arg2);
+        }
+
+        template <typename Functor, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5>
+        inline auto invoke(Functor functor, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4, Arg5) -> 
+        typename std::enable_if<is_args_compatible<Functor, Arg1, Arg2, Arg3>::value,
+        typename ret_func<Functor, Arg1, Arg2, Arg3>::type>::type {
+            return functor(arg1, arg2, arg3);
+        }
+
+        template <typename Functor, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5>
+        inline auto invoke(Functor functor, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5) -> 
+        typename std::enable_if<is_args_compatible<Functor, Arg1, Arg2, Arg3, Arg4>::value,
+        typename ret_func<Functor, Arg1, Arg2, Arg3, Arg4>::type>::type {
+            return functor(arg1, arg2, arg3, arg4);
+        }
+
+        template <typename Functor, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5>
+        inline auto invoke(Functor functor, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5) -> 
+        typename std::enable_if<is_args_compatible<Functor, Arg1, Arg2, Arg3, Arg4, Arg5>::value,
+        typename ret_func<Functor, Arg1, Arg2, Arg3, Arg4, Arg5>::type>::type {
+            return functor(arg1, arg2, arg3, arg4, arg5);
+        }
+
+        template <typename Functor, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5>
+        inline auto invoke(Functor, Arg1, Arg2, Arg3, Arg4, Arg5) -> 
+        typename std::enable_if<!is_args_compatible<Functor>::value && !is_args_compatible<Functor, Arg1>::value && !is_args_compatible<Functor, Arg1, Arg2>::value && !is_args_compatible<Functor, Arg1, Arg2, Arg3>::value && !is_args_compatible<Functor, Arg1, Arg2, Arg3, Arg4>::value && !is_args_compatible<Functor, Arg1, Arg2, Arg3, Arg4, Arg5>::value && !is_readable<Arg1, Functor>::value,
+        Undefined>::type {
+            return Undefined();
+        }
+
+        template <typename Functor, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5>
+        struct is_invokable5 {
+            enum {
+               value = is_args_compatible<Functor>::value || is_args_compatible<Functor, Arg1>::value || is_args_compatible<Functor, Arg1, Arg2>::value || is_args_compatible<Functor, Arg1, Arg2, Arg3>::value || is_args_compatible<Functor, Arg1, Arg2, Arg3, Arg4>::value || is_args_compatible<Functor, Arg1, Arg2, Arg3, Arg4, Arg5>::value || is_readable<Arg1, Functor>::value
+            };
+        };
+
+        
+        template <typename Functor, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5>
+        typename std::enable_if<is_invokable5<Functor, Arg1, Arg2, Arg3, Arg4, Arg5>::value, decltype(invoke(std::declval<Functor>(),std::declval<Arg1>(),std::declval<Arg2>(),std::declval<Arg3>(),std::declval<Arg4>(),std::declval<Arg5>()))>::type
+        inline decl_invoke0();
+        
+        template <typename Functor, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5>
+        typename std::enable_if<!is_invokable5<Functor, Arg1, Arg2, Arg3, Arg4, Arg5>::value, Undefined>::type
+        inline decl_invoke0();
+
         /* END_GENERATED_CODE */
 
         template <typename Functor, typename ...Args>
@@ -1460,7 +1525,17 @@ namespace _ {
 
     template <typename T>
     inline bool isArray(const T&) {
-        return isArray<T>();
+        return Private::is_array<T>::value;
+    }
+
+    template <typename T>
+    inline bool isMap() {
+        return Private::is_key_value_type<T>::value;
+    }
+
+    template <typename T>
+    inline bool isMap(const T&) {
+        return Private::is_key_value_type<T>::value;
     }
 
 #ifdef QT_CORE_LIB
