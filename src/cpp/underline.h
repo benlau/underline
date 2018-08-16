@@ -1033,12 +1033,15 @@ namespace _ {
 #endif
     } /* End of Private Session */
 
-    template <typename K, typename V, template <typename...> class Map, typename Functor>
-    inline Map<K,V>& forIn(Map<K,V> & object, Functor iteratee) {
+    template <typename Map, typename Functor>
+    inline auto forIn(Map& object, Functor iteratee) -> typename std::enable_if<Private::is_map<Map>::value, Map&>::type {
 
-        static_assert(Private::is_invokable3<Functor, V, K, Map<K,V>>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+        using K = typename Private::map_info<Map>::key_type;
+        using V = typename Private::map_info<Map>::mapped_type;
 
-        Private::Value<typename Private::ret_invoke<Functor, V, K, Map<K,V>>::type> value;
+        static_assert(Private::is_invokable3<Functor, V, K, Map>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+
+        Private::Value<typename Private::ret_invoke<Functor, V, K, Map>::type> value;
 
         auto iter = object.begin();
         while (iter != object.end()) {
@@ -1053,12 +1056,14 @@ namespace _ {
         return object;
     }
 
-    template <typename K, typename V, template <typename...> class Map, typename Functor>
-    inline const Map<K,V>& forIn(const Map<K,V> & object, Functor iteratee) {
+    template <typename Map, typename Functor>
+    inline auto forIn(const Map& object, Functor iteratee) -> typename std::enable_if<Private::is_map<Map>::value, const Map&>::type {
+        using K = typename Private::map_info<Map>::key_type;
+        using V = typename Private::map_info<Map>::mapped_type;
 
-        static_assert(Private::is_invokable3<Functor, V, K, Map<K,V>>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+        static_assert(Private::is_invokable3<Functor, V, K, Map>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
 
-        Private::Value<typename Private::ret_invoke<Functor, V, K, Map<K,V>>::type> value;
+        Private::Value<typename Private::ret_invoke<Functor, V, K, Map>::type> value;
 
         auto iter = object.begin();
         while (iter != object.end()) {
@@ -1110,8 +1115,8 @@ namespace _ {
     }
 
 #ifdef QT_CORE_LIB
-    template <typename Functor>
-    inline QObject* forIn(QObject* object, Functor iteratee) {
+    template <typename Object, typename Functor>
+    inline auto forIn(Object* object, Functor iteratee) -> typename std::enable_if<Private::is_qobject<QObject>::value, Object*>::type {
         const QMetaObject* meta = object->metaObject();
         static_assert(Private::is_invokable3<Functor, QVariant, QString, QObject*>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
         Private::Value<typename Private::ret_invoke<Functor, QVariant, QString, QObject*>::type> invokeHelper;
@@ -1130,8 +1135,8 @@ namespace _ {
         return object;
     }
 
-    template <typename Functor>
-    inline const QObject* forIn(const QObject* object, Functor iteratee) {
+    template <typename Object, typename Functor>
+    inline auto forIn(const Object* object, Functor iteratee) -> typename std::enable_if<Private::is_qobject<QObject>::value, const Object*>::type {
         const QMetaObject* meta = object->metaObject();
         static_assert(Private::is_invokable3<Functor, QVariant, QString, QObject*>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
         Private::Value<typename Private::ret_invoke<Functor, QVariant, QString, QObject*>::type> invokeHelper;
