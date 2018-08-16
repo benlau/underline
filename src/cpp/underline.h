@@ -111,6 +111,8 @@ namespace _ {
         public:
             class const_iterator{
             };
+            class iterator {
+            };
         };
 #endif
 #ifndef QT_QUICK_LIB
@@ -314,8 +316,38 @@ namespace _ {
         }
 
         template <typename Key, typename Value>
+        inline Value map_iterator_value(typename std::map<Key,Value>::iterator & iter) {
+            return iter->second;
+        }
+
+        template <typename Key, typename Value>
         inline Value map_iterator_value(typename QMap<Key,Value>::const_iterator & iter) {
             return iter.value();
+        }
+
+        template <typename Key, typename Value>
+        inline Value map_iterator_value(typename QMap<Key,Value>::iterator & iter) {
+            return iter.value();
+        }
+
+        template <typename Key, typename Value>
+        inline Key map_iterator_key(typename std::map<Key,Value>::const_iterator & iter) {
+            return iter->first;
+        }
+
+        template <typename Key, typename Value>
+        inline Key map_iterator_key(typename std::map<Key,Value>::iterator & iter) {
+            return iter->first;
+        }
+
+        template <typename Key, typename Value>
+        inline Key map_iterator_key(typename QMap<Key,Value>::const_iterator & iter) {
+            return iter.key();
+        }
+
+        template <typename Key, typename Value>
+        inline Key map_iterator_key(typename QMap<Key,Value>::iterator & iter) {
+            return iter.key();
         }
 
         template <typename Map>
@@ -474,6 +506,14 @@ namespace _ {
 
         template <typename Functor, typename Arg1, typename Arg2, typename Arg3, typename Arg4>
         typename enable_if_args_not_compatible<void, Functor, Arg1, Arg2, Arg3, Arg4>::type
+        decl_func0();
+
+        template <typename Functor, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5>
+        typename enable_if_args_compatible<decltype(std::declval<Functor>()(std::declval<Arg1>(), std::declval<Arg2>(), std::declval<Arg3>(), std::declval<Arg4>(), std::declval<Arg5>())), Functor, Arg1, Arg2, Arg3, Arg4, Arg5>::type
+        decl_func0();
+
+        template <typename Functor, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5>
+        typename enable_if_args_not_compatible<void, Functor, Arg1, Arg2, Arg3, Arg4, Arg5>::type
         decl_func0();
 
         template <typename Functor, typename ...Args>
@@ -1045,7 +1085,9 @@ namespace _ {
 
         auto iter = object.begin();
         while (iter != object.end()) {
-            value.invoke(iteratee, iter.value(), iter.key(), object);
+            value.invoke(iteratee, Private::map_iterator_value<K,V>(iter),
+                                   Private::map_iterator_key<K,V>(iter),
+                                   object);
 
             if (value.template canConvert<bool>() && value.equals(false)) {
                 break;
@@ -1067,7 +1109,9 @@ namespace _ {
 
         auto iter = object.begin();
         while (iter != object.end()) {
-            value.invoke(iteratee, iter.value(), iter.key(), object);
+            value.invoke(iteratee, Private::map_iterator_value<K,V>(iter),
+                                   Private::map_iterator_key<K,V>(iter),
+                                   object);
 
             if (value.template canConvert<bool>() && value.equals(false)) {
                 break;
@@ -1553,6 +1597,39 @@ namespace _ {
         return range<QList<int>>(args...);
     }
 #endif
+
+    template <typename Object, typename Source, typename Iteratee>
+    inline Object assignWith(Object& object, const Source & source, Iteratee iteratee ) {
+        using source_info = _::Private::key_value_type<Source>;
+        using object_info = _::Private::key_value_type<Object>;
+
+        __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_INVOKABLE("_::assignWith: ", (_::Private::is_invokable5<Iteratee,
+                                                        typename object_info::value_type,
+                                                        typename source_info::value_type,
+                                                        typename source_info::key_type,
+                                                        Object, Source>::value));
+
+        static_assert(_::Private::is_key_value_type<Object>::value, "_::assignWith: The first argument must be a valid Map container type where _::isMap() returns true" );
+
+        static_assert(_::Private::is_key_value_type<Source>::value, "_::assignWith: The second argument must be a valid Map container type where _::isMap() returns true" );
+
+        static_assert(std::is_convertible<typename source_info::key_type, typename object_info::key_type>::value,
+                      "The key field is not convertible from source to object.");
+
+        forIn(source, [&](const typename source_info::value_type& value,
+                         const typename source_info::key_type& key) {
+            auto ret = Private::invoke(iteratee,
+                            Private::read(object, key),
+                            value,
+                            key,
+                            object,
+                            source);
+            Private::write(object, key, ret);
+        });
+
+        return object;
+    };
+
 } // End of _ namespace
 
 /* Type Registration */
@@ -1566,3 +1643,4 @@ __UNDERLINE_REGISTER_REBIND_TO_MAP(QList, QMap)
 #endif
 
 /* End of Type Registration */
+;

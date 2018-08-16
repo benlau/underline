@@ -508,7 +508,7 @@ void C11TestCases::test_isMap()
 
     QCOMPARE(_::isMap(std::map<bool,int>{}),  true);
     QCOMPARE(_::isMap(QMap<int,int>{}),       true);
-    QCOMPARE(_::isMap(new C11TestCases(this)),          true);
+    QCOMPARE(_::isMap(new C11TestCases(this)),true);
 }
 
 

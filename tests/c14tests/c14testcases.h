@@ -41,5 +41,7 @@ private slots:
 
     void test_isArray();
 
+    void test_assignWith();
+
 };
 
