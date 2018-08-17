@@ -103,20 +103,34 @@ namespace _ {
 
 #ifndef QT_CORE_LIB
         class QObject{};
-        class QMetaObject{};
         class QVariant{};
         class QString{};
+        class QMetaProperty{
+        public:
+            QString name() const;
+            template <typename ...Args> QVariant read(Args...) const;
+        };
+        class QMetaObject{
+        public:
+            int propertyCount() const;
+            QMetaProperty property(int) const;
+        };
         template <typename Key, typename Value>
         class QMap {
         public:
-            class const_iterator{
-            };
-            class iterator {
-            };
+            class const_iterator{};
+            class iterator { };
         };
 #endif
 #ifndef QT_QUICK_LIB
         class QJSValue{};
+        class QJSValueIterator{
+        public:
+            template <typename ...Args> inline bool hasNext(Args...);
+            template <typename ...Args> void next(Args...);
+            template <typename ...Args> void value(Args...);
+            template <typename ...Args> void name(Args...);
+        };
 #endif
 
         _DECLARE_UNDERLINE_HAS(reserve, decltype(std::declval<Type>().reserve(0)), void)
@@ -1071,77 +1085,128 @@ namespace _ {
             }
         }
 #endif
+
+        template <typename Map, typename Functor>
+        inline auto forIn(Map& object, Functor iteratee) -> typename std::enable_if<Private::is_map<Map>::value, Map&>::type {
+
+            using K = typename Private::map_info<Map>::key_type;
+            using V = typename Private::map_info<Map>::mapped_type;
+
+            static_assert(Private::is_invokable3<Functor, V, K, Map>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+
+            Private::Value<typename Private::ret_invoke<Functor, V, K, Map>::type> value;
+
+            auto iter = object.begin();
+            while (iter != object.end()) {
+                value.invoke(iteratee, Private::map_iterator_value<K,V>(iter),
+                                       Private::map_iterator_key<K,V>(iter),
+                                       object);
+
+                if (value.template canConvert<bool>() && value.equals(false)) {
+                    break;
+                }
+                iter++;
+            }
+
+            return object;
+        }
+
+        template <typename Map, typename Functor>
+        inline auto forIn(const Map& object, Functor iteratee) -> typename std::enable_if<Private::is_map<Map>::value, const Map&>::type {
+            using K = typename Private::map_info<Map>::key_type;
+            using V = typename Private::map_info<Map>::mapped_type;
+
+            static_assert(Private::is_invokable3<Functor, V, K, Map>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+
+            Private::Value<typename Private::ret_invoke<Functor, V, K, Map>::type> value;
+
+            auto iter = object.begin();
+            while (iter != object.end()) {
+                value.invoke(iteratee, Private::map_iterator_value<K,V>(iter),
+                                       Private::map_iterator_key<K,V>(iter),
+                                       object);
+
+                if (value.template canConvert<bool>() && value.equals(false)) {
+                    break;
+                }
+                iter++;
+            }
+
+            return object;
+        }
+
+        template <typename Value, typename Iteratee>
+        inline auto forIn(const Value& object, Iteratee iteratee)
+        -> typename std::enable_if<std::is_same<Value,QJSValue>::value, const Value&>::type
+        {
+            QJSValueIterator iter(object);
+            Private::Value<typename Private::ret_invoke<Iteratee, Value, QString, Value>::type> value;
+
+            while (iter.hasNext()) {
+                iter.next();
+                value.invoke(iteratee, iter.value(), iter.name(), object);
+
+                if (value.template canConvert<bool>() && value.equals(false)) {
+                    break;
+                }
+            }
+
+            return object;
+        }
+
+        template <typename Object, typename Functor>
+        inline auto forIn(Object* object, Functor iteratee) -> typename std::enable_if<Private::is_qobject<QObject>::value, Object*>::type {
+            const QMetaObject* meta = object->metaObject();
+            static_assert(Private::is_invokable3<Functor, QVariant, QString, QObject*>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+            Private::Value<typename Private::ret_invoke<Functor, QVariant, QString, QObject*>::type> invokeHelper;
+
+            for (int i = 0 ; i < meta->propertyCount(); i++) {
+                const QMetaProperty property = meta->property(i);
+                QString key = property.name();
+                QVariant value = property.read(object);
+
+                invokeHelper.invoke(iteratee, value, key, object);
+
+                if (invokeHelper.template canConvert<bool>() && invokeHelper.equals(false)) {
+                    break;
+                }
+            }
+            return object;
+        }
+
+        template <typename Object, typename Functor>
+        inline auto forIn(const Object* object, Functor iteratee) -> typename std::enable_if<Private::is_qobject<QObject>::value, const Object*>::type {
+            const QMetaObject* meta = object->metaObject();
+            static_assert(Private::is_invokable3<Functor, QVariant, QString, QObject*>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+            Private::Value<typename Private::ret_invoke<Functor, QVariant, QString, QObject*>::type> invokeHelper;
+
+            for (int i = 0 ; i < meta->propertyCount(); i++) {
+                const QMetaProperty property = meta->property(i);
+                QString key = property.name();
+                QVariant value = property.read(object);
+
+                invokeHelper.invoke(iteratee, value, key, object);
+
+                if (invokeHelper.template canConvert<bool>() && invokeHelper.equals(false)) {
+                    break;
+                }
+            }
+            return object;
+        }
+
     } /* End of Private Session */
 
-    template <typename Map, typename Functor>
-    inline auto forIn(Map& object, Functor iteratee) -> typename std::enable_if<Private::is_map<Map>::value, Map&>::type {
-
-        using K = typename Private::map_info<Map>::key_type;
-        using V = typename Private::map_info<Map>::mapped_type;
-
-        static_assert(Private::is_invokable3<Functor, V, K, Map>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
-
-        Private::Value<typename Private::ret_invoke<Functor, V, K, Map>::type> value;
-
-        auto iter = object.begin();
-        while (iter != object.end()) {
-            value.invoke(iteratee, Private::map_iterator_value<K,V>(iter),
-                                   Private::map_iterator_key<K,V>(iter),
-                                   object);
-
-            if (value.template canConvert<bool>() && value.equals(false)) {
-                break;
-            }
-            iter++;
-        }
-
+    template <typename Object, typename Functor>
+    inline Object& forIn(Object& object, Functor iteratee) {
+        Private::forIn(object, iteratee);
         return object;
     }
 
-    template <typename Map, typename Functor>
-    inline auto forIn(const Map& object, Functor iteratee) -> typename std::enable_if<Private::is_map<Map>::value, const Map&>::type {
-        using K = typename Private::map_info<Map>::key_type;
-        using V = typename Private::map_info<Map>::mapped_type;
-
-        static_assert(Private::is_invokable3<Functor, V, K, Map>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
-
-        Private::Value<typename Private::ret_invoke<Functor, V, K, Map>::type> value;
-
-        auto iter = object.begin();
-        while (iter != object.end()) {
-            value.invoke(iteratee, Private::map_iterator_value<K,V>(iter),
-                                   Private::map_iterator_key<K,V>(iter),
-                                   object);
-
-            if (value.template canConvert<bool>() && value.equals(false)) {
-                break;
-            }
-            iter++;
-        }
-
+    template <typename Object, typename Functor>
+    inline const Object& forIn(const Object& object, Functor iteratee) {
+        Private::forIn(object, iteratee);
         return object;
     }
-
-#ifdef QT_QUICK_LIB
-    template <typename Value, typename Iteratee>
-    inline auto forIn(const Value& object, Iteratee iteratee)
-    -> typename std::enable_if<std::is_same<Value,QJSValue>::value, const Value&>::type
-    {
-        QJSValueIterator iter(object);
-        Private::Value<typename Private::ret_invoke<Iteratee, Value, QString, Value>::type> value;
-
-        while (iter.hasNext()) {
-            iter.next();
-            value.invoke(iteratee, iter.value(), iter.name(), object);
-
-            if (value.template canConvert<bool>() && value.equals(false)) {
-                break;
-            }
-        }
-
-        return object;
-    }
-#endif
 
     template <typename Collection, typename Iteratee>
     inline const Collection& forEach(const Collection& collection, Iteratee iteratee) {
@@ -1159,46 +1224,6 @@ namespace _ {
     }
 
 #ifdef QT_CORE_LIB
-    template <typename Object, typename Functor>
-    inline auto forIn(Object* object, Functor iteratee) -> typename std::enable_if<Private::is_qobject<QObject>::value, Object*>::type {
-        const QMetaObject* meta = object->metaObject();
-        static_assert(Private::is_invokable3<Functor, QVariant, QString, QObject*>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
-        Private::Value<typename Private::ret_invoke<Functor, QVariant, QString, QObject*>::type> invokeHelper;
-
-        for (int i = 0 ; i < meta->propertyCount(); i++) {
-            const QMetaProperty property = meta->property(i);
-            QString key = property.name();
-            QVariant value = property.read(object);
-
-            invokeHelper.invoke(iteratee, value, key, object);
-
-            if (invokeHelper.template canConvert<bool>() && invokeHelper.equals(false)) {
-                break;
-            }
-        }
-        return object;
-    }
-
-    template <typename Object, typename Functor>
-    inline auto forIn(const Object* object, Functor iteratee) -> typename std::enable_if<Private::is_qobject<QObject>::value, const Object*>::type {
-        const QMetaObject* meta = object->metaObject();
-        static_assert(Private::is_invokable3<Functor, QVariant, QString, QObject*>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
-        Private::Value<typename Private::ret_invoke<Functor, QVariant, QString, QObject*>::type> invokeHelper;
-
-        for (int i = 0 ; i < meta->propertyCount(); i++) {
-            const QMetaProperty property = meta->property(i);
-            QString key = property.name();
-            QVariant value = property.read(object);
-
-            invokeHelper.invoke(iteratee, value, key, object);
-
-            if (invokeHelper.template canConvert<bool>() && invokeHelper.equals(false)) {
-                break;
-            }
-        }
-        return object;
-    }
-
     /*
      If a property contains QObject pointer, it will be converted to QVariantMap.
 
