@@ -109,6 +109,7 @@ namespace _ {
         public:
             QString name() const;
             template <typename ...Args> QVariant read(Args...) const;
+            template <typename ...Args> QVariant readOnGadget(Args...) const;
         };
         class QMetaObject{
         public:
@@ -1155,7 +1156,7 @@ namespace _ {
         }
 
         template <typename Object, typename Functor>
-        inline auto forIn(Object* object, Functor iteratee) -> typename std::enable_if<Private::is_qobject<QObject>::value, Object*>::type {
+        inline auto forIn(const Object* object, Functor iteratee) -> typename std::enable_if<Private::is_qobject<Object>::value, const Object*>::type {
             const QMetaObject* meta = object->metaObject();
             static_assert(Private::is_invokable3<Functor, QVariant, QString, QObject*>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
             Private::Value<typename Private::ret_invoke<Functor, QVariant, QString, QObject*>::type> invokeHelper;
@@ -1175,15 +1176,18 @@ namespace _ {
         }
 
         template <typename Object, typename Functor>
-        inline auto forIn(const Object* object, Functor iteratee) -> typename std::enable_if<Private::is_qobject<QObject>::value, const Object*>::type {
-            const QMetaObject* meta = object->metaObject();
-            static_assert(Private::is_invokable3<Functor, QVariant, QString, QObject*>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
-            Private::Value<typename Private::ret_invoke<Functor, QVariant, QString, QObject*>::type> invokeHelper;
+        inline auto forIn(const Object& object, Functor iteratee) -> typename std::enable_if<Private::is_gadget<Object>::value, const Object&>::type {
+            auto ptr = cast_to_pointer(object);
 
-            for (int i = 0 ; i < meta->propertyCount(); i++) {
-                const QMetaProperty property = meta->property(i);
+            const QMetaObject meta = ptr->staticMetaObject;
+
+            static_assert(Private::is_invokable3<Functor, QVariant, QString, const Object&>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+            Private::Value<typename Private::ret_invoke<Functor, QVariant, QString, const Object&>::type> invokeHelper;
+
+            for (int i = 0 ; i < meta.propertyCount(); i++) {
+                const QMetaProperty property = meta.property(i);
                 QString key = property.name();
-                QVariant value = property.read(object);
+                QVariant value = property.readOnGadget(ptr);
 
                 invokeHelper.invoke(iteratee, value, key, object);
 
@@ -1194,13 +1198,8 @@ namespace _ {
             return object;
         }
 
-    } /* End of Private Session */
 
-    template <typename Object, typename Functor>
-    inline Object& forIn(Object& object, Functor iteratee) {
-        Private::forIn(object, iteratee);
-        return object;
-    }
+    } /* End of Private Session */
 
     template <typename Object, typename Functor>
     inline const Object& forIn(const Object& object, Functor iteratee) {

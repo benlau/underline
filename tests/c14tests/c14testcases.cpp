@@ -509,6 +509,7 @@ void C14TestCases::test_omit()
 void C14TestCases::test_forIn()
 {
     {
+        /* QVariantMap */
         QVariantMap data{{"value1", 1}, {"value2", 2.0}};
         QList<QString> keys;
         QVariantList values;
@@ -531,7 +532,7 @@ void C14TestCases::test_forIn()
     }
 
     {
-        // Early termination
+        /* QVariantMap and Early Termination */
         QVariantMap data{{"value1", 1}, {"value2", 2.0}};
         QList<QString> keys;
         QVariantList values;
@@ -580,6 +581,29 @@ void C14TestCases::test_forIn()
         QCOMPARE(error, false);
         QCOMPARE(proeprties.size(), 1);
     }
+
+    {
+        GadgetObject object;
+        QVariantList keys;
+
+        _::forIn(&object, [&](auto, auto key) {
+            keys << key;
+        });
+
+        QCOMPARE(keys.size(), 1);
+    }
+
+    {
+        GadgetObject object;
+        QVariantList keys;
+
+        _::forIn(object, [&](auto, auto key) {
+            keys << key;
+        });
+
+        QCOMPARE(keys.size(), 1);
+    }
+
 }
 
 void C14TestCases::test_forEach()
