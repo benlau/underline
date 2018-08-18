@@ -103,8 +103,17 @@ namespace _ {
 
 #ifndef QT_CORE_LIB
         class QObject{};
-        class QVariant{};
+        template <typename Key, typename Value>
+        class QMap {
+        public:
+            class const_iterator{};
+            class iterator { };
+        };
         class QString{};
+        class QVariant{
+        public:
+            QMap<QString, QVariant> toMap() const;
+        };
         class QMetaProperty{
         public:
             QString name() const;
@@ -116,12 +125,7 @@ namespace _ {
             int propertyCount() const;
             QMetaProperty property(int) const;
         };
-        template <typename Key, typename Value>
-        class QMap {
-        public:
-            class const_iterator{};
-            class iterator { };
-        };
+        class QVariantMap: public QMap<QString,QVariant>{};
 #endif
 #ifndef QT_QUICK_LIB
         class QJSValue{};
@@ -1198,7 +1202,44 @@ namespace _ {
             return object;
         }
 
+        template <typename V1, typename V2>
+        inline auto merge(const V1&, const V2& v2) ->
+        typename std::enable_if<
+            !(is_map<V1>::value && is_key_value_type<V2>::value)  &&
+            !(std::is_same<V1,QVariant>::value && std::is_same<V2,QVariant>::value)
+            ,V2>::type {
+            return v2;
+        }
 
+        inline QVariant merge(QVariant &v1, const QVariant &v2);
+
+        template <typename V1, typename V2>
+        inline auto merge(V1& v1, const V2& v2) -> typename std::enable_if<is_map<V1>::value && is_key_value_type<V2>::value, V1&>::type {
+            using Key = typename key_value_type<V2>::key_type;
+            using Value = typename key_value_type<V2>::value_type;
+
+            forIn(v2, [&](const Value& value, const Key& key) {
+                auto srcValue = read(v1,key);
+                write(v1, key, merge(srcValue, value));
+            });
+
+            return v1;
+        }
+#ifdef QT_CORE_LIB
+        template <typename V2>
+        inline auto merge(QVariant& v1, const V2& v2) -> typename std::enable_if<is_key_value_type<V2>::value, QVariant>::type {
+            auto map = v1.toMap();
+
+            return merge(map, v2);
+        }
+
+        inline QVariant merge(QVariant &v1, const QVariant &v2) {
+            if (v2.canConvert<QObject*>()) {
+                return merge(v1, v2.value<QObject*>());
+            }
+            return v2;
+        }
+#endif
     } /* End of Private Session */
 
     template <typename Object, typename Functor>
@@ -1652,7 +1693,12 @@ namespace _ {
         });
 
         return object;
-    };
+    }
+
+    template <typename Object, typename Source>
+    inline Object& merge(Object& object, const Source& source) {
+        return Private::merge(object, source);
+    }
 
 } // End of _ namespace
 

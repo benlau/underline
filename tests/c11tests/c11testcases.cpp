@@ -17,6 +17,15 @@ static bool isOdd(int value) {
     return value % 2 == 1;
 }
 
+static QObject* createMockObject(QObject* parent) {
+    QObject* ret = new DataObject(parent);
+    ret->setProperty("value1", 1);
+    ret->setProperty("value2", 2.0);
+    ret->setProperty("value3", "3");
+
+    return ret;
+}
+
 C11TestCases::C11TestCases(QObject *parent) : QObject(parent)
 {
     auto ref = [=]() {
@@ -403,7 +412,7 @@ void C11TestCases::test_private_write()
     }
 }
 
-void C11TestCases::test_cast_to_pointer()
+void C11TestCases::test_private_cast_to_pointer()
 {
     class A {
     public:
@@ -414,6 +423,56 @@ void C11TestCases::test_cast_to_pointer()
     a.value = 10;
     QCOMPARE(_::Private::cast_to_pointer(a)->value, 10);
     QCOMPARE(_::Private::cast_to_pointer(&a)->value, 10);
+}
+
+void C11TestCases::test_private_merge()
+{
+    {
+        QCOMPARE(_::Private::merge(3, 4.5), 4.5);
+    }
+
+    {
+        QVariant v1;
+        DataObject* v2 = new DataObject(this);
+        v2->setValue1(1);
+
+        auto res = _::Private::merge(v1, v2);
+        auto map = res.toMap();
+        QCOMPARE(map["value1"].toInt(), 1);
+    }
+
+    {
+        QVariant v1;
+        DataObject* object = new DataObject(this);
+        object->setValue1(1);
+
+        QVariant v2 = QVariant::fromValue<DataObject*>(object);
+
+        auto res = _::Private::merge(v1, v2);
+        auto map = res.toMap();
+        QCOMPARE(map["value1"].toInt(), 1);
+    }
+}
+
+void C11TestCases::test_merge()
+{
+
+    {
+        QObject* root = createMockObject(this);
+        QVariantMap data;
+        _::merge(data, root);
+
+        qDebug() << data;
+
+        QVERIFY(data["objectName"] == "Root");
+        QVERIFY(data["value1"].toInt() == 1);
+        QVERIFY(data["value2"].toString() == "2");
+        QVERIFY(data["value3"].toBool());
+
+        QVERIFY(data["value4"].type() == QVariant::Map);
+        QVERIFY(data["value4"].toMap()["value1"].toInt() == 5);
+    }
+
 }
 
 void C11TestCases::test_some()

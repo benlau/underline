@@ -35,7 +35,11 @@ private slots:
 
     void test_private_write();
 
-    void test_cast_to_pointer();
+    void test_private_cast_to_pointer();
+
+    void test_private_merge();
+
+    void test_merge();
 
     void test_some();
 
