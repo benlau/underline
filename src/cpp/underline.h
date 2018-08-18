@@ -1664,6 +1664,16 @@ namespace _ {
         return Private::is_map<T>::value;
     }
 
+    template <typename T>
+    inline bool isKeyValueType() {
+        return Private::is_key_value_type<T>::value;
+    }
+
+    template <typename T>
+    inline bool isKeyValueType(const T&) {
+        return Private::is_key_value_type<T>::value;
+    }
+
 #ifdef QT_CORE_LIB
     template <typename ...Args>
     QList<int> range_q(Args ...args) {

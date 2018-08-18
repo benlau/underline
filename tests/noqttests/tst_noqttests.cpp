@@ -47,6 +47,12 @@ TEST(UnderlineTests, isMap) {
     ASSERT_EQ(_::isMap(std::vector<int>{}),    false);
 }
 
+TEST(UnderlineTests, isKeyValueType) {
+    ASSERT_EQ(_::isKeyValueType(std::map<int,int>{}),   true);
+
+    ASSERT_EQ(_::isKeyValueType(10),                    false);
+    ASSERT_EQ(_::isKeyValueType(std::vector<int>{}),    false);
+}
 
 int main(int argc, char** argv) {
 

@@ -571,5 +571,22 @@ void C11TestCases::test_isMap()
     QCOMPARE(_::isMap(new C11TestCases(this)),false);
 }
 
+void C11TestCases::test_isKeyValueType()
+{
+    QCOMPARE(_::isKeyValueType(QMap<int,int>{}),       true);
+    QCOMPARE(_::isKeyValueType(QVariantMap{}),         true);
+    QCOMPARE(_::isKeyValueType(new QObject(this)),     true);
+    QCOMPARE(_::isKeyValueType(QJSValue()),            true);
+
+    QCOMPARE(_::isKeyValueType(GadgetObject()),        true);
+
+    QCOMPARE(_::isKeyValueType(std::vector<int>{}),    false);
+    QCOMPARE(_::isKeyValueType(QVector<int>{ }),       false);
+    QCOMPARE(_::isKeyValueType(QList<int>{ }),         false);
+    QCOMPARE(_::isKeyValueType(QVariantList{ }),       false);
+    QCOMPARE(_::isKeyValueType(QString{ }),            false);
+    QCOMPARE(_::isKeyValueType(10),                    false);
+}
+
 
 

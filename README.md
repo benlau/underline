@@ -187,7 +187,7 @@ bool _::isArray(const T&)
 bool _::isArray<T>()
 ```
 
-It is a static type checker to validate is the input type classified as a valid Array class for _.   You rarely need to use this function directly.
+It is a static type checker to validate is the input type classified as a valid Array class supported by _.   You rarely need to use this function directly.
 
 Example:
 
@@ -201,6 +201,30 @@ QCOMPARE(_::isArray(QString{ }),            true);
 QCOMPARE(_::isArray(std::map<bool,int>{}),  false);
 QCOMPARE(_::isArray(QMap<int,int>{}),       false);
 QCOMPARE(_::isArray(10),                    false);
+```
+
+isKeyValueType
+------------
+
+It is a static type checker to validate is the input type classified as a valid Key-Value type supported by  _.  You rarely need to use this function directly.
+
+It is a kind of data structure contains key-value pairs with unique keys. std::map and QMap are the typical examples. In this library, Qt's data types like QObject*, QJSValue and Gadget object also classified as this kind of type. You may use them as an input to functions like [forIn](#forIn), [assign](#assign), and [merge](#merge) etc.
+
+```
+ASSERT_EQ(_::isKeyValueType(std::map<int,int>{}),   true);
+
+ASSERT_EQ(_::isKeyValueType(10),                    false);
+ASSERT_EQ(_::isKeyValueType(std::vector<int>{}),    false);
+```
+
+```
+QCOMPARE(_::isKeyValueType(QMap<int,int>{}),       true);
+QCOMPARE(_::isKeyValueType(QVariantMap{}),         true);
+QCOMPARE(_::isKeyValueType(new QObject(this)),     true);
+QCOMPARE(_::isKeyValueType(QJSValue()),            true);
+
+QCOMPARE(_::isKeyValueType(QVariantList{ }),       false);
+QCOMPARE(_::isKeyValueType(QString{ }),            false);
 ```
 
 isMap

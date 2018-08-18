@@ -50,5 +50,7 @@ private slots:
     void test_range_q();
 
     void test_isMap();
+
+    void test_isKeyValueType();
 };
 
