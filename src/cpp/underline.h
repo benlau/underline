@@ -40,12 +40,20 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
 #define __UNDERLINE_STATIC_ASSERT_IS_ARRAY(prefix, type) \
     static_assert(_::Private::is_array<type>::value, prefix __UNDERLINE_INPUT_TYPE_IS_NOT_ARRAY)
 
+#define __UNDERLINE_STATIC_ASSERT_IS_MAP(prefix, type) \
+    static_assert(_::Private::is_key_value_type<type>::value, prefix "The expected input is an valid Map container class, where _::isMap() returns true.")
+
 #define __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_INVOKABLE(prefix, value) \
     static_assert(value, prefix __UNDERLINE_ITERATEE_MISMATCHED_ERROR)
 
 #define __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_NOT_VOID(prefix, value) \
     static_assert(value, prefix __UNDERLINE_ITERATEE_VOID_RET_ERROR)
 
+#define __UNDERLINE_STATIC_ASSERT_IS_OBJECT_SOURCE_KEY_MATCHED(prefix, object, source) \
+    static_assert(std::is_convertible<source,object>::value, prefix "The key type of 'source' argument cannot convert to the key type of 'object' argument.")
+
+#define __UNDERLINE_STATIC_ASSERT_IS_OBJECT_SOURCE_VALUE_MATCHED(prefix, object, source) \
+    static_assert(std::is_convertible<source,object>::value, prefix "The value type of 'source' argument cannot convert to the value type of 'object' argument.")
 
 #define UNDERLINE_PRIVATE_NS_BEGIN \
     namespace _ {\
@@ -1648,12 +1656,12 @@ namespace _ {
 
     template <typename T>
     inline bool isMap() {
-        return Private::is_key_value_type<T>::value;
+        return Private::is_map<T>::value;
     }
 
     template <typename T>
     inline bool isMap(const T&) {
-        return Private::is_key_value_type<T>::value;
+        return Private::is_map<T>::value;
     }
 
 #ifdef QT_CORE_LIB
@@ -1697,6 +1705,14 @@ namespace _ {
 
     template <typename Object, typename Source>
     inline Object& merge(Object& object, const Source& source) {
+
+        using OBJECT_TYPE = typename Private::key_value_type<Object>;
+        using SOURCE_TYPE = typename Private::key_value_type<Source>;
+
+        __UNDERLINE_STATIC_ASSERT_IS_OBJECT_SOURCE_KEY_MATCHED("_::merge: ", typename OBJECT_TYPE::key_type, typename SOURCE_TYPE::key_type);
+
+        __UNDERLINE_STATIC_ASSERT_IS_OBJECT_SOURCE_VALUE_MATCHED("_::merge: ", typename OBJECT_TYPE::value_type, typename SOURCE_TYPE::value_type);
+
         return Private::merge(object, source);
     }
 

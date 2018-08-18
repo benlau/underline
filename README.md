@@ -211,20 +211,25 @@ bool _::isMap(const T&)
 bool _::isMap<T>()
 ```
 
-It is a static type checker to validate is the input type classified as a valid Map class for _.  Besides std::map/QMap, it also returns true for QObject / QJSValue and gadget object. You rarely need to use this function directly.
+It is a static type checker to validate is the input type classified as a valid Map container class for _.  You rarely need to use this function directly.
 
-Example
+Standard C++
+
 ```C++
-QCOMPARE(_::isMap(std::map<bool,int>{}),  true);
-QCOMPARE(_::isMap(QMap<int,int>{}),       true);
-QCOMPARE(_::isMap(new QObject(),          true);
+ASSERT_EQ(_::isMap(std::map<int,int>{}),   true);
 
-QCOMPARE(_::isMap(std::vector<int>{}),    false);
+ASSERT_EQ(_::isMap(10),                    false);
+ASSERT_EQ(_::isMap(std::vector<int>{}),    false);
+```
+
+Qt
+
+```C++
+QCOMPARE(_::isMap(QMap<int,int>{}),       true);
+QCOMPARE(_::isMap(QVariantMap{}),         true);
+
 QCOMPARE(_::isMap(QVector<int>{ }),       false);
 QCOMPARE(_::isMap(QList<int>{ }),         false);
-QCOMPARE(_::isMap(QVariantList{ }),       false);
-QCOMPARE(_::isMap(QString{ }),            false);
-QCOMPARE(_::isMap(10),                    false);
 ```
 
 map

@@ -40,6 +40,14 @@ TEST(UnderlineTests, is_qobject) {
     ASSERT_EQ((bool) (_::Private::is_qobject<A>::value), false);
 }
 
+TEST(UnderlineTests, isMap) {
+    ASSERT_EQ(_::isMap(std::map<int,int>{}),   true);
+
+    ASSERT_EQ(_::isMap(10),                    false);
+    ASSERT_EQ(_::isMap(std::vector<int>{}),    false);
+}
+
+
 int main(int argc, char** argv) {
 
 #ifdef QT_CORE_LIB
