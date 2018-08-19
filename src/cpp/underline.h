@@ -1,3 +1,9 @@
+/** Underline
+ *
+ * @version 0.0.1
+ * @author Ben Lau
+ * @license Apache-2.0
+ */
 #pragma once
 #include <functional>
 #include <map>
@@ -41,7 +47,10 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
     static_assert(_::Private::is_array<type>::value, prefix __UNDERLINE_INPUT_TYPE_IS_NOT_ARRAY)
 
 #define __UNDERLINE_STATIC_ASSERT_IS_MAP(prefix, type) \
-    static_assert(_::Private::is_key_value_type<type>::value, prefix "The expected input is an valid Map container class, where _::isMap() returns true.")
+    static_assert(_::Private::is_map<type>::value, prefix "The expected input is an valid Map container class, where _::isMap() returns true.")
+
+#define __UNDERLINE_STATIC_ASSERT_IS_KEY_VALUE_TYPE(prefix, type) \
+    static_assert(_::Private::is_key_value_type<type>::value, prefix "Invalid argument type. It should be a Map container class, or a meta object type likes QObject*, gadget*, QJSValue where _::isKeyValueType() returns true.")
 
 #define __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_INVOKABLE(prefix, value) \
     static_assert(value, prefix __UNDERLINE_ITERATEE_MISMATCHED_ERROR)
@@ -199,6 +208,27 @@ namespace _ {
             return &value;
         }
 
+        template <typename T>
+        inline auto cast_to_qobject(const T& ) -> typename std::enable_if<!std::is_same<T, QVariant>::value && !is_qobject<T>::value, QObject*>::type {
+            return nullptr;
+        }
+
+#ifdef QT_CORE_LIB
+        template <typename T>
+        inline auto cast_to_qobject(const T& t) -> typename std::enable_if<std::is_pointer<T >::value && is_qobject<T>::value, QObject*>::type {
+            return t;
+        }
+
+        inline auto cast_to_qobject(const QVariant& t) -> QObject* {
+            QObject* res = nullptr;
+            if (t.canConvert<QObject*>()) {
+                res = qvariant_cast<QObject*>(t);
+            }
+            return res;
+        }
+#endif
+
+
         template <typename ...Args>
         struct _meta_object_info {
             enum {
@@ -237,16 +267,6 @@ namespace _ {
             return property.readOnGadget(ptr);
         }
 
-        template <typename Meta, typename Key>
-        inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_qobject<Meta>::value, QVariant>::type {
-            return meta->property(key);
-        }
-
-        template <typename Meta, typename Key>
-        inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_qjsvalue<Meta>::value, QJSValue>::type {
-            return meta.property(key);
-        }
-
         inline const char * cast_to_const_char(const char * value) {
             return value;
         }
@@ -254,6 +274,16 @@ namespace _ {
         template <typename T>
         inline auto cast_to_const_char(const T& string) -> typename std::enable_if<std::is_same<T, QString>::value, const char*>::type {
             return string.toUtf8().constData();
+        }
+
+        template <typename Meta, typename Key>
+        inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_qobject<Meta>::value, QVariant>::type {
+            return meta->property(cast_to_const_char(key));
+        }
+
+        template <typename Meta, typename Key>
+        inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_qjsvalue<Meta>::value, QJSValue>::type {
+            return meta.property(cast_to_const_char(key));
         }
 
         template <typename Meta, typename Key, typename Value>
@@ -1213,7 +1243,7 @@ namespace _ {
         template <typename V1, typename V2>
         inline auto merge(const V1&, const V2& v2) ->
         typename std::enable_if<
-            !(is_map<V1>::value && is_key_value_type<V2>::value)  &&
+            !(is_key_value_type<V1>::value && is_key_value_type<V2>::value)  &&
             !(std::is_same<V1,QVariant>::value && std::is_same<V2,QVariant>::value)
             ,V2>::type {
             return v2;
@@ -1222,13 +1252,19 @@ namespace _ {
         inline QVariant merge(QVariant &v1, const QVariant &v2);
 
         template <typename V1, typename V2>
-        inline auto merge(V1& v1, const V2& v2) -> typename std::enable_if<is_map<V1>::value && is_key_value_type<V2>::value, V1&>::type {
+        inline auto merge(V1& v1, const V2& v2) -> typename std::enable_if<is_key_value_type<V1>::value && is_key_value_type<V2>::value, typename std::conditional<std::is_pointer<V1>::value, V1,V1&>::type>::type {
             using Key = typename key_value_type<V2>::key_type;
             using Value = typename key_value_type<V2>::value_type;
 
             forIn(v2, [&](const Value& value, const Key& key) {
                 auto srcValue = read(v1,key);
-                write(v1, key, merge(srcValue, value));
+
+                QObject* ptr = cast_to_qobject(srcValue);
+                if (ptr != nullptr) {
+                    merge(ptr, value.toMap());
+                } else {
+                    write(v1, key, merge(srcValue, value));
+                }
             });
 
             return v1;
@@ -1242,11 +1278,13 @@ namespace _ {
         }
 
         inline QVariant merge(QVariant &v1, const QVariant &v2) {
-            if (v2.canConvert<QObject*>()) {
-                return merge(v1, v2.value<QObject*>());
+            QObject*ptr = cast_to_qobject(v2);
+            if (ptr != nullptr) {
+                return merge(v1, ptr);
             }
             return v2;
         }
+
 #endif
     } /* End of Private Session */
 
@@ -1714,7 +1752,7 @@ namespace _ {
     }
 
     template <typename Object, typename Source>
-    inline Object& merge(Object& object, const Source& source) {
+    inline auto merge(Object& object, const Source& source) -> typename std::conditional<std::is_pointer<Object>::value, Object, Object&>::type {
 
         using OBJECT_TYPE = typename Private::key_value_type<Object>;
         using SOURCE_TYPE = typename Private::key_value_type<Source>;
@@ -1722,6 +1760,10 @@ namespace _ {
         __UNDERLINE_STATIC_ASSERT_IS_OBJECT_SOURCE_KEY_MATCHED("_::merge: ", typename OBJECT_TYPE::key_type, typename SOURCE_TYPE::key_type);
 
         __UNDERLINE_STATIC_ASSERT_IS_OBJECT_SOURCE_VALUE_MATCHED("_::merge: ", typename OBJECT_TYPE::value_type, typename SOURCE_TYPE::value_type);
+
+        __UNDERLINE_STATIC_ASSERT_IS_KEY_VALUE_TYPE("_::merge: ", Object);
+
+        __UNDERLINE_STATIC_ASSERT_IS_KEY_VALUE_TYPE("_::merge: ", Source);
 
         return Private::merge(object, source);
     }
@@ -1739,4 +1781,3 @@ __UNDERLINE_REGISTER_REBIND_TO_MAP(QList, QMap)
 #endif
 
 /* End of Type Registration */
-;

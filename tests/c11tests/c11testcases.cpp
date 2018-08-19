@@ -428,10 +428,12 @@ void C11TestCases::test_private_cast_to_pointer()
 void C11TestCases::test_private_merge()
 {
     {
+        /* Any to Any */
         QCOMPARE(_::Private::merge(3, 4.5), 4.5);
     }
 
     {
+        /* QVariant, QObject */
         QVariant v1;
         DataObject* v2 = new DataObject(this);
         v2->setValue1(1);
@@ -442,6 +444,7 @@ void C11TestCases::test_private_merge()
     }
 
     {
+        /* QVariant , QVariant(QObject) */
         QVariant v1;
         DataObject* object = new DataObject(this);
         object->setValue1(1);
@@ -452,6 +455,20 @@ void C11TestCases::test_private_merge()
         auto map = res.toMap();
         QCOMPARE(map["value1"].toInt(), 1);
     }
+
+    {
+        /* QObject, QVariant */
+        DataObject* v1 = new DataObject(this);
+        v1->setValue1(1);
+
+        QVariantMap v2;
+        v2["value1"] = 10;
+
+        auto res = _::Private::merge(v1, v2);
+
+        QVERIFY(v1 == res);
+        QCOMPARE(v1->value1(), 10);
+    }
 }
 
 void C11TestCases::test_merge()
@@ -460,19 +477,41 @@ void C11TestCases::test_merge()
     {
         /* QVariantMap, QObject */
 
-        QObject* root = createMockObject(this);
-        QVariantMap data;
-        _::merge(data, root);
+        QObject* source = createMockObject(this);
+        QVariantMap object;
+        _::merge(object, source);
 
-        qDebug() << data;
+        QVERIFY(object["objectName"] == "Root");
+        QVERIFY(object["value1"].toInt() == 1);
+        QVERIFY(object["value2"].toString() == "2");
+        QVERIFY(object["value3"].toBool());
 
-        QVERIFY(data["objectName"] == "Root");
-        QVERIFY(data["value1"].toInt() == 1);
-        QVERIFY(data["value2"].toString() == "2");
-        QVERIFY(data["value3"].toBool());
+        QVERIFY(object["value4"].type() == QVariant::Map);
+        QVERIFY(object["value4"].toMap()["value1"].toInt() == 5);
+    }
 
-        QVERIFY(data["value4"].type() == QVariant::Map);
-        QVERIFY(data["value4"].toMap()["value1"].toInt() == 5);
+    {
+         /* QObject, QVariantMap */
+        QObject* object = createMockObject(this);
+
+        QVariantMap value4{{"value1", 32}};
+        _::merge(object, QVariantMap{{"value1", 99}, {"value4", value4}});
+        QVERIFY(object->property("value1").toInt() == 99);
+        QCOMPARE(object->property("value4").value<QObject*>()->property("value1").toInt(),32);
+    }
+
+    {
+        /* map, map */
+
+        QVariantMap source{{"value1", 1},{"value2", 2.0}};
+        QVariantMap object{{"value3", "3"}};
+
+        _::assign(object, source);
+
+        QCOMPARE(object.size(), 3);
+        QCOMPARE(object["value1"].toInt(), 1);
+        QCOMPARE(object["value2"].toDouble(), 2.0);
+        QCOMPARE(object["value3"].toString(), QString("3"));
     }
 }
 
