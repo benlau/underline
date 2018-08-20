@@ -1259,9 +1259,15 @@ namespace _ {
             forIn(v2, [&](const Value& value, const Key& key) {
                 auto srcValue = read(v1,key);
 
-                QObject* ptr = cast_to_qobject(srcValue);
-                if (ptr != nullptr) {
-                    merge(ptr, value.toMap());
+                QObject* v1_qobject_ptr = cast_to_qobject(srcValue);
+                if (v1_qobject_ptr != nullptr) {
+                    QObject* v2_qobject_ptr = cast_to_qobject(value);
+                    if (v2_qobject_ptr) {
+                        merge(v1_qobject_ptr, v2_qobject_ptr);
+                    } else {
+                        merge(v1_qobject_ptr, value.toMap());
+                    }
+
                 } else {
                     write(v1, key, merge(srcValue, value));
                 }

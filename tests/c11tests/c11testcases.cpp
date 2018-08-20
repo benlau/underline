@@ -17,8 +17,8 @@ static bool isOdd(int value) {
     return value % 2 == 1;
 }
 
-static QObject* createMockObject(QObject* parent) {
-    QObject* ret = new DataObject(parent);
+static DataObject* createMockObject(QObject* parent) {
+    DataObject* ret = new DataObject(parent);
     ret->setProperty("value1", 1);
     ret->setProperty("value2", 2.0);
     ret->setProperty("value3", "3");
@@ -501,7 +501,7 @@ void C11TestCases::test_merge()
     }
 
     {
-        /* map, map */
+        /* QVariantMap, QVariantMap */
 
         QVariantMap source{{"value1", 1},{"value2", 2.0}};
         QVariantMap object{{"value3", "3"}};
@@ -512,6 +512,22 @@ void C11TestCases::test_merge()
         QCOMPARE(object["value1"].toInt(), 1);
         QCOMPARE(object["value2"].toDouble(), 2.0);
         QCOMPARE(object["value3"].toString(), QString("3"));
+    }
+
+    {
+        /* QObject, QObject */
+        auto* source = createMockObject(this);
+        auto* dest = createMockObject(this);
+
+        source->setProperty("value3", "3+");
+        source->value4()->setValue1(33);
+
+        _::merge(dest, source);
+
+        QCOMPARE(dest->property("value3").toString(), QString("3+"));
+
+        QVERIFY(dest->property("value4").value<QObject*>() != source->property("value4").value<QObject*>());
+        QCOMPARE(dest->value4()->value1(), 33);
     }
 }
 
