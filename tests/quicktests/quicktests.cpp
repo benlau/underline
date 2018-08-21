@@ -27,6 +27,22 @@ void QuickTests::test_QJSValue()
     QCOMPARE(_::Private::read(value, "value1").toInt(), 1);
 }
 
+void QuickTests::test_private_is_convertible()
+{
+    QCOMPARE( (bool) (_::Private::is_convertible<QJSValue, QVariant>::value) , true);
+
+    QQmlApplicationEngine engine;
+    QString content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
+    QJSValue source = engine.evaluate(content);
+
+    QVariant dest;
+    _::Private::convertTo(source, dest);
+
+    auto map = dest.toMap();
+
+    QCOMPARE(map["value1"].toInt(), 10);
+}
+
 void QuickTests::test_forIn()
 {
     {

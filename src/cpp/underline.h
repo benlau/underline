@@ -169,7 +169,27 @@ namespace _ {
 
         _DECLARE_UNDERLINE_HAS(key_type,typename std::remove_cv<Type>::type::key_type,typename std::remove_cv<Type>::type::key_type)
 
-        template <typename T>
+        template <typename From, typename To>
+        inline auto convertTo(const From&,  To&) -> typename std::enable_if<!std::is_convertible<From,To>::value, Undefined>::type {}
+
+        template <typename From, typename To>
+        inline auto convertTo(const From& from, To& to) -> typename std::enable_if<std::is_convertible<From,To>::value, void>::type {
+            to = from;
+        }
+
+#ifdef QT_QUICK_LIB
+        inline void convertTo(const QJSValue& from, QVariant& to) {
+            to = from.toVariant();
+        }
+#endif
+        template <typename From, typename To>
+        struct is_convertible {
+            enum {
+                value = std::is_convertible<From, To>::value || !std::is_same<Undefined, decltype(convertTo(std::declval<From>(), std::declval<To&>()))>::value
+            };
+        };
+
+        template <typename T> // Avoid returning a void, change it to Undefined
         using avoid_void_t = typename std::conditional<std::is_same<T,void>::value, Undefined, T>::type;
 
         template <typename T>
