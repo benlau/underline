@@ -1300,13 +1300,19 @@ namespace _ {
 
         template <typename V2>
         inline QVariant merge(QVariant &v1, const V2 &v2) {
-            QObject* ptr = cast_to_qobject(v1);
-            if (ptr != nullptr) {
-                merge(ptr, v2);
+            QObject* qobject = cast_to_qobject(v1);
+            if (qobject != nullptr) {
+                merge(qobject, v2);
                 return v1;
             } else if (v1.canConvert<QVariantMap>()){
                 auto map = v1.toMap();
                 return merge(map, v2);
+            }
+
+            qobject = cast_to_qobject(v2);
+            if (qobject != nullptr) {
+                auto map = v1.toMap();
+                return merge(map, qobject);
             }
             QVariant value;
             convertTo(v2, value);
