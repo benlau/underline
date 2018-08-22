@@ -491,16 +491,6 @@ void C11TestCases::test_merge()
     }
 
     {
-         /* QObject, QVariantMap */
-        QObject* object = createMockObject(this);
-
-        QVariantMap value4{{"value1", 32}};
-        _::merge(object, QVariantMap{{"value1", 99}, {"value4", value4}});
-        QVERIFY(object->property("value1").toInt() == 99);
-        QCOMPARE(object->property("value4").value<QObject*>()->property("value1").toInt(),32);
-    }
-
-    {
         /* QVariantMap, QVariantMap */
 
         QVariantMap source{{"value1", 1},{"value2", 2.0}};
@@ -513,6 +503,21 @@ void C11TestCases::test_merge()
         QCOMPARE(object["value2"].toDouble(), 2.0);
         QCOMPARE(object["value3"].toString(), QString("3"));
     }
+
+
+    {
+        /* std::map , std::map */
+        auto source = std::map<std::string,int>{ {"value1", 1} };
+        auto dest = std::map<std::string,int>{ {"value2", 2} };
+        _::merge(dest, source);
+
+        QCOMPARE(dest["value1"], 1);
+        QCOMPARE(dest["value2"], 2);
+    }
+}
+
+void C11TestCases::test_merge_qobject()
+{
 
     {
         /* QObject, QObject */
@@ -528,6 +533,25 @@ void C11TestCases::test_merge()
 
         QVERIFY(dest->property("value4").value<QObject*>() != source->property("value4").value<QObject*>());
         QCOMPARE(dest->value4()->value1(), 33);
+    }
+
+    {
+         /* QObject, QVariantMap */
+        QObject* object = createMockObject(this);
+
+        QVariantMap value4{{"value1", 32}};
+        _::merge(object, QVariantMap{{"value1", 99}, {"value4", value4}});
+        QVERIFY(object->property("value1").toInt() == 99);
+        QCOMPARE(object->property("value4").value<QObject*>()->property("value1").toInt(),32);
+    }
+
+    {
+         /* QObject, std::map */
+        QObject* object = createMockObject(this);
+
+        std::map<QString,int> source{{"value1", 32}};
+        _::merge(object, source);
+        QVERIFY(object->property("value1").toInt() == 32);
     }
 }
 

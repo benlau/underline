@@ -22,7 +22,8 @@ DISTFILES +=    \
     ../../.travis.yml \
     ../../README.md \
     ../../appveyor.yml \
-    SampleData1.json
+    SampleData1.json \
+    SampleData2.json
 
 !win32 {
     QMAKE_CXXFLAGS += -Werror

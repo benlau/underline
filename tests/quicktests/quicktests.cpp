@@ -90,3 +90,24 @@ void QuickTests::test_assign_QJSValue()
         _::assign(0, value);
     }
 }
+
+void QuickTests::test_merge_QJSValue()
+{
+
+    {
+        QQmlApplicationEngine engine;
+
+        QString content;
+        content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
+        QJSValue source = engine.evaluate(content);
+
+        QVariantMap object;
+        object["value4"] = QVariantMap{{"value2", 2.0}};
+
+        _::merge(object, source);
+
+        QCOMPARE(object["value4"].toMap()["value1"].toInt(), 21);
+        QCOMPARE(object["value4"].toMap()["value2"].toDouble(), 2.0);
+    }
+
+}

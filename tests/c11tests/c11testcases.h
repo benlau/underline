@@ -41,6 +41,8 @@ private slots:
 
     void test_merge();
 
+    void test_merge_qobject();
+
     void test_some();
 
     void test_map();

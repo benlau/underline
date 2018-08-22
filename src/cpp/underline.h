@@ -59,10 +59,10 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
     static_assert(value, prefix __UNDERLINE_ITERATEE_VOID_RET_ERROR)
 
 #define __UNDERLINE_STATIC_ASSERT_IS_OBJECT_SOURCE_KEY_MATCHED(prefix, object, source) \
-    static_assert(std::is_convertible<source,object>::value, prefix "The key type of 'source' argument cannot convert to the key type of 'object' argument.")
+    static_assert(Private::is_convertible<source,object>::value, prefix "The key type of 'source' argument cannot convert to the key type of 'object' argument.")
 
 #define __UNDERLINE_STATIC_ASSERT_IS_OBJECT_SOURCE_VALUE_MATCHED(prefix, object, source) \
-    static_assert(std::is_convertible<source,object>::value, prefix "The value type of 'source' argument cannot convert to the value type of 'object' argument.")
+    static_assert(Private::is_convertible<source,object>::value, prefix "The value type of 'source' argument cannot convert to the value type of 'object' argument.")
 
 #define UNDERLINE_PRIVATE_NS_BEGIN \
     namespace _ {\
@@ -170,7 +170,7 @@ namespace _ {
         _DECLARE_UNDERLINE_HAS(key_type,typename std::remove_cv<Type>::type::key_type,typename std::remove_cv<Type>::type::key_type)
 
         template <typename From, typename To>
-        inline auto convertTo(const From&,  To&) -> typename std::enable_if<!std::is_convertible<From,To>::value, Undefined>::type {}
+        inline auto convertTo(const From&,  To&) -> typename std::enable_if<!std::is_convertible<From,To>::value, Undefined>::type { return Undefined(); }
 
         template <typename From, typename To>
         inline auto convertTo(const From& from, To& to) -> typename std::enable_if<std::is_convertible<From,To>::value, void>::type {
@@ -247,7 +247,6 @@ namespace _ {
             return res;
         }
 #endif
-
 
         template <typename ...Args>
         struct _meta_object_info {
@@ -1260,16 +1259,24 @@ namespace _ {
             return object;
         }
 
+        /* merge */
+
         template <typename V1, typename V2>
         inline auto merge(const V1&, const V2& v2) ->
         typename std::enable_if<
             !(is_key_value_type<V1>::value && is_key_value_type<V2>::value)  &&
-            !(std::is_same<V1,QVariant>::value && std::is_same<V2,QVariant>::value)
-            ,V2>::type {
+            !(std::is_same<V1,QVariant>::value )
+            ,V2>::type { // The default merge function which is not doing anything
             return v2;
         }
 
-        inline QVariant merge(QVariant &v1, const QVariant &v2);
+        inline QObject* merge(QObject* v1, const QVariant& v2);
+
+        template <typename V1>
+        inline auto merge(V1& v1, const QVariant& v2) -> typename std::enable_if<is_gadget<V1>::value && std::is_pointer<V1>::value, V1*>::type;
+
+        template <typename V2>
+        inline QVariant merge(QVariant &v1, const V2 &v2);
 
         template <typename V1, typename V2>
         inline auto merge(V1& v1, const V2& v2) -> typename std::enable_if<is_key_value_type<V1>::value && is_key_value_type<V2>::value, typename std::conditional<std::is_pointer<V1>::value, V1,V1&>::type>::type {
@@ -1281,13 +1288,7 @@ namespace _ {
 
                 QObject* v1_qobject_ptr = cast_to_qobject(srcValue);
                 if (v1_qobject_ptr != nullptr) {
-                    QObject* v2_qobject_ptr = cast_to_qobject(value);
-                    if (v2_qobject_ptr) {
-                        merge(v1_qobject_ptr, v2_qobject_ptr);
-                    } else {
-                        merge(v1_qobject_ptr, value.toMap());
-                    }
-
+                    merge(v1_qobject_ptr, value);
                 } else {
                     write(v1, key, merge(srcValue, value));
                 }
@@ -1296,22 +1297,45 @@ namespace _ {
             return v1;
         }
 #ifdef QT_CORE_LIB
+
         template <typename V2>
-        inline auto merge(QVariant& v1, const V2& v2) -> typename std::enable_if<is_key_value_type<V2>::value, QVariant>::type {
-            auto map = v1.toMap();
-
-            return merge(map, v2);
-        }
-
-        inline QVariant merge(QVariant &v1, const QVariant &v2) {
-            QObject*ptr = cast_to_qobject(v2);
+        inline QVariant merge(QVariant &v1, const V2 &v2) {
+            QObject* ptr = cast_to_qobject(v1);
             if (ptr != nullptr) {
-                return merge(v1, ptr);
+                merge(ptr, v2);
+                return v1;
+            } else if (v1.canConvert<QVariantMap>()){
+                auto map = v1.toMap();
+                return merge(map, v2);
             }
-            return v2;
+            QVariant value;
+            convertTo(v2, value);
+            return value;
         }
 
+        inline QObject* merge(QObject* v1, const QVariant& v2) {
+            QObject* v2_qobject_ptr = cast_to_qobject(v2);
+            if (v2_qobject_ptr) {
+                merge(v1, v2_qobject_ptr);
+            } else {
+                merge(v1, v2.toMap());
+            }
+            return v1;
+        }
+
+        template <typename V1>
+        inline auto merge(V1& v1, const QVariant& v2) -> typename std::enable_if<is_gadget<V1>::value && std::is_pointer<V1>::value, V1*>::type {
+            QObject* v2_qobject_ptr = cast_to_qobject(v2);
+            if (v2_qobject_ptr) {
+                merge(v1, v2_qobject_ptr);
+            } else {
+                merge(v1, v2.toMap());
+            }
+            return v1;
+        }
 #endif
+        /* end of merge */
+
     } /* End of Private Session */
 
     template <typename Object, typename Functor>

@@ -18,6 +18,8 @@ private slots:
     void test_private_is_convertible();
     void test_forIn();
     void test_assign_QJSValue();
+
+    void test_merge_QJSValue();
 };
 
 #endif // QUICKTESTS_H
