@@ -541,7 +541,7 @@ void C11TestCases::test_merge_qobject()
 
         QVariantMap value4{{"value1", 32}};
         _::merge(object, QVariantMap{{"value1", 99}, {"value4", value4}});
-        QVERIFY(object->property("value1").toInt() == 99);
+        QCOMPARE(object->property("value1").toInt(), 99);
         QCOMPARE(object->property("value4").value<QObject*>()->property("value1").toInt(),32);
     }
 

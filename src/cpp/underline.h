@@ -247,6 +247,35 @@ namespace _ {
             return res;
         }
 #endif
+#ifdef QT_QUICK_LIB
+        inline auto cast_to_qobject(const QJSValue& t) -> QObject* {
+            QObject* res = nullptr;
+            if (t.isQObject()) {
+                res = t.toQObject();
+            }
+            return res;
+        }
+#endif
+
+        template <typename T>
+        inline QVariantMap cast_to_qvariantmap(const T&) {
+            return QVariantMap();
+        }
+#ifdef QT_CORE_LIB
+        inline auto cast_to_qvariantmap(const QVariant& t) -> QVariantMap {
+            return t.toMap();
+        }
+
+        inline auto cast_to_qvariantmap(const QVariantMap& map) -> QVariantMap {
+            return map;
+        }
+#endif
+#ifdef QT_QUICK_LIB
+        inline auto cast_to_qvariantmap(const QJSValue& t) -> QVariantMap {
+            return t.toVariant().toMap();
+        }
+#endif
+
 
         template <typename ...Args>
         struct _meta_object_info {
@@ -510,6 +539,11 @@ namespace _ {
         template <typename T>
         struct is_key_value_type {
             enum { value = key_value_type<T>::is_key_value_type};
+        };
+
+        template <typename T>
+        struct is_real_key_value_type {
+            enum { value = key_value_type<T>::is_key_value_type && !std::is_same<T,QJSValue>::value};
         };
 
         /// Source: https://stackoverflow.com/questions/5052211/changing-value-type-of-a-given-stl-container
@@ -1262,6 +1296,9 @@ namespace _ {
         /* merge */
 
         template <typename V1, typename V2>
+        inline void forIn_merge(V1 &v1 , const V2& v2);
+
+        template <typename V1, typename V2>
         inline auto merge(const V1&, const V2& v2) ->
         typename std::enable_if<
             !(is_key_value_type<V1>::value && is_key_value_type<V2>::value)  &&
@@ -1270,7 +1307,11 @@ namespace _ {
             return v2;
         }
 
-        inline QObject* merge(QObject* v1, const QVariant& v2);
+        template <typename V2>
+        inline auto merge(QObject* v1, const V2& v2) -> typename std::enable_if<!is_real_key_value_type<V2>::value, QObject*>::type;
+
+        template <typename V2>
+        inline auto merge(QObject* v1, const V2& v2) -> typename std::enable_if<is_real_key_value_type<V2>::value, QObject*>::type;
 
         template <typename V1>
         inline auto merge(V1& v1, const QVariant& v2) -> typename std::enable_if<is_gadget<V1>::value && std::is_pointer<V1>::value, V1*>::type;
@@ -1279,25 +1320,12 @@ namespace _ {
         inline QVariant merge(QVariant &v1, const V2 &v2);
 
         template <typename V1, typename V2>
-        inline auto merge(V1& v1, const V2& v2) -> typename std::enable_if<is_key_value_type<V1>::value && is_key_value_type<V2>::value, typename std::conditional<std::is_pointer<V1>::value, V1,V1&>::type>::type {
-            using Key = typename key_value_type<V2>::key_type;
-            using Value = typename key_value_type<V2>::value_type;
-
-            forIn(v2, [&](const Value& value, const Key& key) {
-                auto srcValue = read(v1,key);
-
-                QObject* v1_qobject_ptr = cast_to_qobject(srcValue);
-                if (v1_qobject_ptr != nullptr) {
-                    merge(v1_qobject_ptr, value);
-                } else {
-                    write(v1, key, merge(srcValue, value));
-                }
-            });
-
+        inline auto merge(V1& v1, const V2& v2) -> typename std::enable_if<is_real_key_value_type<V1>::value && is_real_key_value_type<V2>::value, typename std::conditional<std::is_pointer<V1>::value, V1,V1&>::type>::type { // Generic merge function
+            forIn_merge(v1, v2);
             return v1;
         }
-#ifdef QT_CORE_LIB
 
+#ifdef QT_CORE_LIB
         template <typename V2>
         inline QVariant merge(QVariant &v1, const V2 &v2) {
             QObject* qobject = cast_to_qobject(v1);
@@ -1319,13 +1347,20 @@ namespace _ {
             return value;
         }
 
-        inline QObject* merge(QObject* v1, const QVariant& v2) {
+        template <typename V2>
+        inline auto merge(QObject* v1, const V2& v2) -> typename std::enable_if<!is_real_key_value_type<V2>::value, QObject*>::type {
             QObject* v2_qobject_ptr = cast_to_qobject(v2);
             if (v2_qobject_ptr) {
-                merge(v1, v2_qobject_ptr);
+                forIn_merge(v1, v2_qobject_ptr);
             } else {
-                merge(v1, v2.toMap());
+                forIn_merge(v1, cast_to_qvariantmap(v2));
             }
+            return v1;
+        }
+
+        template <typename V2>
+        inline auto merge(QObject* v1, const V2& v2) -> typename std::enable_if<is_real_key_value_type<V2>::value, QObject*>::type {
+            forIn_merge(v1, v2);
             return v1;
         }
 
@@ -1335,11 +1370,69 @@ namespace _ {
             if (v2_qobject_ptr) {
                 merge(v1, v2_qobject_ptr);
             } else {
-                merge(v1, v2.toMap());
+                merge(v1, cast_to_qvariantmap(v2));
             }
             return v1;
         }
 #endif
+
+#ifdef QT_QUICK_LIB
+        template <typename V1>
+        inline auto merge(V1& v1, const QJSValue & v2) -> typename std::enable_if<is_map<V1>::value, typename std::conditional<std::is_pointer<V1>::value, V1, V1&>::type >::type {
+            if (v2.isQObject()) {
+                merge(v1, v2.toQObject());
+            } else if (v2.isObject()) {
+                forIn_merge(v1, v2);
+            }
+
+            return v1;
+        }
+
+        inline QVariant merge(QVariant &v1, const QJSValue &v2) {
+            auto ptr = cast_to_qobject(v1);
+            if (ptr) {
+                merge(ptr, v2);
+            } else if (v1.canConvert<QVariantMap>()) {
+                auto map = v1.toMap();
+                return merge(map, v2);
+            } else {
+                QVariant v;
+                convertTo(v2, v);
+                return v;
+            }
+
+            return v1;
+        }
+
+        inline QJSValue merge(QJSValue &v1, const QJSValue &v2) {
+            if (v1.isQObject()) {
+                merge(v1.toQObject(), v2);
+                return v1;
+            } else if (v1.isObject()) {
+                forIn_merge(v1, v2);
+                return v1;
+            } else {
+                return v2;
+            }
+        }
+#endif
+        template <typename V1, typename V2>
+        inline void forIn_merge(V1 &v1 , const V2& v2) {
+            using Key = typename key_value_type<V2>::key_type;
+            using Value = typename key_value_type<V2>::value_type;
+
+            forIn(v2, [&](const Value& value, const Key& key) {
+                auto srcValue = read(v1,key);
+
+                QObject* v1_qobject_ptr = cast_to_qobject(srcValue);
+                if (v1_qobject_ptr != nullptr) {
+                    merge(v1_qobject_ptr, value);
+                } else {
+                    write(v1, key, merge(srcValue, value));
+                }
+            });
+        }
+
         /* end of merge */
 
     } /* End of Private Session */
@@ -1821,7 +1914,9 @@ namespace _ {
 
         __UNDERLINE_STATIC_ASSERT_IS_KEY_VALUE_TYPE("_::merge: ", Source);
 
-        return Private::merge(object, source);
+        Private::merge(object, source);
+
+        return object;
     }
 
 } // End of _ namespace

@@ -110,4 +110,25 @@ void QuickTests::test_merge_QJSValue()
         QCOMPARE(object["value4"].toMap()["value2"].toDouble(), 2.0);
     }
 
+    {
+
+        QQmlApplicationEngine engine;
+
+        QString content;
+        content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
+        QJSValue source = engine.evaluate(content);
+
+        content = QtShell::cat(QString(SRCDIR) + "/SampleData2.json");
+        QJSValue object = engine.evaluate(content);
+
+        _::merge(object, source);
+
+        QVariantMap map;
+        _::merge(map, object);
+
+        QCOMPARE(map["value4"].toMap()["value1"].toInt(), 21);
+        QCOMPARE(map["value4"].toMap()["value2"].toDouble(), 2.0);
+
+    }
+
 }
