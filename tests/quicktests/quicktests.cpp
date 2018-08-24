@@ -95,6 +95,7 @@ void QuickTests::test_merge_QJSValue()
 {
 
     {
+        /* QVariantMap, QJSValue */
         QQmlApplicationEngine engine;
 
         QString content;
@@ -111,7 +112,7 @@ void QuickTests::test_merge_QJSValue()
     }
 
     {
-
+        /* QJSValue, QJSValue */
         QQmlApplicationEngine engine;
 
         QString content;

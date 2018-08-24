@@ -208,6 +208,12 @@ namespace _ {
             enum { value = std::is_same<T, QJSValue>::value};
         };
 
+        template <typename T> struct is_qany_type {
+            enum {
+                value = std::is_same<T,QJSValue>::value || std::is_same<T,QVariant>::value
+            };
+        };
+
         template <typename T>
         auto inline cast_to_pointer(const T& value) -> typename std::enable_if<std::is_pointer<T>::value, const T&>::type {
             return value;
@@ -261,6 +267,12 @@ namespace _ {
         inline QVariantMap cast_to_qvariantmap(const T&) {
             return QVariantMap();
         }
+
+        template <typename T>
+        inline auto can_cast_to_qvariantmap(const T&) -> typename std::enable_if<!is_qany_type<T>::value, bool>::type {
+            return false;
+        }
+
 #ifdef QT_CORE_LIB
         inline auto cast_to_qvariantmap(const QVariant& t) -> QVariantMap {
             return t.toMap();
@@ -269,6 +281,15 @@ namespace _ {
         inline auto cast_to_qvariantmap(const QVariantMap& map) -> QVariantMap {
             return map;
         }
+
+        inline auto can_cast_to_qvariantmap(const QVariant& t) -> bool {
+            return t.canConvert<QVariantMap>();
+        }
+
+        inline auto can_cast_to_qvariantmap(const QJSValue& t) -> bool {
+            return t.isObject();
+        }
+
 #endif
 #ifdef QT_QUICK_LIB
         inline auto cast_to_qvariantmap(const QJSValue& t) -> QVariantMap {
@@ -1302,7 +1323,9 @@ namespace _ {
         inline auto merge(const V1&, const V2& v2) ->
         typename std::enable_if<
             !(is_key_value_type<V1>::value && is_key_value_type<V2>::value)  &&
-            !(std::is_same<V1,QVariant>::value )
+            !(std::is_same<V1,QVariant>::value) &&
+            !(std::is_same<V1,QJSValue>::value) &&
+            !(std::is_same<V2,QJSValue>::value)
             ,V2>::type { // The default merge function which is not doing anything
             return v2;
         }
@@ -1325,28 +1348,21 @@ namespace _ {
             return v1;
         }
 
-#ifdef QT_CORE_LIB
-        template <typename V2>
-        inline QVariant merge(QVariant &v1, const V2 &v2) {
-            QObject* qobject = cast_to_qobject(v1);
-            if (qobject != nullptr) {
-                merge(qobject, v2);
+        template <typename V1, typename V2>
+        inline auto merge(V1& v1, const V2& v2) ->
+            typename std::enable_if<is_map<V1>::value && !is_real_key_value_type<V2>::value, V1&>::type {
+            auto ptr = cast_to_qobject(v2);
+            if (ptr) {
+                forIn_merge(v1, ptr);
                 return v1;
-            } else if (v1.canConvert<QVariantMap>()){
-                auto map = v1.toMap();
-                return merge(map, v2);
             }
 
-            qobject = cast_to_qobject(v2);
-            if (qobject != nullptr) {
-                auto map = v1.toMap();
-                return merge(map, qobject);
-            }
-            QVariant value;
-            convertTo(v2, value);
-            return value;
+            auto map = cast_to_qvariantmap(v2);
+            forIn_merge(v1, map);
+            return v1;
         }
 
+#ifdef QT_CORE_LIB
         template <typename V2>
         inline auto merge(QObject* v1, const V2& v2) -> typename std::enable_if<!is_real_key_value_type<V2>::value, QObject*>::type {
             QObject* v2_qobject_ptr = cast_to_qobject(v2);
@@ -1364,47 +1380,38 @@ namespace _ {
             return v1;
         }
 
-        template <typename V1>
-        inline auto merge(V1& v1, const QVariant& v2) -> typename std::enable_if<is_gadget<V1>::value && std::is_pointer<V1>::value, V1*>::type {
-            QObject* v2_qobject_ptr = cast_to_qobject(v2);
-            if (v2_qobject_ptr) {
-                merge(v1, v2_qobject_ptr);
-            } else {
-                merge(v1, cast_to_qvariantmap(v2));
+        template <typename V2>
+        inline QVariant merge(QVariant &v1, const V2 &v2) {
+            QObject* qobject = cast_to_qobject(v1);
+            if (qobject != nullptr) {
+                merge(qobject, v2);
+                return v1;
+            } else if (v1.canConvert<QVariantMap>()){
+                auto map = v1.toMap();
+                merge(map, v2);
+                v1 = map;
+                return v1;
             }
-            return v1;
+
+            qobject = cast_to_qobject(v2);
+            if (qobject != nullptr) {
+                auto map = v1.toMap();
+                return merge(map, qobject);
+            }
+            QVariant value;
+            convertTo(v2, value);
+            return value;
         }
 #endif
 
 #ifdef QT_QUICK_LIB
-        template <typename V1>
-        inline auto merge(V1& v1, const QJSValue & v2) -> typename std::enable_if<is_map<V1>::value, typename std::conditional<std::is_pointer<V1>::value, V1, V1&>::type >::type {
-            if (v2.isQObject()) {
-                merge(v1, v2.toQObject());
-            } else if (v2.isObject()) {
-                forIn_merge(v1, v2);
-            }
-
-            return v1;
+        template <typename V2>
+        inline auto merge(QJSValue& v1, const V2 & v2) -> typename std::enable_if<is_real_key_value_type<V2>::value, QJSValue&>::type {
+            forIn_merge(v1, v2);
         }
 
-        inline QVariant merge(QVariant &v1, const QJSValue &v2) {
-            auto ptr = cast_to_qobject(v1);
-            if (ptr) {
-                merge(ptr, v2);
-            } else if (v1.canConvert<QVariantMap>()) {
-                auto map = v1.toMap();
-                return merge(map, v2);
-            } else {
-                QVariant v;
-                convertTo(v2, v);
-                return v;
-            }
-
-            return v1;
-        }
-
-        inline QJSValue merge(QJSValue &v1, const QJSValue &v2) {
+        template <typename V2>
+        inline auto merge(QJSValue& v1, const V2 & v2) -> typename std::enable_if<std::is_same<V2, QJSValue>::value, QJSValue&>::type {
             if (v1.isQObject()) {
                 merge(v1.toQObject(), v2);
                 return v1;
@@ -1412,7 +1419,8 @@ namespace _ {
                 forIn_merge(v1, v2);
                 return v1;
             } else {
-                return v2;
+                v1 = v2;
+                return v1;
             }
         }
 #endif
