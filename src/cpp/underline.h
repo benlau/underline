@@ -59,10 +59,10 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
     static_assert(value, prefix __UNDERLINE_ITERATEE_VOID_RET_ERROR)
 
 #define __UNDERLINE_STATIC_ASSERT_IS_OBJECT_SOURCE_KEY_MATCHED(prefix, object, source) \
-    static_assert(Private::is_convertible<source,object>::value, prefix "The key type of 'source' argument cannot convert to the key type of 'object' argument.")
+    static_assert(Private::is_custom_convertible<source,object>::value, prefix "The key type of 'source' argument cannot convert to the key type of 'object' argument.")
 
 #define __UNDERLINE_STATIC_ASSERT_IS_OBJECT_SOURCE_VALUE_MATCHED(prefix, object, source) \
-    static_assert(Private::is_convertible<source,object>::value, prefix "The value type of 'source' argument cannot convert to the value type of 'object' argument.")
+    static_assert(Private::is_custom_convertible<source,object>::value, prefix "The value type of 'source' argument cannot convert to the value type of 'object' argument.")
 
 #define UNDERLINE_PRIVATE_NS_BEGIN \
     namespace _ {\
@@ -183,7 +183,7 @@ namespace _ {
         }
 #endif
         template <typename From, typename To>
-        struct is_convertible {
+        struct is_custom_convertible {
             enum {
                 value = std::is_convertible<From, To>::value || !std::is_same<Undefined, decltype(convertTo(std::declval<From>(), std::declval<To&>()))>::value
             };
@@ -297,6 +297,12 @@ namespace _ {
         }
 #endif
 
+        template <typename T>
+        struct is_jsvalue {
+            enum {
+                value = std::is_same<T, QJSValue>::value
+            };
+        };
 
         template <typename ...Args>
         struct _meta_object_info {
@@ -1314,7 +1320,7 @@ namespace _ {
             return object;
         }
 
-        /* merge */
+        /* PRIVATE_MERGE begin */
 
         template <typename V1, typename V2>
         inline void forIn_merge(V1 &v1 , const V2& v2);
@@ -1405,10 +1411,6 @@ namespace _ {
 #endif
 
 #ifdef QT_QUICK_LIB
-        template <typename V2>
-        inline auto merge(QJSValue& v1, const V2 & v2) -> typename std::enable_if<is_real_key_value_type<V2>::value, QJSValue&>::type {
-            forIn_merge(v1, v2);
-        }
 
         template <typename V2>
         inline auto merge(QJSValue& v1, const V2 & v2) -> typename std::enable_if<std::is_same<V2, QJSValue>::value, QJSValue&>::type {
@@ -1423,6 +1425,7 @@ namespace _ {
                 return v1;
             }
         }
+
 #endif
         template <typename V1, typename V2>
         inline void forIn_merge(V1 &v1 , const V2& v2) {
@@ -1441,7 +1444,7 @@ namespace _ {
             });
         }
 
-        /* end of merge */
+        /* PRIVATE_MERGE end */
 
     } /* End of Private Session */
 
@@ -1921,6 +1924,9 @@ namespace _ {
         __UNDERLINE_STATIC_ASSERT_IS_KEY_VALUE_TYPE("_::merge: ", Object);
 
         __UNDERLINE_STATIC_ASSERT_IS_KEY_VALUE_TYPE("_::merge: ", Source);
+
+        static_assert( !(Private::is_qjsvalue<Object>::value && !Private::is_qjsvalue<Source>::value),
+                      "_::merge:  _merge(QJSValue) could not take source argument another then the type of QJSValue.");
 
         Private::merge(object, source);
 

@@ -29,7 +29,7 @@ void QuickTests::test_QJSValue()
 
 void QuickTests::test_private_is_convertible()
 {
-    QCOMPARE( (bool) (_::Private::is_convertible<QJSValue, QVariant>::value) , true);
+    QCOMPARE( (bool) (_::Private::is_custom_convertible<QJSValue, QVariant>::value) , true);
 
     QQmlApplicationEngine engine;
     QString content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
@@ -93,6 +93,8 @@ void QuickTests::test_assign_QJSValue()
 
 void QuickTests::test_merge_QJSValue()
 {
+    /* Remarks: merge(QJSValue, any_type_other_then_QJSValue) is not supported.
+     */
 
     {
         /* QVariantMap, QJSValue */
@@ -123,6 +125,9 @@ void QuickTests::test_merge_QJSValue()
         QJSValue object = engine.evaluate(content);
 
         _::merge(object, source);
+
+        QCOMPARE(object.property("value4").property("value1").toInt(), 21);
+        QCOMPARE(object.property("value4").property("value2").toNumber(), 2.0);
 
         QVariantMap map;
         _::merge(map, object);
