@@ -471,6 +471,82 @@ void C11TestCases::test_private_merge()
     }
 }
 
+void C11TestCases::test_private_Gadget()
+{
+    {   /* Qt API Behaviour Validation */
+        QVariant v;
+        v = 40;
+
+        QMetaType intType(v.userType());
+        QVERIFY(intType.metaObject() == nullptr);
+
+        GadgetObject object;
+        object.value = 13;
+        v.setValue<GadgetObject>(object);
+
+        int indexOfProperty = GadgetObject::staticMetaObject.indexOfProperty("value");
+
+        QMetaProperty property = GadgetObject::staticMetaObject.property(indexOfProperty);
+        QVariant propertyValue = property.readOnGadget(v.data());
+
+        /* Warning: QVariant::data() is a non-documented API and not used by any inline functions */
+
+        QCOMPARE(propertyValue.toInt(), 13);
+
+        QMetaType type(v.userType());
+
+        QCOMPARE(type.metaObject() != nullptr, true);
+
+        const QMetaObject* metaObject = type.metaObject();
+
+        QCOMPARE(QString(metaObject->className()), QString("GadgetObject"));
+    }
+
+    {
+        /* Initialization */
+        _::Private::Gadget gadget;
+
+        QCOMPARE((bool) _::Private::is_meta_object<_::Private::Gadget>::value, true);
+        QCOMPARE(_::isKeyValueType(gadget), true);
+        QVERIFY(gadget.data == nullptr);
+        QVERIFY(gadget.metaObject == nullptr);
+    }
+
+    {
+        QVariant v;
+        QObject* obj = new QObject(this);
+        v.setValue<QObject*>(obj);
+        _::Private::Gadget gadget = _::Private::cast_to_gadget_wrapper(v);
+        QVERIFY(gadget.data == nullptr);
+        QVERIFY(gadget.constData == nullptr);
+        QVERIFY(gadget.metaObject == nullptr);
+    }
+
+    {
+        QVariant v;
+        GadgetObject object;
+        object.value = 13;
+        v.setValue<GadgetObject>(object);
+        _::Private::Gadget gadget = _::Private::cast_to_gadget_wrapper(v);
+        QVERIFY(gadget.data != nullptr);
+        QVERIFY(gadget.constData != nullptr);
+        QVERIFY(gadget.metaObject == &GadgetObject::staticMetaObject);
+    }
+
+    {
+        QVariant v;
+        GadgetObject object;
+        object.value = 13;
+        v.setValue<GadgetObject>(object);
+        const QVariant& cv = v;
+        _::Private::Gadget gadget = _::Private::cast_to_gadget_wrapper(cv);
+        QVERIFY(gadget.data == nullptr);
+        QVERIFY(gadget.constData != nullptr);
+        QVERIFY(gadget.metaObject == &GadgetObject::staticMetaObject);
+    }
+
+}
+
 void C11TestCases::test_merge()
 {
 

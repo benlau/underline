@@ -155,6 +155,13 @@ namespace _ {
         };
 #endif
 
+        class Gadget { // A Wrapper of Qt's Gadget object
+            public:
+                const QMetaObject* metaObject = nullptr;
+                void* data = nullptr;
+                const void* constData = nullptr;
+        };
+
         _DECLARE_UNDERLINE_HAS(reserve, decltype(std::declval<Type>().reserve(0)), void)
 
         _DECLARE_UNDERLINE_HAS(push_back, decltype(std::declval<Type>().push_back(std::declval<typename std::remove_reference<typename std::remove_cv<Type>::type::value_type>::type>())), void)
@@ -301,6 +308,37 @@ namespace _ {
 #endif
 
         template <typename T>
+        inline auto cast_to_gadget_wrapper(const T&) -> typename std::enable_if<!std::is_same<T, QVariant>::value, Gadget>::type {
+            return Gadget();
+        }
+
+#ifdef QT_CORE_LIB
+        inline Gadget cast_to_gadget_wrapper(const QVariant &v) {
+            Gadget gadget;
+
+            QMetaType type (v.userType());
+            const QMetaObject* metaObject = type.metaObject();
+            if (metaObject == nullptr || metaObject->inherits(&QObject::staticMetaObject)) {
+                return gadget;
+            }
+
+            gadget.metaObject = metaObject;
+            gadget.constData = v.constData();
+            return gadget;
+        }
+
+        inline Gadget cast_to_gadget_wrapper(QVariant &v) {
+            const QVariant& cv = v;
+            Gadget gadget = cast_to_gadget_wrapper(cv);
+            if (gadget.metaObject == nullptr) {
+                return gadget;
+            }
+            gadget.data = v.data(); /* QVariant::data() is a non-documented API and not used by any inline function. Reference: QTBUG-35510 */
+            return gadget;
+        }
+#endif
+
+        template <typename T>
         struct is_jsvalue {
             enum {
                 value = std::is_same<T, QJSValue>::value
@@ -317,7 +355,9 @@ namespace _ {
         };
 
         template <typename T>
-        struct _meta_object_info<T, typename std::enable_if<has_static_meta_object<T>::value, std::true_type>::type> {
+        struct _meta_object_info<T,
+                typename std::enable_if<has_static_meta_object<T>::value || std::is_same<T, Gadget>::value
+                , std::true_type>::type> {
             enum { is_meta_object = true};
             using key_type = QString;
             using value_type = QVariant;
@@ -1362,21 +1402,6 @@ namespace _ {
             return v1;
         }
 
-        template <typename V1, typename V2>
-        inline auto merge(V1* v1, const V2& v2) ->
-            typename std::enable_if<is_real_key_value_type<V1>::value && !is_real_key_value_type<V2>::value, V1*>::type {
-            auto ptr = cast_to_qobject(v2);
-            if (ptr) {
-                forIn_merge(v1, ptr);
-                return v1;
-            }
-
-            auto map = cast_to_qvariantmap(v2);
-            forIn_merge(v1, map);
-            return v1;
-        }
-
-
 #ifdef QT_CORE_LIB
         template <typename V2>
         inline QVariant merge(QVariant &v1, const V2 &v2) {
@@ -1407,7 +1432,8 @@ namespace _ {
         template <typename V2>
         inline auto merge(QJSValue& v1, const V2 & v2) -> typename std::enable_if<std::is_same<V2, QJSValue>::value, QJSValue&>::type {
             if (v1.isQObject()) {
-                merge(v1.toQObject(), v2);
+                auto ptr = v1.toQObject();
+                merge(ptr, v2);
                 return v1;
             } else if (v1.isObject()) {
                 forIn_merge(v1, v2);

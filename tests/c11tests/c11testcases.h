@@ -39,6 +39,8 @@ private slots:
 
     void test_private_merge();
 
+    void test_private_Gadget();
+
     void test_merge();
 
     void test_merge_qobject();
