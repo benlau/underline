@@ -655,6 +655,53 @@ void C11TestCases::test_merge_qobject()
     }
 }
 
+void C11TestCases::test_merge_gadget()
+{
+//    {
+//        /* QVariantMap, Gadget */
+
+//        GadgetObject source;
+//        source.value = 33;
+
+//        QVariantMap object;
+
+//        auto res = _::merge(object, source);
+
+//        QCOMPARE(res, object);
+//        QCOMPARE(object["value"].toInt(), 33);
+//    }
+
+//    {
+//        /* Gadget, QVariantMap */
+//        QVariantMap source;
+//        source["value"] = 44;
+//        source["other"] = 55;
+
+//        GadgetObject object;
+
+//        QCOMPARE(_::merge(object, source).value, 44);
+//    }
+
+    {
+        /* QVariantMap{Gadget}, QVariantMap */
+
+        QVariantMap source;
+        source["gadget"] = QVariantMap{{"value", 34}, {"other", 55}};
+
+        GadgetObject gadget;
+
+        QVariantMap object;
+        object["gadget"] = QVariant::fromValue<GadgetObject>(gadget);
+
+        _::merge(object, source);
+
+        gadget = object["gadget"].value<GadgetObject>();
+
+        QCOMPARE(gadget.value, 34);
+    }
+
+}
+
 void C11TestCases::test_some()
 {
     {

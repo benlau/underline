@@ -338,6 +338,15 @@ namespace _ {
         }
 #endif
 
+        inline const char * cast_to_const_char(const char * value) {
+            return value;
+        }
+
+        template <typename T>
+        inline auto cast_to_const_char(const T& string) -> typename std::enable_if<std::is_same<T, QString>::value, const char*>::type {
+            return string.toUtf8().constData();
+        }
+
         template <typename T>
         struct is_jsvalue {
             enum {
@@ -376,22 +385,14 @@ namespace _ {
         template <typename Meta, typename Key>
         inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_gadget<Meta>::value, QVariant>::type {
             auto ptr = cast_to_pointer<Meta>(meta);
+            auto k = cast_to_const_char(key);
             auto metaObject = ptr->staticMetaObject;
-            int index = metaObject.indexOfProperty(key);
+            int index = metaObject.indexOfProperty(k);
             if (index < 0 ) {
                 return QVariant();
             }
             auto property = metaObject.property(index);
             return property.readOnGadget(ptr);
-        }
-
-        inline const char * cast_to_const_char(const char * value) {
-            return value;
-        }
-
-        template <typename T>
-        inline auto cast_to_const_char(const T& string) -> typename std::enable_if<std::is_same<T, QString>::value, const char*>::type {
-            return string.toUtf8().constData();
         }
 
         template <typename Meta, typename Key>
@@ -410,7 +411,8 @@ namespace _ {
             if (gadget.constData == nullptr) {
                 return QVariant();
             }
-            int index = gadget.metaObject->indexOfProperty(key);
+            auto k = cast_to_const_char(key);
+            int index = gadget.metaObject->indexOfProperty(k);
             if (index < 0) return QVariant();
 
             QMetaProperty prop = gadget.metaObject->property(index);
@@ -423,7 +425,8 @@ namespace _ {
         inline auto meta_object_set_value(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_gadget<Meta>::value, bool>::type {
             auto ptr = cast_to_pointer<Meta>(meta);
             auto metaObject = ptr->staticMetaObject;
-            int index = metaObject.indexOfProperty(key);
+            auto k = cast_to_const_char(key);
+            int index = metaObject.indexOfProperty(k);
             if (index < 0 ) {
                 return false;
             }
@@ -451,7 +454,8 @@ namespace _ {
             if (gadget.data == nullptr) {
                 return false;
             }
-            int index = gadget.metaObject->indexOfProperty(key);
+            auto k = cast_to_const_char(key);
+            int index = gadget.metaObject->indexOfProperty(k);
             if (index < 0) return false;
 
             QMetaProperty prop = gadget.metaObject->property(index);
@@ -1448,6 +1452,7 @@ namespace _ {
         inline auto merge(V1& v1, const V2& v2) ->
             typename std::enable_if<is_real_key_value_type<V1>::value && !is_real_key_value_type<V2>::value, V1&>::type {
             auto ptr = cast_to_qobject(v2);
+
             if (ptr) {
                 forIn_merge(v1, ptr);
                 return v1;
@@ -1513,9 +1518,17 @@ namespace _ {
                 QObject* v1_qobject_ptr = cast_to_qobject(srcValue);
                 if (v1_qobject_ptr != nullptr) {
                     merge(v1_qobject_ptr, value);
-                } else {
-                    write(v1, key, merge(srcValue, value));
+                    return;
                 }
+
+                GadgetContainer gadget = cast_to_gadget_container(srcValue);
+                if (gadget.metaObject != nullptr) {
+                    merge(gadget, value);
+                    write(v1, key, srcValue);
+                    return;
+                }
+
+                write(v1, key, merge(srcValue, value));
             });
         }
 

@@ -102,6 +102,8 @@ void QuickTests::test_merge_QJSValue()
 
         QString content;
         content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
+        qDebug() << content;
+        QVERIFY(content.size() > 0);
         QJSValue source = engine.evaluate(content);
 
         QVariantMap object;
@@ -126,8 +128,8 @@ void QuickTests::test_merge_QJSValue()
 
         _::merge(object, source);
 
-        QCOMPARE(object.property("value4").property("value1").toInt(), 21);
         QCOMPARE(object.property("value4").property("value2").toNumber(), 2.0);
+        QCOMPARE(object.property("value4").property("value1").toInt(), 21);
 
         QVariantMap map;
         _::merge(map, object);
