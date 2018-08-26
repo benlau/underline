@@ -155,7 +155,7 @@ namespace _ {
         };
 #endif
 
-        class Gadget { // A Wrapper of Qt's Gadget object
+        class GadgetContainer { // A Wrapper of Qt's Gadget object
             public:
                 const QMetaObject* metaObject = nullptr;
                 void* data = nullptr;
@@ -308,13 +308,13 @@ namespace _ {
 #endif
 
         template <typename T>
-        inline auto cast_to_gadget_wrapper(const T&) -> typename std::enable_if<!std::is_same<T, QVariant>::value, Gadget>::type {
-            return Gadget();
+        inline auto cast_to_gadget_container(const T&) -> typename std::enable_if<!std::is_same<T, QVariant>::value, GadgetContainer>::type {
+            return GadgetContainer();
         }
 
 #ifdef QT_CORE_LIB
-        inline Gadget cast_to_gadget_wrapper(const QVariant &v) {
-            Gadget gadget;
+        inline GadgetContainer cast_to_gadget_container(const QVariant &v) {
+            GadgetContainer gadget;
 
             QMetaType type (v.userType());
             const QMetaObject* metaObject = type.metaObject();
@@ -327,9 +327,9 @@ namespace _ {
             return gadget;
         }
 
-        inline Gadget cast_to_gadget_wrapper(QVariant &v) {
+        inline GadgetContainer cast_to_gadget_container(QVariant &v) {
             const QVariant& cv = v;
-            Gadget gadget = cast_to_gadget_wrapper(cv);
+            GadgetContainer gadget = cast_to_gadget_container(cv);
             if (gadget.metaObject == nullptr) {
                 return gadget;
             }
@@ -356,7 +356,7 @@ namespace _ {
 
         template <typename T>
         struct _meta_object_info<T,
-                typename std::enable_if<has_static_meta_object<T>::value || std::is_same<T, Gadget>::value
+                typename std::enable_if<has_static_meta_object<T>::value || std::is_same<T, GadgetContainer>::value
                 , std::true_type>::type> {
             enum { is_meta_object = true};
             using key_type = QString;
@@ -404,6 +404,21 @@ namespace _ {
             return meta.property(cast_to_const_char(key));
         }
 
+#ifdef QT_CORE_LIB
+        template <typename Meta, typename Key>
+        inline auto meta_object_value(const Meta& gadget, const Key& key) -> typename std::enable_if<std::is_same<GadgetContainer, Meta>::value, QVariant>::type {
+            if (gadget.constData == nullptr) {
+                return QVariant();
+            }
+            int index = gadget.metaObject->indexOfProperty(key);
+            if (index < 0) return QVariant();
+
+            QMetaProperty prop = gadget.metaObject->property(index);
+
+            return prop.readOnGadget(gadget.constData);
+        }
+#endif
+
         template <typename Meta, typename Key, typename Value>
         inline auto meta_object_set_value(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_gadget<Meta>::value, bool>::type {
             auto ptr = cast_to_pointer<Meta>(meta);
@@ -417,6 +432,7 @@ namespace _ {
             return true;
         }
 
+
         template <typename Meta, typename Key, typename Value>
         inline auto meta_object_set_value(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_qobject<Meta>::value, bool>::type {
             return meta->setProperty(cast_to_const_char(key), value);
@@ -427,6 +443,23 @@ namespace _ {
             meta.setProperty(cast_to_const_char(key), value);
             return true;
         }
+
+
+#ifdef QT_CORE_LIB
+        template <typename Meta, typename Key, typename Value>
+        inline auto meta_object_set_value(Meta& gadget, const Key& key, const Value& value) -> typename std::enable_if<std::is_same<GadgetContainer, Meta>::value, bool>::type {
+            if (gadget.data == nullptr) {
+                return false;
+            }
+            int index = gadget.metaObject->indexOfProperty(key);
+            if (index < 0) return false;
+
+            QMetaProperty prop = gadget.metaObject->property(index);
+            prop.writeOnGadget(gadget.data, value);
+            return true;
+        }
+
+#endif
 
         template <typename T>
         struct is_array {
@@ -1353,6 +1386,29 @@ namespace _ {
                 const QMetaProperty property = meta.property(i);
                 QString key = property.name();
                 QVariant value = property.readOnGadget(ptr);
+
+                invokeHelper.invoke(iteratee, value, key, object);
+
+                if (invokeHelper.template canConvert<bool>() && invokeHelper.equals(false)) {
+                    break;
+                }
+            }
+            return object;
+        }
+
+        template <typename Object, typename Functor>
+        inline auto forIn(const Object& object, Functor iteratee) -> typename std::enable_if<std::is_same<Object, GadgetContainer>::value, const Object&>::type {
+            if (object.constData == nullptr) {
+                return object;
+            }
+
+            const QMetaObject* meta = object.metaObject;
+            Private::Value<typename Private::ret_invoke<Functor, QVariant, QString, const Object&>::type> invokeHelper;
+
+            for (int i = 0 ; i < meta->propertyCount(); i++) {
+                const QMetaProperty property = meta->property(i);
+                QString key = property.name();
+                QVariant value = property.readOnGadget(object.constData);
 
                 invokeHelper.invoke(iteratee, value, key, object);
 

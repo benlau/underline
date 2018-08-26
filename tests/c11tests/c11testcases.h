@@ -39,7 +39,7 @@ private slots:
 
     void test_private_merge();
 
-    void test_private_Gadget();
+    void test_private_GadgetContainer();
 
     void test_merge();
 
