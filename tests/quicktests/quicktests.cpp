@@ -103,7 +103,6 @@ void QuickTests::test_merge_QJSValue()
         QString content;
         content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
         qDebug() << content;
-        QVERIFY(content.size() > 0);
         QJSValue source = engine.evaluate(content);
 
         QVariantMap object;
@@ -121,9 +120,11 @@ void QuickTests::test_merge_QJSValue()
 
         QString content;
         content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
+        qDebug() << content;
         QJSValue source = engine.evaluate(content);
 
         content = QtShell::cat(QString(SRCDIR) + "/SampleData2.json");
+        qDebug() << content;
         QJSValue object = engine.evaluate(content);
 
         _::merge(object, source);

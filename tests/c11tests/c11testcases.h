@@ -47,6 +47,8 @@ private slots:
 
     void test_merge_gadget();
 
+    void test_merge_complex();
+
     void test_some();
 
     void test_map();

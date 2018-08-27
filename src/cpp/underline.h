@@ -1451,10 +1451,17 @@ namespace _ {
         template <typename V1, typename V2>
         inline auto merge(V1& v1, const V2& v2) ->
             typename std::enable_if<is_real_key_value_type<V1>::value && !is_real_key_value_type<V2>::value, V1&>::type {
+
             auto ptr = cast_to_qobject(v2);
 
             if (ptr) {
                 forIn_merge(v1, ptr);
+                return v1;
+            }
+
+            GadgetContainer gadget = cast_to_gadget_container(v2);
+            if (gadget.metaObject != nullptr) {
+                merge(v1, gadget);
                 return v1;
             }
 
@@ -1470,7 +1477,15 @@ namespace _ {
             if (qobject != nullptr) {
                 merge(qobject, v2);
                 return v1;
-            } else if (v1.canConvert<QVariantMap>()){
+            }
+
+            GadgetContainer gadget = cast_to_gadget_container(v1);
+            if (gadget.metaObject != nullptr) {
+                merge(gadget, v2);
+                return v1;
+            }
+
+            if (v1.canConvert<QVariantMap>()){
                 auto map = v1.toMap();
                 merge(map, v2);
                 v1 = map;
@@ -1482,6 +1497,13 @@ namespace _ {
                 auto map = v1.toMap();
                 return merge(map, qobject);
             }
+
+            gadget = cast_to_gadget_container(v2);
+            if (gadget.metaObject != nullptr) {
+                auto map = v1.toMap();
+                return merge(map, gadget);
+            }
+
             QVariant value;
             convertTo(v2, value);
             return value;
@@ -1504,7 +1526,6 @@ namespace _ {
                 return v1;
             }
         }
-
 #endif
 
         template <typename V1, typename V2>

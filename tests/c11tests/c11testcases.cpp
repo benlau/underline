@@ -8,6 +8,7 @@
 #include <QtCore>
 #include <QVector>
 #include <memory>
+#include "complexqobject.h"
 #include "c11testcases.h"
 #include "underline.h"
 #include "dataobject.h"
@@ -657,30 +658,30 @@ void C11TestCases::test_merge_qobject()
 
 void C11TestCases::test_merge_gadget()
 {
-//    {
-//        /* QVariantMap, Gadget */
+    {
+        /* QVariantMap, Gadget */
 
-//        GadgetObject source;
-//        source.value = 33;
+        GadgetObject source;
+        source.value = 33;
 
-//        QVariantMap object;
+        QVariantMap object;
 
-//        auto res = _::merge(object, source);
+        auto res = _::merge(object, source);
 
-//        QCOMPARE(res, object);
-//        QCOMPARE(object["value"].toInt(), 33);
-//    }
+        QCOMPARE(res, object);
+        QCOMPARE(object["value"].toInt(), 33);
+    }
 
-//    {
-//        /* Gadget, QVariantMap */
-//        QVariantMap source;
-//        source["value"] = 44;
-//        source["other"] = 55;
+    {
+        /* Gadget, QVariantMap */
+        QVariantMap source;
+        source["value"] = 44;
+        source["other"] = 55;
 
-//        GadgetObject object;
+        GadgetObject object;
 
-//        QCOMPARE(_::merge(object, source).value, 44);
-//    }
+        QCOMPARE(_::merge(object, source).value, 44);
+    }
 
     {
         /* QVariantMap{Gadget}, QVariantMap */
@@ -698,6 +699,58 @@ void C11TestCases::test_merge_gadget()
         gadget = object["gadget"].value<GadgetObject>();
 
         QCOMPARE(gadget.value, 34);
+    }
+
+    {
+        /* QVariantMap, QVariantMap{Gadget}*/
+
+        GadgetObject gadget;
+        gadget.value = 47;
+        QVariantMap source;
+        source["gadget"] = QVariant::fromValue<GadgetObject>(gadget);
+
+        QVariantMap object;
+        _::merge(object, source);
+
+        QVERIFY(object.contains("gadget"));
+        QCOMPARE(object["gadget"].toMap()["value"].toInt(), 47);
+    }
+
+}
+
+void C11TestCases::test_merge_complex()
+{
+    {
+        QVariantMap object;
+        ComplexQObject* source = new ComplexQObject(this);
+
+        _::merge(object, source);
+
+        QVariantMap value1 = object["value1"].toMap();
+        QCOMPARE(value1["value"].toInt(), 11);
+
+        QVariantMap value2 = object["value2"].toMap();
+        QCOMPARE(value2["value3"].toString(), QString("23.0"));
+
+        QVariantMap value2value4 = value2["value4"].toMap();
+        QCOMPARE(value2value4["value1"].toInt(), 5);
+    }
+
+    {
+        ComplexQObject* object = new ComplexQObject(this);
+
+        QVariantMap source;
+        source["value1"] = QVariantMap{{"value", 33}, {"other", 4}};
+        source["value2"] = QVariantMap{{"value1", 41}, {"value4", QVariantMap{{"value1", 57}} }};
+        source["value3"] = QVariantMap{{"value1", 70}};
+        source["value4"] = QVariantList{1,2,3};
+
+        _::merge(object, source);
+
+        QCOMPARE(object->value1().value, 33);
+        QCOMPARE(object->value2()->value1(), 41);
+        QCOMPARE(object->value2()->value4()->value1(), 57);
+        QCOMPARE(object->value3()["value1"].toInt(), 70);
     }
 
 }

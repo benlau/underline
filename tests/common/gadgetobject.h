@@ -12,4 +12,6 @@ public:
     int value;
 };
 
+Q_DECLARE_METATYPE(GadgetObject)
+
 #endif // GADGETOBJECT_H
