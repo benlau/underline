@@ -179,6 +179,16 @@ namespace _ {
         template <typename T>
         using pointer_or_reference_t = typename std::conditional<std::is_pointer<T>::value, T, T&>::type;
 
+        template <typename T>
+        inline auto is_null_ptr(T&) -> typename std::enable_if<!std::is_pointer<T>::value, bool>::type {
+            return false;
+        }
+
+        template <typename T>
+        inline auto is_null_ptr(T& t) -> typename std::enable_if<std::is_pointer<T>::value, bool>::type {
+            return t == nullptr;
+        }
+
         template <typename From, typename To>
         inline auto convertTo(const From&,  To&) -> typename std::enable_if<!std::is_convertible<From,To>::value, Undefined>::type { return Undefined(); }
 
@@ -611,11 +621,23 @@ namespace _ {
             };
         };
 
+        template <typename Meta,typename Key, typename Value>
+        struct is_meta_object_key_value_custom_matched {
+            enum {
+                value = is_meta_object<Meta>::value &&
+                is_custom_convertible<Key, typename meta_object_info<Meta>::key_type>::value &&
+                is_custom_convertible<Value, typename meta_object_info<Meta>::value_type>::value
+            };
+        };
+
         template <typename Meta, typename Key>
         using enable_if_is_meta_object_key_matched = typename std::enable_if<is_meta_object_key_matched<Meta, Key>::value, typename meta_object_info<Meta>::value_type>;
 
         template <typename Meta, typename Key, typename Value, typename Ret>
         using enable_if_is_meta_object_key_value_matched_ret = typename std::enable_if<is_meta_object_key_value_matched<Meta, Key, Value>::value, Ret>;
+
+        template <typename Meta, typename Key, typename Value, typename Ret>
+        using enable_if_is_meta_object_key_value_only_custom_matched_ret = typename std::enable_if<!is_meta_object_key_value_matched<Meta, Key, Value>::value && is_meta_object_key_value_custom_matched<Meta, Key, Value>::value, Ret>;
 
         template <typename ...Args>
         struct _key_value_type_info {
@@ -814,19 +836,24 @@ namespace _ {
             return true;
         }
 
-        template <typename Map, typename Key, typename Value>
-        inline auto write(Map &map, const Key& key, const Value& value) ->
+        template <typename Meta, typename Key, typename Value>
+        inline auto write(Meta &map, const Key& key, const Value& value) ->
             typename enable_if_is_meta_object_key_value_matched_ret
-<Map, Key, Value, bool>::type {
+<Meta, Key, Value, bool>::type {
             meta_object_set_value(map, key, value);
             return true;
         }
 
-        template <typename Map, typename Key, typename Value>
-        inline auto write(Map &&map, const Key& key, const Value& value) ->
-            typename enable_if_is_meta_object_key_value_matched_ret
-<Map, Key, Value, bool>::type {
-            meta_object_set_value(map, key, value);
+        template <typename Meta, typename Key, typename Value>
+        inline auto write(Meta &map, const Key& key, const Value& value) ->
+            typename enable_if_is_meta_object_key_value_only_custom_matched_ret
+<Meta, Key, Value, bool>::type { // eg. QJSValue to QVariant
+            typename meta_object_info<Meta>::key_type k;
+            typename meta_object_info<Meta>::value_type v;
+            convertTo(key, k);
+            convertTo(value, v);
+
+            meta_object_set_value(map, k, v);
             return true;
         }
 
@@ -1542,13 +1569,6 @@ namespace _ {
                     return;
                 }
 
-                GadgetContainer gadget = cast_to_gadget_container(srcValue);
-                if (gadget.metaObject != nullptr) {
-                    merge(gadget, value);
-                    write(v1, key, srcValue);
-                    return;
-                }
-
                 write(v1, key, merge(srcValue, value));
             });
         }
@@ -1578,112 +1598,21 @@ namespace _ {
         return collection;
     }
 
-#ifdef QT_CORE_LIB
-    /*
-     If a property contains QObject pointer, it will be converted to QVariantMap.
+    template <typename Object, typename Source>
+    inline auto assign(Object& object, const Source& source) -> typename Private::pointer_or_reference_t<Object> {
 
-     In case you need to obtain a QObject pointer, please use get().
-     */
-
-    /// Assign properties from source object to the destination object.
-    inline QVariantMap& assign(QVariantMap &dest, const QObject *source)
-    {
-        forIn(source, [&](const QVariant& value, const QString& key) {
-            QVariant v = value;
-
-            if (value.canConvert<QObject*>()) {
-                QVariantMap map;
-                assign(map, value.value<QObject*>()); // nested properties are not supported yet
-                v = map;
-            }
-
-            dest[key] = v;
-        });
-        return dest;
-    }
-
-    inline QObject* assign(QObject *dest, const QVariantMap & source)
-    {
-        const QMetaObject* meta = dest->metaObject();
-
-        forIn(source, [&](QVariant value, QString key) {
-
-            int index = meta->indexOfProperty(key.toLocal8Bit().constData());
-            if (index < 0) {
-                qWarning() << QString("_::assign: assigns an non-existed property: %1").arg(key);
-                return;
-            }
-
-            QVariant orig = dest->property(key.toLocal8Bit().constData());
-
-            if (orig.canConvert<QObject*>()) {
-                if (value.type() != QVariant::Map) {
-                    qWarning() << QString("assign:expect a QVariantMap property but it is not: %1");
-                } else {
-                    assign(orig.value<QObject*>(), value.toMap());
-                }
-
-            } else if (orig != value) {
-                dest->setProperty(key.toLocal8Bit().constData(), value);
-            }
-        });
-
-        return dest;
-    }
-
-    inline QVariantMap& assign(QVariantMap& dest, const QVariantMap& source) {
-        forIn(source, [&](const QVariant& value , const QString& key) {
-            dest[key] = value;
-        });
-        return dest;
-    }
-
-    inline QObject* assign(QObject* dest, const QObject* source) {
-        forIn(source, [&](const QVariant& value , const QString& key) {
-            Private::write(dest, key, value);
-        });
-        return dest;
-    }
-#endif
-
-#ifdef QT_QUICK_LIB
-    inline QObject * assign(QObject *dest, const QJSValue &source)
-    {
-        if (dest == 0) {
-            return dest;
+        using Key = typename Private::key_value_type<Source>::key_type;
+        using Value = typename Private::key_value_type<Source>::value_type;
+        if (Private::is_null_ptr(object)) {
+            return object;
         }
 
-        const QMetaObject* meta = dest->metaObject();
-        QJSValueIterator iter(source);
+        forIn(source, [&](const Value& value, const Key& key) {
+            Private::write(object, key, value);
+        });
 
-        while (iter.hasNext()) {
-            iter.next();
-            QByteArray key = iter.name().toLocal8Bit();
-            int index = meta->indexOfProperty(key.constData());
-            if (index < 0) {
-                qWarning() << QString("QSyncable::assign:assign a non-existed property: %1").arg(iter.name());
-                continue;
-            }
-
-            QVariant orig = dest->property(key.constData());
-
-            if (orig.canConvert<QObject*>()) {
-                if (!iter.value().isObject()) {
-                    qWarning() << QString("QSyncable::assign:expect a object property but it is not: %1");
-                } else {
-                    assign(orig.value<QObject*>(), iter.value());
-                }
-                continue;
-            }
-
-            QVariant value = iter.value().toVariant();
-            if (orig != value) {
-                dest->setProperty(key.constData(), value);
-            }
-        }
-        return dest;
+        return object;
     }
-#endif
 
     template <typename Dest, typename Source, typename... Args>
     inline auto assign(Dest& dest, const Source& source, Args... sources) -> typename std::enable_if< (sizeof...(Args) > 0), Dest&>::type {

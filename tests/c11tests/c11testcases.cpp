@@ -399,16 +399,17 @@ void C11TestCases::test_private_write()
         _::Private::write(object, "value", 1);
         QCOMPARE(object.value, 1);
 
-        _::Private::write(&object, "value", 2);
+        auto ptr = &object;
+        _::Private::write(ptr, "value", 2);
         QCOMPARE(object.value, 2);
 
     }
 
     {
-        std::unique_ptr<DataObject> object(new DataObject(this));
+        auto  object = new DataObject(this);
 
         object->setValue1(0);
-        _::Private::write(object.get(), "value1", 1);
+        _::Private::write(object, "value1", 1);
         QCOMPARE(object->value1(), 1);
     }
 }

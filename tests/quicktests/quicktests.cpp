@@ -74,12 +74,15 @@ void QuickTests::test_assign_QJSValue()
         QString content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
         QJSValue value = engine.evaluate(content);
 
+        QCOMPARE(value.property("value1").toInt(), 10);
+        QCOMPARE(root->property("value1").toInt(), 1);
+
         _::assign(root, value);
 
         QCOMPARE(root->property("value1").toInt(), 10);
         QVERIFY(root->property("value2").toString() == "11");
         QVERIFY(root->property("value3").toBool() == false);
-        QCOMPARE(root->property("value4").value<QObject*>()->property("value1").toInt(), 21);
+        QVERIFY(root->property("value4").canConvert<QJSValue>());
     }
 
     {
@@ -87,7 +90,8 @@ void QuickTests::test_assign_QJSValue()
         QString content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
         QJSValue value = engine.evaluate(content);
 
-        _::assign(0, value);
+        QObject* object = nullptr;
+        _::assign(object, value);
     }
 }
 
