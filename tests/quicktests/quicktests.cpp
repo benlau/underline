@@ -126,10 +126,12 @@ void QuickTests::test_merge_QJSValue()
         content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
         qDebug() << content;
         QJSValue source = engine.evaluate(content);
+        QCOMPARE(source.property("value4").property("value1").toInt(), 21);
 
         content = QtShell::cat(QString(SRCDIR) + "/SampleData2.json");
         qDebug() << content;
         QJSValue object = engine.evaluate(content);
+        QCOMPARE(object.property("value4").property("value2").toNumber(), 2.0);
 
         _::merge(object, source);
 

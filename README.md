@@ -91,22 +91,21 @@ assign
 -----
 
 ```C++
-_:assign(QVariantMap& dest, QObject source, ...)
-_:assign(QObject* dest, QObject* source, ...)
-_:assign(QVariantMap& dest, QVariantMap source, ...)
-_:assign(QObject* dest, QJSValue source, ...) // Available only if `quick` is set in the qmake project file.
+KeyValueType& _::assign(KeyValueType& dest, const KeyValueType& source, ...);
 ```
 
-Assigns the string-keyed properties from the source object to the destination object. The sequence to apply source objects is from left to right. Subsequent sources overwrite property assignments of previous sources.
+Assigns the properties from the source to the destination object. The input should be an valid Key Value Type where [_::isKeyValueType](#isKeyValueType) returns true. The sequence to apply source objects is from left to right. Subsequent sources overwrite property assignments of previous sources. It is a non-recursive function. For deep copying and merge, you should use [_::merge](#merge).
 
 Arguments:
 
- * dest: The destination object
+ * object: The destination object
  * source && ... : The source object(s) to be assigned to the destination object
+
+Supported types: std::map, QMap, QObject, Gadget, QJSValue
 
 Returns:
 
- * The dest object
+ * The destination object
 
 Example
 
@@ -260,7 +259,7 @@ map
 ----
 
 ```C++
-_::map(collection, iteratee)
+_::map(Array, Iteratee)
 ```
 
 Iterate all the elements of the collection and call the iteratee function. It creates a new collection obtain the result. The iteratee is invoked with one to three arguments: [value, [index, [collection]]].
@@ -283,6 +282,11 @@ QVector<int> output2 = _::map(QVector<QString>() {"1","2","3"}, [](auto item, in
 
 QVector<int> output3 = _::map(std::vector<QString>(){"1","2","3"}, [](auto item, int index, auto collection) { return item.toInt();});
 ```
+
+merge
+------
+
+
 
 omit
 ----

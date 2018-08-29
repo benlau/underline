@@ -1601,8 +1601,23 @@ namespace _ {
     template <typename Object, typename Source>
     inline auto assign(Object& object, const Source& source) -> typename Private::pointer_or_reference_t<Object> {
 
+        using OBJECT_TYPE = typename Private::key_value_type<Object>;
+        using SOURCE_TYPE = typename Private::key_value_type<Source>;
+
+        __UNDERLINE_STATIC_ASSERT_IS_OBJECT_SOURCE_KEY_MATCHED("_::assign: ", typename OBJECT_TYPE::key_type, typename SOURCE_TYPE::key_type);
+
+        __UNDERLINE_STATIC_ASSERT_IS_OBJECT_SOURCE_VALUE_MATCHED("_::assign: ", typename OBJECT_TYPE::value_type, typename SOURCE_TYPE::value_type);
+
+        __UNDERLINE_STATIC_ASSERT_IS_KEY_VALUE_TYPE("_::assign: ", Object);
+
+        __UNDERLINE_STATIC_ASSERT_IS_KEY_VALUE_TYPE("_::assign: ", Source);
+
+        static_assert( !(Private::is_qjsvalue<Object>::value && !Private::is_qjsvalue<Source>::value),
+                      "_::assign(QJSValue): It could not take source argument another then the type of QJSValue.");
+
         using Key = typename Private::key_value_type<Source>::key_type;
         using Value = typename Private::key_value_type<Source>::value_type;
+
         if (Private::is_null_ptr(object)) {
             return object;
         }
@@ -1964,7 +1979,7 @@ namespace _ {
         __UNDERLINE_STATIC_ASSERT_IS_KEY_VALUE_TYPE("_::merge: ", Source);
 
         static_assert( !(Private::is_qjsvalue<Object>::value && !Private::is_qjsvalue<Source>::value),
-                      "_::merge:  _merge(QJSValue) could not take source argument another then the type of QJSValue.");
+                      "_::merge(QJSValue, source): It could not take source argument another then the type of QJSValue.");
 
         Private::merge(object, source);
 
