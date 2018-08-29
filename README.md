@@ -25,8 +25,7 @@ QVector<int> output3 = _::map(QVector<QString>{"1","2","3"},
 
 ```C++
 // Serialize a QObject
-// Non-deep copy from source to dest
-_::assign( /* QVariantMap */ dest, /* QObject* */ source );
+_::merge( /* QVariantMap */ dest, /* QObject* */ source );
 
 // Obtain the objectName property from object's parent.
 // It is equivalent to object->parent()->objectName() but _::get will take care null pointer checking

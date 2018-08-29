@@ -573,6 +573,24 @@ void C11TestCases::test_private_GadgetContainer()
 
 }
 
+void C11TestCases::test_private_contains()
+{
+    QCOMPARE(_::Private::contains(10, "123"), false);
+
+    QCOMPARE(_::Private::contains(std::map<std::string, int>{{"v1", 1} }, "v1"), true);
+    QCOMPARE(_::Private::contains(std::map<std::string, int>{{"v1", 1} }, "v2"), false);
+
+
+    QCOMPARE(_::Private::contains(new DataObject(this), "value1"), true);
+    QCOMPARE(_::Private::contains(new DataObject(this), "valueX"), false);
+
+    GadgetObject gadget;
+
+    QCOMPARE(_::Private::contains(gadget, "value"), true);
+    QCOMPARE(_::Private::contains(gadget, "valueX"), false);
+
+}
+
 void C11TestCases::test_merge()
 {
 

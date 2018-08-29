@@ -675,6 +675,30 @@ namespace _ {
             enum { value = key_value_type<T>::is_key_value_type && !std::is_same<T,QJSValue>::value};
         };
 
+        template <typename T, typename K>
+        inline auto contains(const T&, const K& ) -> typename std::enable_if<!is_key_value_type<T>::value, bool>::type { return false;}
+
+        template <typename T, typename K>
+        inline auto contains(const T& map, const K& key) -> typename std::enable_if<is_map<T>::value, bool>::type {
+            auto iter = map.find(key);
+            return iter != map.end();
+        }
+
+#ifdef QT_CORE_LIB
+        template <typename T, typename K>
+        inline auto contains(const T& object, const K& key) -> typename std::enable_if<is_qobject<T>::value, bool>::type {
+            const QMetaObject* meta = object->metaObject();
+            return meta->indexOfProperty(cast_to_const_char(key)) >= 0;
+        }
+
+        template <typename T, typename K>
+        inline auto contains(const T&, const K& key) -> typename std::enable_if<is_gadget<T>::value, bool>::type {
+            const QMetaObject meta = T::staticMetaObject;
+            return meta.indexOfProperty(cast_to_const_char(key)) >= 0;
+        }
+
+#endif
+
         /// Source: https://stackoverflow.com/questions/5052211/changing-value-type-of-a-given-stl-container
         template <class Container, class NewType>
         struct array_rebinder {
