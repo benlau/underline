@@ -676,6 +676,46 @@ namespace _ {
             enum { value = key_value_type<T>::is_key_value_type && !std::is_same<T,QJSValue>::value};
         };
 
+        template <typename T, typename F1, typename F2, typename F3>
+        inline bool try_cast_to_real_key_value_type(T& value, F1 func1, F2 func2, F3 func3) {
+            auto qobject = cast_to_qobject(value);
+            if (qobject) {
+                func1(qobject);
+                return true;
+            }
+            GadgetContainer gadget = cast_to_gadget_container(value);
+            if (gadget.metaObject != nullptr) {
+                func2(gadget);
+                return true;
+            }
+            if (can_cast_to_qvariantmap(value)) {
+                auto map = cast_to_qvariantmap(value);
+                func3(map);
+                return true;
+            }
+            return false;
+        }
+
+        template <typename T, typename F1, typename F2, typename F3>
+        inline bool try_cast_to_real_key_value_type(const T& value, F1 func1, F2 func2, F3 func3) {
+            auto qobject = cast_to_qobject(value);
+            if (qobject) {
+                func1(qobject);
+                return true;
+            }
+            GadgetContainer gadget = cast_to_gadget_container(value);
+            if (gadget.metaObject != nullptr) {
+                func2(gadget);
+                return true;
+            }
+            if (can_cast_to_qvariantmap(value)) {
+                auto map = cast_to_qvariantmap(value);
+                func3(map);
+                return true;
+            }
+            return false;
+        }
+
         template <typename T, typename K>
         inline auto contains(const T&, const K& ) -> typename std::enable_if<!is_key_value_type<T>::value, bool>::type { return false;}
 
@@ -1488,6 +1528,7 @@ namespace _ {
         }
 
         /* PRIVATE_MERGE begin */
+        // Unlike the public version of the merge, it doesn't guarantee to return the object itself
 
         template <typename V1, typename V2>
         inline void forIn_merge(V1 &v1 , const V2& v2);
@@ -1516,66 +1557,53 @@ namespace _ {
         inline auto merge(V1& v1, const V2& v2) ->
             typename std::enable_if<is_real_key_value_type<V1>::value && !is_real_key_value_type<V2>::value, V1&>::type {
 
-            auto ptr = cast_to_qobject(v2);
-
-            if (ptr) {
+            try_cast_to_real_key_value_type(v2, [&](QObject* ptr){
                 forIn_merge(v1, ptr);
-                return v1;
-            }
+            },[&](GadgetContainer& gadget) {
+                forIn_merge(v1, gadget);
+            },[&](QVariantMap map) {
+                merge(v1, map);
+            });
 
-            GadgetContainer gadget = cast_to_gadget_container(v2);
-            if (gadget.metaObject != nullptr) {
-                merge(v1, gadget);
-                return v1;
-            }
-
-            auto map = cast_to_qvariantmap(v2);
-            forIn_merge(v1, map);
             return v1;
         }
 
 #ifdef QT_CORE_LIB
         template <typename V2>
         inline QVariant merge(QVariant &v1, const V2 &v2) {
-            QObject* qobject = cast_to_qobject(v1);
-            if (qobject != nullptr) {
+            auto handled = try_cast_to_real_key_value_type(v1, [&](QObject* qobject){
                 merge(qobject, v2);
-                return v1;
-            }
-
-            GadgetContainer gadget = cast_to_gadget_container(v1);
-            if (gadget.metaObject != nullptr) {
-                merge(gadget, v2);
-                return v1;
-            }
-
-            if (v1.canConvert<QVariantMap>()){
-                auto map = v1.toMap();
+            },[&](GadgetContainer container) {
+                merge(container, v2);
+            },[&](QVariantMap map) {
                 merge(map, v2);
                 v1 = map;
+            });
+
+            if (handled) {
                 return v1;
             }
 
-            qobject = cast_to_qobject(v2);
-            if (qobject != nullptr) {
-                auto map = v1.toMap();
-                return merge(map, qobject);
-            }
+            auto map = v1.toMap();
+            QVariant res;
 
-            gadget = cast_to_gadget_container(v2);
-            if (gadget.metaObject != nullptr) {
-                auto map = v1.toMap();
-                return merge(map, gadget);
-            }
+            handled = try_cast_to_real_key_value_type(v2, [&](QObject* qobject){
+                res = merge(map, qobject);
+            },[&](GadgetContainer container) {
+                res = merge(map, container);
+            },[&](QVariantMap container) {
+                res = merge(map, container);
+            });
 
-            QVariant value;
-            convertTo(v2, value);
-            return value;
+            if (handled) {
+                return res;
+            }
+            convertTo(v2, res);
+            return res;
         }
 #endif
 
 #ifdef QT_QUICK_LIB
-
         template <typename V2>
         inline auto merge(QJSValue& v1, const V2 & v2) -> typename std::enable_if<std::is_same<V2, QJSValue>::value, QJSValue&>::type {
             if (v1.isQObject()) {
