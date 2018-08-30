@@ -9,6 +9,7 @@
 #include <map>
 #include <list>
 #include <vector>
+#include <string>
 #include <unordered_map>
 
 #ifdef QT_CORE_LIB
@@ -698,6 +699,18 @@ namespace _ {
         }
 
 #endif
+
+        inline std::vector<std::string> split(const std::string &str , const std::string& delimiter) {
+            size_t current;
+            size_t next = -1;
+            std::vector<std::string> res;
+            do {
+                current = next + 1;
+                next = str.find_first_of( delimiter, current);
+                res.push_back(str.substr( current, next - current ));
+            } while (next != std::string::npos);
+            return res;
+        }
 
         /// Source: https://stackoverflow.com/questions/5052211/changing-value-type-of-a-given-stl-container
         template <class Container, class NewType>
@@ -1585,7 +1598,7 @@ namespace _ {
             using Value = typename key_value_type<V2>::value_type;
 
             forIn(v2, [&](const Value& value, const Key& key) {
-                auto srcValue = read(v1,key);
+                auto srcValue = read(v1, key);
 
                 QObject* v1_qobject_ptr = cast_to_qobject(srcValue);
                 if (v1_qobject_ptr != nullptr) {

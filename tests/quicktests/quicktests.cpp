@@ -133,13 +133,15 @@ void QuickTests::test_merge_QJSValue()
         QJSValue object = engine.evaluate(content);
         QCOMPARE(object.property("value4").property("value2").toNumber(), 2.0);
 
-        QJSValue tmp = engine.toScriptValue(10);
-        object.property("value4").setProperty("value1", tmp);
+        object.property("value4").setProperty("value1", 10);
+        QCOMPARE(object.property("value4").property("value1").toInt(), 10);
 
+        //@TODO
+        _::merge(object, source);
         _::merge(object, source);
 
-        QCOMPARE(object.property("value4").property("value2").toNumber(), 2.0);
         QCOMPARE(object.property("value4").property("value1").toInt(), 21);
+        QCOMPARE(object.property("value4").property("value2").toNumber(), 2.0);
 
         QVariantMap map;
         _::merge(map, object);
