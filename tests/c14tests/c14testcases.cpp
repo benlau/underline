@@ -372,25 +372,34 @@ void C14TestCases::test_assign()
 
 void C14TestCases::test_get()
 {
-    QObject* root = createMockObject(this);
-    QVERIFY(root);
 
     /* get(QObject*, QString) */
-    QVariant value = _::get(root, "value4.value1");
-    QCOMPARE(value.toInt(), 5);
 
-    value = _::get(root,"value4.valueX", QString("Not Found"));
-    QVERIFY(value.toString() == "Not Found");
+    {
+        QObject* root = createMockObject(this);
+        QVERIFY(root);
+
+        QVariant value = _::get(root, "value4.value1");
+        QCOMPARE(value.toInt(), 5);
+
+        value = _::get(root,"value4.valueX", QString("Not Found"));
+        QVERIFY(value.toString() == "Not Found");
+    }
 
     /* get(QVarnaintMap, QString) */
 
-    QVariantMap source;
-    _::assign(source, root);
-    value = _::get(source, "value2");
-    QVERIFY(value.toString() == "2");
+    {
+        QObject* root = createMockObject(this);
+        QVERIFY(root);
 
-    value = _::get(source, "valueX");
-    QVERIFY(value.isNull());
+        QVariantMap source;
+        _::assign(source, root);
+        auto value = _::get(source, "value3");
+        QCOMPARE(value.toString(), QString("3"));
+
+        value = _::get(source, "valueX");
+        QVERIFY(value.isNull());
+    }
 }
 
 void C14TestCases::test_set()

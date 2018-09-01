@@ -5,4 +5,4 @@ CONFIG += ordered
 SUBDIRS += buildlib
 SUBDIRS += tests
 
-tests.depends = builddlib
+tests.depends = buildlib

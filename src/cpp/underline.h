@@ -307,8 +307,11 @@ namespace _ {
             return t.canConvert<QVariantMap>();
         }
 
-
+        inline auto can_cast_to_qvariantmap(const QVariantMap& ) -> bool {
+            return true;
+        }
 #endif
+
 #ifdef QT_QUICK_LIB
         inline auto cast_to_qvariantmap(const QJSValue& t) -> QVariantMap {
             return t.toVariant().toMap();
@@ -357,6 +360,27 @@ namespace _ {
         inline auto cast_to_const_char(const T& string) -> typename std::enable_if<std::is_same<T, QString>::value, const char*>::type {
             return string.toUtf8().constData();
         }
+
+        template <typename T>
+        inline auto cast_to_const_char(const T& string) -> typename std::enable_if<std::is_same<T, std::string>::value, const char*>::type {
+            return string.c_str();
+        }
+
+//#ifndef QT_CORE_LIB
+//        template <typename T>
+//        inline auto cast_to_qvariant(const T&) -> QVariant {
+//            QVariant v;
+//            return v;
+//        }
+//#else
+//        template <typename T>
+//        inline auto cast_to_qvariant(const T& t) -> QVariant {
+//            QVariant v = QVariant::fromValue<T>(t);
+//            return v;
+//        }
+//#endif
+
+        /* cast_to_* END */
 
         template <typename T>
         struct is_jsvalue {
@@ -736,6 +760,15 @@ namespace _ {
         inline auto contains(const T&, const K& key) -> typename std::enable_if<is_gadget<T>::value, bool>::type {
             const QMetaObject meta = T::staticMetaObject;
             return meta.indexOfProperty(cast_to_const_char(key)) >= 0;
+        }
+
+        template <typename T, typename K>
+        inline auto contains(const T& object, const K& key) -> typename std::enable_if<std::is_same<T, GadgetContainer>::value, bool>::type {
+            const QMetaObject* meta = object.metaObject;
+            if (meta == nullptr) {
+                return false;
+            }
+            return meta->indexOfProperty(cast_to_const_char(key)) >= 0;
         }
 
 #endif
@@ -1336,60 +1369,38 @@ namespace _ {
             typedef QList<NewType> type;
         };
 
-        inline QVariant _get(const QVariantMap& object, const QStringList &path, const QVariant& defaultValue) ;
 
-        inline QVariant _get(const QObject* object, const QStringList &path, const QVariant& defaultValue) {
+        template <typename KeyValueType>
+        inline void _recursive_get(const KeyValueType& object, const std::vector<std::string>& tokens,int index, QVariant& result) {
+            auto k = cast_to_const_char(tokens[index]);
 
-            QString key = path[0];
+            bool hasKey = false;
+            QVariant value;
 
-            const QMetaObject* meta = object->metaObject();
+            try_cast_to_real_key_value_type(object, [&](const QObject* kyt){
+                if (contains(kyt, k)) { value = read(kyt, k); hasKey = true;}
+            },[&](GadgetContainer& kyt) {
+                if (contains(kyt, k)) { value = read(kyt, k); hasKey = true;}
+            },[&](QVariantMap& kyt) {
+                if (contains(kyt, k)) { value = read(kyt, k); hasKey = true;}
+            });
 
-            if (meta->indexOfProperty(key.toUtf8().constData()) < 0) {
-                return defaultValue;
+            int remaining = tokens.size() - index - 1;
+            if (remaining == 0 && hasKey) {
+                result = value;
             }
 
-            QVariant value = object->property(key.toUtf8().constData());
-
-            if (path.size() == 1) {
-                return value;
-            }
-
-            QStringList nextPath = path;
-            nextPath.removeFirst();
-
-            if (value.canConvert<QObject*>()) {
-                return _get(qvariant_cast<QObject*>(value), nextPath, defaultValue);
-            } else if (value.type() == QVariant::Map) {
-                return _get(value.toMap(), nextPath, defaultValue);
-            } else {
-                return defaultValue;
+            if (remaining != 0 && hasKey) {
+                _recursive_get(value, tokens, index + 1, result);
             }
         }
 
-        inline QVariant _get(const QVariantMap& object, const QStringList &path, const QVariant& defaultValue) {
-
-            QString key = path[0];
-
-            if (!object.contains(key)) {
-                return defaultValue;
-            }
-
-            QVariant value = object[key];
-
-            if (path.size() == 1) {
-                return value;
-            }
-
-            QStringList nextPath = path;
-            nextPath.removeFirst();
-
-            if (value.canConvert<QObject*>()) {
-                return _get(qvariant_cast<QObject*>(value), nextPath, defaultValue);
-            } else if (value.type() == QVariant::Map) {
-                return _get(value.toMap(), nextPath, defaultValue);
-            } else {
-                return defaultValue;
-            }
+        template <typename KeyValueType>
+        inline QVariant _get(const KeyValueType& object, const QString& path, const QVariant& defaultValue) {
+            QVariant result = defaultValue;
+            auto tokens = split(path.toStdString(), ".");
+            _recursive_get(object, tokens, 0, result);
+            return result;
         }
 #endif
 
@@ -1557,12 +1568,12 @@ namespace _ {
         inline auto merge(V1& v1, const V2& v2) ->
             typename std::enable_if<is_real_key_value_type<V1>::value && !is_real_key_value_type<V2>::value, V1&>::type {
 
-            try_cast_to_real_key_value_type(v2, [&](QObject* ptr){
-                forIn_merge(v1, ptr);
-            },[&](GadgetContainer& gadget) {
-                forIn_merge(v1, gadget);
-            },[&](QVariantMap map) {
-                merge(v1, map);
+            try_cast_to_real_key_value_type(v2, [&](QObject* kyt){
+                forIn_merge(v1, kyt);
+            },[&](GadgetContainer& kyt) {
+                forIn_merge(v1, kyt);
+            },[&](QVariantMap& kyt) {
+                merge(v1, kyt);
             });
 
             return v1;
@@ -1704,24 +1715,11 @@ namespace _ {
     /* End of assign() */
 
 #ifdef QT_CORE_LIB
-    inline QVariant get(const QObject *object, const QStringList &path, const QVariant& defaultValue)
+
+    template <typename KeyValueType>
+    inline QVariant get(const KeyValueType &object, const QString &path, const QVariant& defaultValue = QVariant())
     {
         return Private::_get(object, path, defaultValue);
-    }
-
-    inline QVariant get(const QObject *object, const QString &path, const QVariant& defaultValue = QVariant())
-    {
-        return get(object, path.split("."), defaultValue);
-    }
-
-    inline QVariant get(const QVariantMap &source, const QStringList &path, const QVariant &defaultValue = QVariant())
-    {
-        return Private::_get(source, path, defaultValue);
-    }
-
-    inline QVariant get(const QVariantMap &source, const QString &path, const QVariant &defaultValue = QVariant())
-    {
-        return get(source, path.split("."), defaultValue);
     }
 
     inline void set(QVariantMap &data, const QStringList &path, const QVariant &value)
