@@ -26,6 +26,7 @@ build_script:
   - dir /w
   - tests\c11tests\release\c11tests
   - tests\c14tests\release\c14tests
+  - tests\c17tests\release\c17tests
   - tests\quicktests\release\quicktests
   - tests\noqttests\release\noqttests
   - npm install
