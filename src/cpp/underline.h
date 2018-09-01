@@ -218,7 +218,7 @@ namespace _ {
 
         template <typename Object>
         struct is_qobject {
-            enum { value = std::is_convertible<typename std::add_pointer<typename std::remove_pointer<typename std::remove_cv<Object>::type>::type>::type, QObject*>::value };
+            enum { value = std::is_convertible<typename std::add_pointer<typename std::remove_pointer< remove_cvref_t<Object>>::type>::type, QObject*>::value };
         };
 
         template <typename T> struct is_gadget {

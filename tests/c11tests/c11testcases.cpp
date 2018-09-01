@@ -142,26 +142,27 @@ void C11TestCases::test_private_is_map()
 
 void C11TestCases::test_private_is_meta_object()
 {
-    QCOMPARE((bool)(_::Private::is_meta_object<QObject>::value), true);
-    QCOMPARE((bool)(_::Private::is_meta_object<QObject*>::value), true);
-    QCOMPARE((bool)(_::Private::is_meta_object<QObject**>::value), false);
+    QCOMPARE((bool)(_::Private::is_meta_object<QObject>::value),        true);
+    QCOMPARE((bool)(_::Private::is_meta_object<QObject*>::value),       true);
+    QCOMPARE((bool)(_::Private::is_meta_object<QObject**>::value),      false);
 
-    QCOMPARE((bool)(_::Private::is_meta_object<GadgetObject>::value), true);
-    QCOMPARE((bool)(_::Private::is_meta_object<GadgetObject*>::value), true);
-    QCOMPARE((bool)(_::Private::is_meta_object<GadgetObject**>::value), false);
+    QCOMPARE((bool)(_::Private::is_meta_object<GadgetObject>::value),    true);
+    QCOMPARE((bool)(_::Private::is_meta_object<GadgetObject*>::value),   true);
+    QCOMPARE((bool)(_::Private::is_meta_object<GadgetObject**>::value),  false);
 
     QCOMPARE((bool)(_::Private::is_meta_object<QString>::value), false);
 }
 
 void C11TestCases::test_private_is_qobject()
 {
-    QCOMPARE((bool)_::Private::is_qobject<QObject>::value, true);
-    QCOMPARE((bool)_::Private::is_qobject<QObject*>::value, true);
+    QCOMPARE((bool)_::Private::is_qobject<QObject>::value,          true);
+    QCOMPARE((bool)_::Private::is_qobject<QObject*>::value,         true);
+    QCOMPARE((bool)_::Private::is_qobject<QObject*&>::value,        true);
 
-    QCOMPARE((bool)_::Private::is_qobject<C11TestCases>::value, true);
-    QCOMPARE((bool)_::Private::is_qobject<C11TestCases*>::value, true);
+    QCOMPARE((bool)_::Private::is_qobject<C11TestCases>::value,     true);
+    QCOMPARE((bool)_::Private::is_qobject<C11TestCases*>::value,    true);
 
-    QCOMPARE((bool)_::Private::is_qobject<GadgetObject>::value, false);
+    QCOMPARE((bool)_::Private::is_qobject<GadgetObject>::value,     false);
 }
 
 void C11TestCases::test_private_is_key_value_type()
