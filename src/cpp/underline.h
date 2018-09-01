@@ -262,8 +262,8 @@ namespace _ {
 
 #ifdef QT_CORE_LIB
         template <typename T>
-        inline auto cast_to_qobject(const T& t) -> typename std::enable_if<std::is_pointer<T >::value && is_qobject<T>::value, QObject*>::type {
-            return t;
+        inline auto cast_to_qobject(T& t) -> typename std::enable_if<std::is_pointer<T>::value && is_qobject<T>::value, const QObject*>::type {
+            return qobject_cast<const QObject*>(t);
         }
 
         inline auto cast_to_qobject(const QVariant& t) -> QObject* {
@@ -1587,7 +1587,7 @@ namespace _ {
             auto map = v1.toMap();
             QVariant res;
 
-            handled = try_cast_to_real_key_value_type(v2, [&](QObject* qobject){
+            handled = try_cast_to_real_key_value_type(v2, [&](const QObject* qobject){
                 res = merge(map, qobject);
             },[&](GadgetContainer container) {
                 res = merge(map, container);

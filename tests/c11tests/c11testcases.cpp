@@ -429,6 +429,17 @@ void C11TestCases::test_private_cast_to_pointer()
     QCOMPARE(_::Private::cast_to_pointer(&a)->value, 10);
 }
 
+void C11TestCases::test_private_cast_to_qobject()
+{
+    QObject* object = new QObject(this);
+    const QObject* const_object = object;
+
+
+    QCOMPARE(_::Private::cast_to_qobject(object), object);
+    QCOMPARE(_::Private::cast_to_qobject(const_object), const_object);
+
+}
+
 void C11TestCases::test_private_merge()
 {
     {

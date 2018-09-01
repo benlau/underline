@@ -37,6 +37,8 @@ private slots:
 
     void test_private_cast_to_pointer();
 
+    void test_private_cast_to_qobject();
+
     void test_private_merge();
 
     void test_private_GadgetContainer();
