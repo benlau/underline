@@ -4,6 +4,10 @@
 #include <QCoreApplication>
 #include <QtCore>
 
+#ifndef __cpp_hex_float
+#define __cpp_hex_float "Undefined"
+#endif
+
 TEST(c17tests, test_version) {
     qDebug() << "__cplusplus" << __cplusplus;
     qDebug() << "__cpp_hex_float" << __cpp_hex_float;

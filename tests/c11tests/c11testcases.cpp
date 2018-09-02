@@ -434,9 +434,11 @@ void C11TestCases::test_private_cast_to_qobject()
     QObject* object = new QObject(this);
     const QObject* const_object = object;
 
-
     QCOMPARE(_::Private::cast_to_qobject(object), object);
     QCOMPARE(_::Private::cast_to_qobject(const_object), const_object);
+
+    QVERIFY((std::is_same<decltype(_::Private::cast_to_qobject(object)), QObject*>::value) > 0);
+    QVERIFY((std::is_same<decltype(_::Private::cast_to_qobject(const_object)), const QObject*>::value) > 0);
 
 }
 

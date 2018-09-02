@@ -262,7 +262,12 @@ namespace _ {
 
 #ifdef QT_CORE_LIB
         template <typename T>
-        inline auto cast_to_qobject(T& t) -> typename std::enable_if<std::is_pointer<T>::value && is_qobject<T>::value, const QObject*>::type {
+        inline auto cast_to_qobject(T* t) -> typename std::enable_if<is_qobject<T>::value, QObject*>::type {
+            return qobject_cast<QObject*>(t);
+        }
+
+        template <typename T>
+        inline auto cast_to_qobject(const T* t) -> typename std::enable_if<is_qobject<T>::value, const QObject*>::type {
             return qobject_cast<const QObject*>(t);
         }
 

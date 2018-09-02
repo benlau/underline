@@ -4,9 +4,15 @@ branches:
   except:
     - project/travis
 
+matrix:
+  fast_finish: true
+
+image:
+  - Visual Studio 2015
+  - Visual Studio 2017
+
 environment:
   matrix:
-  - fast_finish: true
   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
     QTDIR: C:\Qt\5.9.5\msvc2015_64
     VCVARSALL: C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat
