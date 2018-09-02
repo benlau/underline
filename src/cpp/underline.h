@@ -65,15 +65,17 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
 #define __UNDERLINE_STATIC_ASSERT_IS_OBJECT_SOURCE_VALUE_MATCHED(prefix, object, source) \
     static_assert(Private::is_custom_convertible<source,object>::value, prefix "The value type of 'source' argument cannot convert to the value type of 'object' argument.")
 
-#define UNDERLINE_PRIVATE_NS_BEGIN \
-    namespace _ {\
-        namespace Private {
+#define __UNDERLINE_PRIVATE_NS_BEGIN \
+    namespace _ ::Private {
 
-#define UNDERLINE_PRIVATE_NS_END \
-        } \
+#define __UNDERLINE_PRIVATE_NS_END \
     }
 
-#define _DECLARE_UNDERLINE_HAS(name, expr1, expr2) \
+#ifndef __UNDERLINE_DEBUG
+#define __UNDERLINE_DEBUG(msg)
+#endif
+
+#define __DECLARE_UNDERLINE_HAS(name, expr1, expr2) \
         template <typename T> \
         struct has_##name { \
             template <typename Type> \
@@ -163,19 +165,19 @@ namespace _ {
                 const void* constData = nullptr;
         };
 
-        _DECLARE_UNDERLINE_HAS(reserve, decltype(std::declval<Type>().reserve(0)), void)
+        __DECLARE_UNDERLINE_HAS(reserve, decltype(std::declval<Type>().reserve(0)), void)
 
-        _DECLARE_UNDERLINE_HAS(push_back, decltype(std::declval<Type>().push_back(std::declval<typename std::remove_reference<typename std::remove_cv<Type>::type::value_type>::type>())), void)
+        __DECLARE_UNDERLINE_HAS(push_back, decltype(std::declval<Type>().push_back(std::declval<typename std::remove_reference<typename std::remove_cv<Type>::type::value_type>::type>())), void)
 
-        _DECLARE_UNDERLINE_HAS(static_meta_object, typename std::remove_cv<decltype(std::remove_pointer<Type>::type::staticMetaObject)>::type, QMetaObject)
+        __DECLARE_UNDERLINE_HAS(static_meta_object, typename std::remove_cv<decltype(std::remove_pointer<Type>::type::staticMetaObject)>::type, QMetaObject)
 
-        _DECLARE_UNDERLINE_HAS(operator_round_backets_int, decltype(std::declval<Type>()[0]), typename std::remove_cv<Type>::type::value_type)
+        __DECLARE_UNDERLINE_HAS(operator_round_backets_int, decltype(std::declval<Type>()[0]), typename std::remove_cv<Type>::type::value_type)
 
-        _DECLARE_UNDERLINE_HAS(operator_round_backets_key, decltype(std::declval<Type>()[std::declval<typename std::remove_cv<Type>::type::key_type>()]), typename std::remove_cv<Type>::type::mapped_type)
+        __DECLARE_UNDERLINE_HAS(operator_round_backets_key, decltype(std::declval<Type>()[std::declval<typename std::remove_cv<Type>::type::key_type>()]), typename std::remove_cv<Type>::type::mapped_type)
 
-        _DECLARE_UNDERLINE_HAS(mapped_type,typename std::remove_cv<Type>::type::mapped_type,typename std::remove_cv<Type>::type::mapped_type)
+        __DECLARE_UNDERLINE_HAS(mapped_type,typename std::remove_cv<Type>::type::mapped_type,typename std::remove_cv<Type>::type::mapped_type)
 
-        _DECLARE_UNDERLINE_HAS(key_type,typename std::remove_cv<Type>::type::key_type,typename std::remove_cv<Type>::type::key_type)
+        __DECLARE_UNDERLINE_HAS(key_type,typename std::remove_cv<Type>::type::key_type,typename std::remove_cv<Type>::type::key_type)
 
         template <typename T>
         using pointer_or_reference_t = typename std::conditional<std::is_pointer<T>::value, T, T&>::type;
@@ -1625,14 +1627,13 @@ namespace _ {
             if (v1.isQObject()) {
                 auto ptr = v1.toQObject();
                 merge(ptr, v2);
-                return v1;
             } else if (v1.isObject()) {
                 forIn_merge(v1, v2);
-                return v1;
             } else {
                 v1 = v2;
-                return v1;
             }
+            __UNDERLINE_DEBUG("merge(QJSValue, QJSValue)");__UNDERLINE_DEBUG(v1.toVariant());
+            return v1;
         }
 #endif
 

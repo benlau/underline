@@ -1,8 +1,10 @@
 #include <QTest>
 #include <QQmlApplicationEngine>
 #include <QtShell>
-#include <underline.h>
 #include "quicktests.h"
+
+#define __UNDERLINE_DEBUG(x) { qDebug() << x;}
+#include <underline.h>
 
 QuickTests::QuickTests(QObject *parent) : QObject(parent)
 {
@@ -10,7 +12,6 @@ QuickTests::QuickTests(QObject *parent) : QObject(parent)
         QTest::qExec(this, 0, 0); // Autotest detect available test cases of a QObject by looking for "QTest::qExec" in source code
     };
     Q_UNUSED(ref);
-
 }
 
 void QuickTests::test_QJSValue()
