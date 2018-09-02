@@ -233,7 +233,7 @@ namespace _ {
         };
 
         template <typename T> struct is_qjsvalue {
-            enum { value = std::is_same<T, QJSValue>::value};
+            enum { value = std::is_same<remove_cvref_t<T>, QJSValue>::value};
         };
 
         template <typename T> struct is_qany_type {
@@ -378,6 +378,14 @@ namespace _ {
             return string.c_str();
         }
 
+#ifdef QT_QUICK_LIB
+        template <typename T>
+        inline auto cast_to_const_char(const T&) -> typename std::enable_if<std::is_same<T, QJSValue>::value, const char*>::type {
+            return "";
+        }
+#endif
+
+
         template <typename T>
         inline auto cast_to_qstring(const T&) -> QString {
             return QString();
@@ -396,15 +404,17 @@ namespace _ {
             return value.toString();
         }
 #endif
-
-        /* cast_to_* END */
+        template <typename T>
+        inline auto cast_to_qjsvalue(T&) -> typename std::enable_if<!is_qjsvalue<T>::value, QJSValue>::type {
+            return QJSValue();
+        }
 
         template <typename T>
-        struct is_jsvalue {
-            enum {
-                value = std::is_same<T, QJSValue>::value
-            };
-        };
+        inline auto cast_to_qjsvalue(T& v) -> typename std::enable_if<is_qjsvalue<T>::value, T>::type {
+            return v;
+        }
+
+        /* cast_to_* END */
 
         template <typename ...Args>
         struct _meta_object_info {
@@ -737,8 +747,13 @@ namespace _ {
             return false;
         }
 
-        template <typename T, typename F1, typename F2, typename F3>
-        inline bool try_cast_to_real_key_value_type(const T& value, F1 func1, F2 func2, F3 func3) {
+        template <typename T, typename F1, typename F2, typename F3, typename F4>
+        inline bool try_cast_to_key_value_type(T& value, F1 func1, F2 func2, F3 func3, F4 func4) {
+            if (is_qjsvalue<T>::value && can_cast_to_qvariantmap(value)) {
+                QJSValue jsValue = cast_to_qjsvalue(value);
+                func4(jsValue);
+                return true;
+            }
             auto qobject = cast_to_qobject(value);
             if (qobject) {
                 func1(qobject);
@@ -1647,13 +1662,16 @@ namespace _ {
             typename std::enable_if<is_real_key_value_type<V1>::value && !is_real_key_value_type<V2>::value, V1&>::type {
 
             __UNDERLINE_DEBUG("_::merge(kyt, non-kyt)");
-            try_cast_to_real_key_value_type(v2, [&](QObject* kyt){
+            try_cast_to_key_value_type(v2, [&](QObject* kyt){
                 forIn_merge(v1, kyt);
             },[&](GadgetContainer& kyt) {
                 forIn_merge(v1, kyt);
             },[&](QVariantMap& kyt) {
                 __UNDERLINE_DEBUG("_::merge(kyt, non-kyt): Cast v2 to QVariantMap");
                 merge(v1, kyt);
+            },[&](const QJSValue& kyt) {
+                __UNDERLINE_DEBUG("_::merge(kyt, non-kyt): v2 is QJSValue(object)");
+                forIn_merge(v1, kyt);
             });
 
             return v1;
@@ -1667,7 +1685,7 @@ namespace _ {
             },[&](GadgetContainer container) {
                 merge(container, v2);
             },[&](QVariantMap map) {
-                __UNDERLINE_DEBUG("_::merge(QVarint) - cast to QVariantMap");
+                __UNDERLINE_DEBUG("_::merge(QVariant) - cast to QVariantMap");
                 merge(map, v2);
                 v1 = map;
             });
@@ -1722,6 +1740,8 @@ namespace _ {
             using Value = typename key_value_type<V2>::value_type;
 
             forIn(v2, [&](const Value& value, const Key& key) {
+                __UNDERLINE_DEBUG(QString("forIn_merge:" ) + cast_to_qstring(key));
+
                 auto srcValue = read(v1, key);
 
                 QObject* v1_qobject_ptr = cast_to_qobject(srcValue);
