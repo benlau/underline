@@ -93,7 +93,7 @@ assign
 KeyValueType& _::assign(KeyValueType& dest, const KeyValueType& source, ...);
 ```
 
-Assigns the properties from the source to the destination object. The input should be an valid Key Value Type where [_::isKeyValueType](#isKeyValueType) returns true. The sequence to apply source objects is from left to right. Subsequent sources overwrite property assignments of previous sources. It is a non-recursive function. For deep copying and merge, you should use [_::merge](#merge).
+Assigns the properties from the source to the destination object. The input should be an valid Key Value Type where [_::iskeyvaluetype](#isKeyValueType) returns true. The sequence to apply source objects is from left to right. Subsequent sources overwrite property assignments of previous sources. It is a non-recursive function. For deep copying and merge, you should use [_::merge](#merge).
 
 Arguments:
 
@@ -164,14 +164,15 @@ get
 ---
 
 ```C++
-QVariant _::get(const KeyValuType& object, QString path,QVariant defaultValue = QVariant())
+/* Qt5 */
+QVariant _::get(const KeyValueType& object, QString path,QVariant defaultValue = QVariant())
 ```
 
 Obtain the value from the source object at the given path. If the path does not exist, it returns the default value.
 
-The input could be any valid Key Value Type where [_::isKeyValueType](#isKeyValueType) returns true.
+The input could be any valid Key Value Type where [_::iskeyvaluetype](#isKeyValueType) returns true and using string as the key type.
 
-Example:
+Example (Qt):
 
 ```
 // Obtain the objectName property from object's parent

@@ -145,6 +145,7 @@ namespace _ {
             int propertyCount() const;
             QMetaProperty property(int) const;
         };
+        class QByteArray{};
         class QVariantMap: public QMap<QString,QVariant>{};
 #endif
 #ifndef QT_QUICK_LIB
@@ -163,6 +164,12 @@ namespace _ {
                 const QMetaObject* metaObject = nullptr;
                 void* data = nullptr;
                 const void* constData = nullptr;
+        };
+
+        class ConstCharContainer {
+        public:
+            const char* data = nullptr;
+            QByteArray bytes;
         };
 
         __DECLARE_UNDERLINE_HAS(reserve, decltype(std::declval<Type>().reserve(0)), void)
@@ -364,27 +371,28 @@ namespace _ {
         }
 #endif
 
-        inline const char * cast_to_const_char(const char * value) {
-            return value;
+        inline ConstCharContainer cast_to_const_char_container(const char* value) {
+            ConstCharContainer container;
+            container.data = value;
+            return container;
+        }
+
+#ifdef QT_CORE_LIB
+        template <typename T>
+        inline auto cast_to_const_char_container(const T& string) -> typename std::enable_if<std::is_same<T, QString>::value, ConstCharContainer>::type {
+            ConstCharContainer container;
+            container.bytes = string.toUtf8();
+            container.data = container.bytes.constData();
+            return container;
         }
 
         template <typename T>
-        inline auto cast_to_const_char(const T& string) -> typename std::enable_if<std::is_same<T, QString>::value, const char*>::type {
-            return string.toUtf8().constData();
-        }
-
-        template <typename T>
-        inline auto cast_to_const_char(const T& string) -> typename std::enable_if<std::is_same<T, std::string>::value, const char*>::type {
-            return string.c_str();
-        }
-
-#ifdef QT_QUICK_LIB
-        template <typename T>
-        inline auto cast_to_const_char(const T&) -> typename std::enable_if<std::is_same<T, QJSValue>::value, const char*>::type {
-            return "";
+        inline auto cast_to_const_char_container(const T& string) -> typename std::enable_if<std::is_same<T, std::string>::value, ConstCharContainer>::type {
+            ConstCharContainer container;
+            container.data = string.c_str();
+            return container;
         }
 #endif
-
 
         template <typename T>
         inline auto cast_to_qstring(const T&) -> QString {
@@ -447,9 +455,9 @@ namespace _ {
         template <typename Meta, typename Key>
         inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_gadget<Meta>::value, QVariant>::type {
             auto ptr = cast_to_pointer<Meta>(meta);
-            auto k = cast_to_const_char(key);
+            auto k = cast_to_const_char_container(key);
             auto metaObject = ptr->staticMetaObject;
-            int index = metaObject.indexOfProperty(k);
+            int index = metaObject.indexOfProperty(k.data);
             if (index < 0 ) {
                 return QVariant();
             }
@@ -459,7 +467,8 @@ namespace _ {
 
         template <typename Meta, typename Key>
         inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_qobject<Meta>::value, QVariant>::type {
-            return meta->property(cast_to_const_char(key));
+            auto k = cast_to_const_char_container(key);
+            return meta->property(k.data);
         }
 
         template <typename Meta, typename Key>
@@ -473,8 +482,8 @@ namespace _ {
             if (gadget.constData == nullptr) {
                 return QVariant();
             }
-            auto k = cast_to_const_char(key);
-            int index = gadget.metaObject->indexOfProperty(k);
+            auto k = cast_to_const_char_container(key);
+            int index = gadget.metaObject->indexOfProperty(k.data);
             if (index < 0) return QVariant();
 
             QMetaProperty prop = gadget.metaObject->property(index);
@@ -487,8 +496,8 @@ namespace _ {
         inline auto meta_object_set_value(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_gadget<Meta>::value, bool>::type {
             auto ptr = cast_to_pointer<Meta>(meta);
             auto metaObject = ptr->staticMetaObject;
-            auto k = cast_to_const_char(key);
-            int index = metaObject.indexOfProperty(k);
+            auto k = cast_to_const_char_container(key);
+            int index = metaObject.indexOfProperty(k.data);
             if (index < 0 ) {
                 return false;
             }
@@ -500,7 +509,8 @@ namespace _ {
 
         template <typename Meta, typename Key, typename Value>
         inline auto meta_object_set_value(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_qobject<Meta>::value, bool>::type {
-            return meta->setProperty(cast_to_const_char(key), value);
+            auto k = cast_to_const_char_container(key);
+            return meta->setProperty(k.data, value);
         }
 
         template <typename Meta, typename Key, typename Value>
@@ -516,8 +526,8 @@ namespace _ {
             if (gadget.data == nullptr) {
                 return false;
             }
-            auto k = cast_to_const_char(key);
-            int index = gadget.metaObject->indexOfProperty(k);
+            auto k = cast_to_const_char_container(key);
+            int index = gadget.metaObject->indexOfProperty(k.data);
             if (index < 0) return false;
 
             QMetaProperty prop = gadget.metaObject->property(index);
@@ -785,13 +795,15 @@ namespace _ {
         template <typename T, typename K>
         inline auto contains(const T& object, const K& key) -> typename std::enable_if<is_qobject<T>::value, bool>::type {
             const QMetaObject* meta = object->metaObject();
-            return meta->indexOfProperty(cast_to_const_char(key)) >= 0;
+            auto k = cast_to_const_char_container(key);
+            return meta->indexOfProperty(k.data) >= 0;
         }
 
         template <typename T, typename K>
         inline auto contains(const T&, const K& key) -> typename std::enable_if<is_gadget<T>::value, bool>::type {
             const QMetaObject meta = T::staticMetaObject;
-            return meta.indexOfProperty(cast_to_const_char(key)) >= 0;
+            auto k = cast_to_const_char_container(key);
+            return meta.indexOfProperty(k.data) >= 0;
         }
 
         template <typename T, typename K>
@@ -800,7 +812,8 @@ namespace _ {
             if (meta == nullptr) {
                 return false;
             }
-            return meta->indexOfProperty(cast_to_const_char(key)) >= 0;
+            auto k = cast_to_const_char_container(key);
+            return meta->indexOfProperty(k.data) >= 0;
         }
 
 #endif
@@ -1401,23 +1414,22 @@ namespace _ {
             typedef QList<NewType> type;
         };
 
-
         template <typename KeyValueType>
         inline void _recursive_get(const KeyValueType& object, const std::vector<std::string>& tokens,int index, QVariant& result) {
-            auto k = cast_to_const_char(tokens[index]);
+            auto k = cast_to_const_char_container(tokens[index]);
 
             bool hasKey = false;
             QVariant value;
 
             try_cast_to_real_key_value_type(object, [&](const QObject* kyt){
-                if (contains(kyt, k)) { value = read(kyt, k); hasKey = true;}
+                if (contains(kyt, k.data)) { value = read(kyt, k.data); hasKey = true;}
             },[&](GadgetContainer& kyt) {
-                if (contains(kyt, k)) { value = read(kyt, k); hasKey = true;}
+                if (contains(kyt, k.data)) { value = read(kyt, k.data); hasKey = true;}
             },[&](QVariantMap& kyt) {
-                if (contains(kyt, k)) { value = read(kyt, k); hasKey = true;}
+                if (contains(kyt, k.data)) { value = read(kyt, k.data); hasKey = true;}
             });
 
-            int remaining = tokens.size() - index - 1;
+            int remaining = (int) tokens.size() - index - 1;
             if (remaining == 0 && hasKey) {
                 result = value;
             }
@@ -1455,33 +1467,33 @@ namespace _ {
 
         template <typename KeyValueType>
         inline pointer_or_reference_t<KeyValueType> _recursive_set(KeyValueType& object, const std::vector<std::string>& tokens,int index, const QVariant& value) {
-            auto k = cast_to_const_char(tokens[index]);
+            auto k = cast_to_const_char_container(tokens[index]);
 
             int remaining = tokens.size() - index - 1;
 
             if (remaining == 0) {
                 try_cast_to_real_key_value_type(object, [&](QObject* kyt){
-                    write(kyt, k, value);
+                    write(kyt, k.data, value);
                 },[&](GadgetContainer& kyt) {
-                    write(kyt, k, value);
+                    write(kyt, k.data, value);
                 },[&](QVariantMap& kyt) {
-                    write(kyt, k, value);
+                    write(kyt, k.data, value);
                     qvariantmap_pair_assignment(object, kyt);
                 });
 
             } else {
                 try_cast_to_real_key_value_type(object, [&](const QObject* kyt){
-                    if (contains(kyt, k)) {
-                        auto v = read(kyt, k); _recursive_set(v , tokens, index + 1, value);
+                    if (contains(kyt, k.data)) {
+                        auto v = read(kyt, k.data); _recursive_set(v , tokens, index + 1, value);
                     }
                 },[&](GadgetContainer& kyt) {
-                    if (contains(kyt, k)) {
-                        auto v = read(kyt, k); _recursive_set(v , tokens, index + 1, value);
+                    if (contains(kyt, k.data)) {
+                        auto v = read(kyt, k.data); _recursive_set(v , tokens, index + 1, value);
                     }
                 },[&](QVariantMap& kyt) {
-                    auto v = read(kyt, k).toMap();
+                    auto v = read(kyt, k.data).toMap();
                     _recursive_set(v , tokens, index + 1, value);
-                    qvariantmap_pair_write(object, k, v);
+                    qvariantmap_pair_write(object, k.data, v);
                 });
             }
 
