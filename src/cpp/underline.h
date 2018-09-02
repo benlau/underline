@@ -378,19 +378,24 @@ namespace _ {
             return string.c_str();
         }
 
-//#ifndef QT_CORE_LIB
-//        template <typename T>
-//        inline auto cast_to_qvariant(const T&) -> QVariant {
-//            QVariant v;
-//            return v;
-//        }
-//#else
-//        template <typename T>
-//        inline auto cast_to_qvariant(const T& t) -> QVariant {
-//            QVariant v = QVariant::fromValue<T>(t);
-//            return v;
-//        }
-//#endif
+        template <typename T>
+        inline auto cast_to_qstring(const T&) -> QString {
+            return QString();
+        }
+
+#ifdef QT_CORE_LIB
+        inline auto cast_to_qstring(const QString &str) -> QString {
+            return str;
+        }
+        inline auto cast_to_qstring(const char* str) -> QString {
+            return QString(str);
+        }
+#endif
+#ifdef QT_QUICK_LIB
+        inline auto cast_to_qstring(const QJSValue &value) -> QString {
+            return value.toString();
+        }
+#endif
 
         /* cast_to_* END */
 
@@ -490,7 +495,7 @@ namespace _ {
 
         template <typename Meta, typename Key, typename Value>
         inline auto meta_object_set_value(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_qjsvalue<Meta>::value, bool>::type {
-            meta.setProperty(cast_to_const_char(key), value);
+            meta.setProperty(cast_to_qstring(key), value);
             return true;
         }
 
