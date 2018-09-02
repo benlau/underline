@@ -794,6 +794,7 @@ namespace _ {
 #ifdef QT_CORE_LIB
         template <typename T, typename K>
         inline auto contains(const T& object, const K& key) -> typename std::enable_if<is_qobject<T>::value, bool>::type {
+            if (object == nullptr) return false;
             const QMetaObject* meta = object->metaObject();
             auto k = cast_to_const_char_container(key);
             return meta->indexOfProperty(k.data) >= 0;
@@ -1415,11 +1416,10 @@ namespace _ {
         };
 
         template <typename KeyValueType>
-        inline void _recursive_get(const KeyValueType& object, const std::vector<std::string>& tokens,int index, QVariant& result) {
+        inline auto _recursive_get(const KeyValueType& object, const std::vector<std::string>& tokens ,int index , QVariant& result) -> typename std::enable_if<!is_real_key_value_type<KeyValueType>::value, void>::type {
             auto k = cast_to_const_char_container(tokens[index]);
-
-            bool hasKey = false;
             QVariant value;
+            bool hasKey = false;
 
             try_cast_to_real_key_value_type(object, [&](const QObject* kyt){
                 if (contains(kyt, k.data)) { value = read(kyt, k.data); hasKey = true;}
@@ -1428,6 +1428,27 @@ namespace _ {
             },[&](QVariantMap& kyt) {
                 if (contains(kyt, k.data)) { value = read(kyt, k.data); hasKey = true;}
             });
+
+            int remaining = (int) tokens.size() - index - 1;
+            if (remaining == 0 && hasKey) {
+                result = value;
+            }
+
+            if (remaining != 0 && hasKey) {
+                _recursive_get(value, tokens, index + 1, result);
+            }
+        }
+
+        template <typename KeyValueType>
+        inline auto _recursive_get(const KeyValueType& object, const std::vector<std::string>& tokens,int index, QVariant& result) -> typename std::enable_if<is_real_key_value_type<KeyValueType>::value, void>::type {
+            auto k = cast_to_const_char_container(tokens[index]);
+
+            bool hasKey = contains(object, k.data);
+            QVariant value;
+
+            if (hasKey) {
+                value = read(object, k.data);
+            }
 
             int remaining = (int) tokens.size() - index - 1;
             if (remaining == 0 && hasKey) {
@@ -1469,7 +1490,7 @@ namespace _ {
         inline pointer_or_reference_t<KeyValueType> _recursive_set(KeyValueType& object, const std::vector<std::string>& tokens,int index, const QVariant& value) {
             auto k = cast_to_const_char_container(tokens[index]);
 
-            int remaining = tokens.size() - index - 1;
+            int remaining = (int) tokens.size() - index - 1;
 
             if (remaining == 0) {
                 try_cast_to_real_key_value_type(object, [&](QObject* kyt){

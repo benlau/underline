@@ -386,6 +386,15 @@ void C14TestCases::test_get()
         QVERIFY(value.toString() == "Not Found");
     }
 
+    /* get(QObject* == nullptr, QString) */
+
+    {
+        QObject* root = nullptr;
+
+        QVariant value = _::get(root, "value4.value1", -1);
+        QCOMPARE(value.toInt(), -1);
+    }
+
     /* get(QVarnaintMap, QString) */
 
     {
@@ -400,6 +409,17 @@ void C14TestCases::test_get()
         value = _::get(source, "valueX");
         QVERIFY(value.isNull());
     }
+
+    /* get(std::map, std::string) */
+
+    {
+        std::map<std::string, int> object{{"value1", 11}};
+
+        auto value = _::get(object, "value1");
+        QCOMPARE(value.toInt(), 11);
+
+    }
+
 }
 
 void C14TestCases::test_set()
@@ -645,13 +665,16 @@ void C14TestCases::test_reduce()
 
 void C14TestCases::test_countBy()
 {
-    QCOMPARE(_::countBy(_::range<std::vector<int>>(5), [](auto value) {return value % 2 == 0 ? std::string("even") : std::string("odd"); })["even"] , 3);
+    std::string even = "even";
+    std::string odd = "odd";
 
-    QCOMPARE(_::countBy(_::range<std::vector<int>>(5), [](auto value) {return value % 2 == 0 ? "even" : "odd"; })["odd"] , 2);
+    QCOMPARE(_::countBy(_::range<std::vector<int>>(5), [=](auto value) {return value % 2 == 0 ? even : odd; })[even] , 3);
+
+    QCOMPARE(_::countBy(_::range<std::vector<int>>(5), [=](auto value) {return value % 2 == 0 ? even : odd; })[odd] , 2);
 
     {
         auto input = _::range<QList<int>>(5);
-        QCOMPARE(_::countBy(input, [](auto value) {return value % 2 == 0 ? "even" : "odd"; })["odd"] , 2);
+        QCOMPARE(_::countBy(input, [=](auto value) {return value % 2 == 0 ? even : odd; })[odd] , 2);
     }
 
     {
