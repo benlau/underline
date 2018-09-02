@@ -10,6 +10,7 @@
 int main(int argc, char *argv[])
 {
     XBacktrace::enableBacktraceLogOnUnhandledException();
+    qputenv("QML_DISABLE_DISK_CACHE", "true");
 
     QCoreApplication app(argc, argv);
 

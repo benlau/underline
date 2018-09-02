@@ -1575,11 +1575,13 @@ namespace _ {
         inline auto merge(V1& v1, const V2& v2) ->
             typename std::enable_if<is_real_key_value_type<V1>::value && !is_real_key_value_type<V2>::value, V1&>::type {
 
+            __UNDERLINE_DEBUG("_::merge(kyt, non-kyt)");
             try_cast_to_real_key_value_type(v2, [&](QObject* kyt){
                 forIn_merge(v1, kyt);
             },[&](GadgetContainer& kyt) {
                 forIn_merge(v1, kyt);
             },[&](QVariantMap& kyt) {
+                __UNDERLINE_DEBUG("_::merge(kyt, non-kyt): Cast v2 to QVariantMap");
                 merge(v1, kyt);
             });
 
@@ -1594,6 +1596,7 @@ namespace _ {
             },[&](GadgetContainer container) {
                 merge(container, v2);
             },[&](QVariantMap map) {
+                __UNDERLINE_DEBUG("_::merge(QVarint) - cast to QVariantMap");
                 merge(map, v2);
                 v1 = map;
             });
@@ -1632,7 +1635,7 @@ namespace _ {
             } else {
                 v1 = v2;
             }
-            __UNDERLINE_DEBUG("merge(QJSValue, QJSValue)");__UNDERLINE_DEBUG(v1.toVariant());
+            __UNDERLINE_DEBUG("merge(QJSValue, QJSValue):"); __UNDERLINE_DEBUG(v1.toVariant());
             return v1;
         }
 #endif
