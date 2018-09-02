@@ -218,6 +218,11 @@ namespace _ {
         template <typename T>
         using remove_cvref_t = typename std::remove_reference<typename std::remove_cv<T>::type>::type;
 
+        template <typename V1, typename V2>
+        struct is_qvariantmap_pair {
+            enum { value = std::is_same<QVariantMap, V1>::value && std::is_same<QVariantMap, V2>::value };
+        };
+
         template <typename Object>
         struct is_qobject {
             enum { value = std::is_convertible<typename std::add_pointer<typename std::remove_pointer< remove_cvref_t<Object>>::type>::type, const QObject*>::value };
@@ -1409,6 +1414,67 @@ namespace _ {
             _recursive_get(object, tokens, 0, result);
             return result;
         }
+
+        template <typename V1, typename V2>
+        inline auto qvariantmap_pair_assignment(V1 &v1, const V2& v2) -> typename std::enable_if<is_qvariantmap_pair<V1,V2>::value, void>::type {
+            v1 = v2;
+        }
+
+        template <typename V1, typename V2>
+        inline auto qvariantmap_pair_assignment(V1 &, const V2&) -> typename std::enable_if<!is_qvariantmap_pair<V1,V2>::value , void>::type {
+        }
+
+        template <typename V1, typename V2, typename K>
+        inline auto qvariantmap_pair_write(V1 &v1, const K& k, const V2& v2) -> typename std::enable_if<is_qvariantmap_pair<V1,V2>::value, void>::type {
+            write(v1, k, v2);
+        }
+
+        template <typename V1, typename V2, typename K>
+        inline auto qvariantmap_pair_write(V1 &, const K&, const V2&) -> typename std::enable_if<!is_qvariantmap_pair<V1,V2>::value, void>::type {
+        }
+
+        template <typename KeyValueType>
+        inline pointer_or_reference_t<KeyValueType> _recursive_set(KeyValueType& object, const std::vector<std::string>& tokens,int index, const QVariant& value) {
+            auto k = cast_to_const_char(tokens[index]);
+
+            int remaining = tokens.size() - index - 1;
+
+            if (remaining == 0) {
+                try_cast_to_real_key_value_type(object, [&](QObject* kyt){
+                    write(kyt, k, value);
+                },[&](GadgetContainer& kyt) {
+                    write(kyt, k, value);
+                },[&](QVariantMap& kyt) {
+                    write(kyt, k, value);
+                    qvariantmap_pair_assignment(object, kyt);
+                });
+
+            } else {
+                try_cast_to_real_key_value_type(object, [&](const QObject* kyt){
+                    if (contains(kyt, k)) {
+                        auto v = read(kyt, k); _recursive_set(v , tokens, index + 1, value);
+                    }
+                },[&](GadgetContainer& kyt) {
+                    if (contains(kyt, k)) {
+                        auto v = read(kyt, k); _recursive_set(v , tokens, index + 1, value);
+                    }
+                },[&](QVariantMap& kyt) {
+                    auto v = read(kyt, k).toMap();
+                    _recursive_set(v , tokens, index + 1, value);
+                    qvariantmap_pair_write(object, k, v);
+                });
+            }
+
+            return object;
+        }
+
+        template <typename KeyValueType>
+        inline void _set(KeyValueType& object, const QString& path, const QVariant& value) {
+            auto tokens = split(path.toStdString(), ".");
+            _recursive_set(object, tokens, 0, value);
+        }
+
+
 #endif
 
         template <typename Map, typename Functor>
@@ -1627,6 +1693,10 @@ namespace _ {
 #ifdef QT_QUICK_LIB
         template <typename V2>
         inline auto merge(QJSValue& v1, const V2 & v2) -> typename std::enable_if<std::is_same<V2, QJSValue>::value, QJSValue&>::type {
+            __UNDERLINE_DEBUG(QString("Begin of merge(QJSValue, QJSValue):"));
+            __UNDERLINE_DEBUG(v1.toVariant());
+            __UNDERLINE_DEBUG(v2.toVariant());
+
             if (v1.isQObject()) {
                 auto ptr = v1.toQObject();
                 merge(ptr, v2);
@@ -1635,7 +1705,8 @@ namespace _ {
             } else {
                 v1 = v2;
             }
-            __UNDERLINE_DEBUG("merge(QJSValue, QJSValue):"); __UNDERLINE_DEBUG(v1.toVariant());
+            __UNDERLINE_DEBUG("End of merge(QJSValue, QJSValue):");
+            __UNDERLINE_DEBUG(v1.toVariant());
             return v1;
         }
 #endif
@@ -1731,28 +1802,13 @@ namespace _ {
         return Private::_get(object, path, defaultValue);
     }
 
-    inline void set(QVariantMap &data, const QStringList &path, const QVariant &value)
+    template <typename KeyValueType>
+    inline Private::pointer_or_reference_t<KeyValueType> set(KeyValueType &object, const QString &path, const QVariant& value)
     {
-        QString key = path[0];
-
-        if (path.size() == 1) {
-            data[key] = value;
-        } else {
-            if (!data.contains(key) || !data[key].canConvert<QVariantMap>()) {
-                data[key] = QVariantMap();
-            }
-            QStringList nextPath = path;
-            nextPath.removeFirst();
-            QVariantMap map = data[key].toMap();
-            set(map, nextPath, value);
-            data[key] = map;
-        }
+        Private::_set(object, path, value);
+        return object;
     }
 
-    inline void set(QVariantMap &data, const QString &path, const QVariant &value)
-    {
-        return set(data, path.split("."), value);
-    }
     /// Creates an QVariantMap composed of the picked object properties at paths.
     /*
      Example:

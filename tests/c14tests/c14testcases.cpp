@@ -417,6 +417,7 @@ void C14TestCases::test_set()
 
     _::set(data,"value3.value1",2);
 
+    QVERIFY(data.contains("value3"));
     QVariantMap value3 = data["value3"].toMap();
     QVERIFY(value3["value1"].toInt() == 2);
 
