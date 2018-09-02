@@ -464,7 +464,7 @@ namespace _ {
 
         template <typename Meta, typename Key>
         inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_qjsvalue<Meta>::value, QJSValue>::type {
-            return meta.property(cast_to_const_char(key));
+            return meta.property(cast_to_qstring(key));
         }
 
 #ifdef QT_CORE_LIB

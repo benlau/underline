@@ -164,17 +164,18 @@ get
 ---
 
 ```C++
-QVariant _::get(const QObject* source, QString path,QVariant defaultValue = QVariant())
-QVariant _::get(const QVariantMap source, QString path, QVariant defaultValue = QVariant())
+QVariant _::get(const KeyValuType& object, QString path,QVariant defaultValue = QVariant())
 ```
 
 Obtain the value from the source object at the given path. If the path does not exist, it returns the default value.
+
+The input could be any valid Key Value Type where [_::isKeyValueType](#isKeyValueType) returns true.
 
 Example:
 
 ```
 // Obtain the objectName property from object's parent
-QVariant property = _::get(object, "parent.objectName");
+QVariant property = _::get(/* QObject* */ object, "parent.objectName");
 ```
 
 isArray
