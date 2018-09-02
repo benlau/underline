@@ -4,16 +4,10 @@ branches:
   except:
     - project/travis
 
-image:
-  - Visual Studio 2017
-  - Visual Studio 2015
-
 environment:
   matrix:
+  - fast_finish: true
   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-    name: win32
-    platform: amd64_x86
-    qt: msvc2017
     QTDIR: C:\Qt\5.9.5\msvc2015_64
     VCVARSALL: C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat
   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
@@ -21,7 +15,7 @@ environment:
     QTDIR: C:\Qt\5.10.1\msvc2017_64
 
 build_script:
-  - call %VCVARSALL% x86_amd64
+  - call "%VCVARSALL%" x86_amd64
   - set GOPATH=c:\gopath
   - dir C:\Qt\5.9.5
   - dir C:\Qt\5.10.1
