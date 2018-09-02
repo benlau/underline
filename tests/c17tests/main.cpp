@@ -6,6 +6,7 @@
 
 TEST(c17tests, test_version) {
     qDebug() << "__cplusplus" << __cplusplus;
+    qDebug() << "__cpp_hex_float" << __cpp_hex_float;
     ASSERT_LE(201406, __cplusplus);
 }
 

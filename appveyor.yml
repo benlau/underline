@@ -6,19 +6,23 @@ branches:
 
 image:
   - Visual Studio 2017
+  - Visual Studio 2015
 
 environment:
   matrix:
-  - name: win32
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    name: win32
     platform: amd64_x86
     qt: msvc2017
+    QTDIR: C:\Qt\5.9.5\msvc2015_64
+    VCVARSALL: C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    VCVARSALL: C:\Program Files (x86)\Microsoft Visual Studio 15.0\VC\vcvarsall.bat
+    QTDIR: C:\Qt\5.10.1\msvc2017_64
 
 build_script:
-  - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86_amd64
+  - call %VCVARSALL% x86_amd64
   - set GOPATH=c:\gopath
-# - set QTDIR=C:\Qt\5.9.5\msvc2015_64
-  - set QTDIR=C:\Qt\5.9.5\msvc2017_64
-#  - set QTDIR=C:\Qt\5.10.1\msvc2017_64
   - dir C:\Qt\5.9.5
   - dir C:\Qt\5.10.1
   - set PATH=%PATH%;%QTDIR%\bin;C:\MinGW\bin;%GOPATH%\bin;
