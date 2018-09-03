@@ -64,5 +64,8 @@ private slots:
     void test_isMap();
 
     void test_isKeyValueType();
+
+    void test_isQKeyValueType();
+
 };
 

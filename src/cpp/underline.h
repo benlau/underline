@@ -702,6 +702,16 @@ namespace _ {
         using enable_if_is_meta_object_key_value_only_custom_matched_ret = typename std::enable_if<!is_meta_object_key_value_matched<Meta, Key, Value>::value && is_meta_object_key_value_custom_matched<Meta, Key, Value>::value, Ret>;
 
         template <typename ...Args>
+        struct is_std_map {
+            enum { value = 0 };
+        };
+
+        template <typename K, typename V>
+        struct is_std_map<std::map<K, V>> {
+            enum { value = 1 };
+        };
+
+        template <typename ...Args>
         struct _key_value_type_info {
             enum {
                 is_key_value_type = false
@@ -735,6 +745,13 @@ namespace _ {
         template <typename T>
         struct is_real_key_value_type {
             enum { value = key_value_type<T>::is_key_value_type && !std::is_same<T,QJSValue>::value};
+        };
+
+        template <typename T>
+        struct is_q_key_value_type {
+            enum {
+                value = key_value_type<T>::is_key_value_type && !is_std_map<T>::value
+            };
         };
 
         template <typename T, typename F1, typename F2, typename F3>
@@ -2110,6 +2127,17 @@ namespace _ {
     inline bool isKeyValueType(const T&) {
         return Private::is_key_value_type<T>::value;
     }
+
+    template <typename T>
+    inline bool isQKeyValueType() {
+        return Private::is_q_key_value_type<T>::value;
+    }
+
+    template <typename T>
+    inline bool isQKeyValueType(const T&) {
+        return Private::is_q_key_value_type<T>::value;
+    }
+
 
 #ifdef QT_CORE_LIB
     template <typename ...Args>
