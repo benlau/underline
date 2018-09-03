@@ -2129,12 +2129,12 @@ namespace _ {
     }
 
     template <typename T>
-    inline bool isQKeyValueType() {
+    inline bool isQMetaObject() {
         return Private::is_q_key_value_type<T>::value;
     }
 
     template <typename T>
-    inline bool isQKeyValueType(const T&) {
+    inline bool isQMetaObject(const T&) {
         return Private::is_q_key_value_type<T>::value;
     }
 

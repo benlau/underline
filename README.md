@@ -106,7 +106,7 @@ This function assigns the properties from the source object to the destination o
 Arguments:
 
  * object: The destination object
- * source && ... : The source object(s) to be assigned to the destination object. The key type of source object should be convertible to the destination object key type.
+ * source && ... : The source object(s) to be assigned to the destination object. The key and value type of source object should be convertible to the destination object key-value system.
 
 Returns:
 
@@ -148,8 +148,8 @@ Example
 countBy
 -------
 
-```
-template <typename Array,  typename Iteratee>
+```C++
+template <typename Array, typename Iteratee>
 Map countBy(const Array& collection, Iteratee iteratee)
 ```
 
@@ -159,16 +159,37 @@ The return is a Map object in a type either of std::map or QMap. The actual type
 
 Arguments:
 
- * collection: The input source. Check [_::isArray](#isarray) function for the supported type
+ * collection: The input source. Check [_::isArray](#isarray) function for the supported types
  * iteratee:  The iteratee function to transform the element in the array to a key value.
 
-Arguments:
+Examples:
 
- * collection: The input source. Check [_::isArray](#isarray) function for the supported type
- * iteratee:  The iteratee function to transform the element in the array to a key value.
+STL:
 
-Example:
+```C++
+    class Student {
+    public:
+        std::string name;
+        int age;
+    };
+
+    std::vector<Student> students = {{"Ben", 18} , {"Mary", 17}, {"John", 18}};
+
+    std::map<int, int> stats = _::countBy(students, [=](const Student& student) { return student.age;});
+    ASSERT_EQ(stats[18], 2);
+    ASSERT_EQ(stats[17], 1);
 ```
+
+Qt
+
+```C++
+    QVariantList students = {QVariantMap{{"name","Ben"},   {"age", 18}},
+                             QVariantMap{{"name","Mary"},  {"age", 17}},
+                             QVariantMap{{"name","John"},  {"age", 18}}};
+
+    QMap<int,int> stats = _::countBy(students, [=](const QVariant& student) { return student.toMap()["age"].toInt();});
+    ASSERT_EQ(stats[18], 2);
+    ASSERT_EQ(stats[17], 1);
 ```
 
 forEach
@@ -216,83 +237,6 @@ Example (Qt):
 QVariant property = _::get(/* QObject* */ object, "parent.objectName");
 ```
 
-isArray
-------
-
-```C++
-bool _::isArray(const T&)
-bool _::isArray<T>()
-```
-
-It is a static type checker to validate is the input type classified as a valid Array class supported by _.   You rarely need to use this function directly.
-
-Example:
-
-```C++
-QCOMPARE(_::isArray(std::vector<int>{}),    true);
-QCOMPARE(_::isArray(QVector<int>{ }),       true);
-QCOMPARE(_::isArray(QList<int>{ }),         true);
-QCOMPARE(_::isArray(QVariantList{ }),       true);
-QCOMPARE(_::isArray(QString{ }),            true);
-
-QCOMPARE(_::isArray(std::map<bool,int>{}),  false);
-QCOMPARE(_::isArray(QMap<int,int>{}),       false);
-QCOMPARE(_::isArray(10),                    false);
-```
-
-isKeyValueType
-------------
-
-It is a static type checker to validate is the input type classified as a valid Key-Value type supported by  _.  You rarely need to use this function directly.
-
-It is a kind of data structure contains key-value pairs with unique keys. std::map and QMap are the typical examples. In this library, Qt's data types like QObject*, QJSValue and Gadget object also classified as this kind of type. You may use them as an input to functions like [forIn](#forIn), [assign](#assign), and [merge](#merge) etc.
-
-```
-ASSERT_EQ(_::isKeyValueType(std::map<int,int>{}),   true);
-
-ASSERT_EQ(_::isKeyValueType(10),                    false);
-ASSERT_EQ(_::isKeyValueType(std::vector<int>{}),    false);
-```
-
-```
-QCOMPARE(_::isKeyValueType(QMap<int,int>{}),       true);
-QCOMPARE(_::isKeyValueType(QVariantMap{}),         true);
-QCOMPARE(_::isKeyValueType(new QObject(this)),     true);
-QCOMPARE(_::isKeyValueType(QJSValue()),            true);
-
-QCOMPARE(_::isKeyValueType(QVariantList{ }),       false);
-QCOMPARE(_::isKeyValueType(QString{ }),            false);
-```
-
-isMap
------
-
-```C++
-bool _::isMap(const T&)
-bool _::isMap<T>()
-```
-
-It is a static type checker to validate is the input type classified as a valid Map container class for _.  You rarely need to use this function directly.
-
-Standard C++
-
-```C++
-ASSERT_EQ(_::isMap(std::map<int,int>{}),   true);
-
-ASSERT_EQ(_::isMap(10),                    false);
-ASSERT_EQ(_::isMap(std::vector<int>{}),    false);
-```
-
-Qt
-
-```C++
-QCOMPARE(_::isMap(QMap<int,int>{}),       true);
-QCOMPARE(_::isMap(QVariantMap{}),         true);
-
-QCOMPARE(_::isMap(QVector<int>{ }),       false);
-QCOMPARE(_::isMap(QList<int>{ }),         false);
-```
-
 map
 ----
 
@@ -323,7 +267,6 @@ QVector<int> output3 = _::map(std::vector<QString>(){"1","2","3"}, [](auto item,
 
 merge
 ------
-
 
 
 omit
@@ -420,3 +363,113 @@ Returns
 
  * bool: Returns true if any element passes to the predicate function, otherwise, it is false.
 
+Type Checker
+============
+
+isArray
+------
+
+```C++
+bool _::isArray(const T&)
+bool _::isArray<T>()
+```
+
+It is a static type checker to validate is the input type classified as a valid Array class supported by _.   You rarely need to use this function directly.
+
+Example:
+
+```C++
+QCOMPARE(_::isArray(std::vector<int>{}),    true);
+QCOMPARE(_::isArray(QVector<int>{ }),       true);
+QCOMPARE(_::isArray(QList<int>{ }),         true);
+QCOMPARE(_::isArray(QVariantList{ }),       true);
+QCOMPARE(_::isArray(QString{ }),            true);
+
+QCOMPARE(_::isArray(std::map<bool,int>{}),  false);
+QCOMPARE(_::isArray(QMap<int,int>{}),       false);
+QCOMPARE(_::isArray(10),                    false);
+```
+
+isKeyValueType
+------------
+
+It is a static type checker to validate is the input type classified as a valid Key-Value type supported by  _.  You rarely need to use this function directly.
+
+It is a kind of data structure contains key-value pairs with unique keys. std::map and QMap are the typical examples. In this library, Qt's data types like QObject*, QJSValue and Gadget object also classified as this kind of type. You may use them as an input to functions like [forIn](#forIn), [assign](#assign), and [merge](#merge) etc.
+
+```
+ASSERT_EQ(_::isKeyValueType(std::map<int,int>{}),   true);
+
+ASSERT_EQ(_::isKeyValueType(10),                    false);
+ASSERT_EQ(_::isKeyValueType(std::vector<int>{}),    false);
+```
+
+```
+QCOMPARE(_::isKeyValueType(QMap<int,int>{}),       true);
+QCOMPARE(_::isKeyValueType(QVariantMap{}),         true);
+QCOMPARE(_::isKeyValueType(new QObject(this)),     true);
+QCOMPARE(_::isKeyValueType(QJSValue()),            true);
+
+QCOMPARE(_::isKeyValueType(QVariantList{ }),       false);
+QCOMPARE(_::isKeyValueType(QString{ }),            false);
+```
+
+isQMetaObject
+------------
+
+```C++
+    template <typename T>
+    bool isQMetaObject();
+
+    template <typename T>
+    bool isQMetaObject(const T&);
+```
+
+It is a static type checker to validate is the input type classified as a meta object in Qt supported by _. You rarely need to use this function directly.
+
+It is a kind of data structure contains a set of key-value pairs with unique keys. A typical example is QObject*. QVariantMap and QJSValue are also classified as this kind of type.  You may use them as an input to functions like [forIn](#forIn), [assign](#assign), and [merge](#merge) etc.
+
+Examples:
+
+```C++
+class GadgetObject {
+    Q_GADGET
+    Q_PROPERTY(int value MEMBER value)
+public:
+    int value;
+};
+
+QCOMPARE(_::isQMetaObject(GadgetObject()),        true);
+QCOMPARE(_::isQMetaObject(QVariantMap{}),         true);
+QCOMPARE(_::isQMetaObject(new QObject(this)),     true);
+QCOMPARE(_::isQMetaObject(QJSValue()),            true);
+```
+
+isMap
+-----
+
+```C++
+bool _::isMap(const T&)
+bool _::isMap<T>()
+```
+
+It is a static type checker to validate is the input type classified as a valid Map container class for _.  You rarely need to use this function directly.
+
+Standard C++
+
+```C++
+ASSERT_EQ(_::isMap(std::map<int,int>{}),   true);
+
+ASSERT_EQ(_::isMap(10),                    false);
+ASSERT_EQ(_::isMap(std::vector<int>{}),    false);
+```
+
+Qt
+
+```C++
+QCOMPARE(_::isMap(QMap<int,int>{}),       true);
+QCOMPARE(_::isMap(QVariantMap{}),         true);
+
+QCOMPARE(_::isMap(QVector<int>{ }),       false);
+QCOMPARE(_::isMap(QList<int>{ }),         false);
+```

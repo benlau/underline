@@ -902,21 +902,21 @@ void C11TestCases::test_isKeyValueType()
     QCOMPARE(_::isKeyValueType(10),                    false);
 }
 
-void C11TestCases::test_isQKeyValueType()
+void C11TestCases::test_isQMetaObject()
 {
-    QCOMPARE(_::isQKeyValueType(QMap<int,int>{}),       true);
-    QCOMPARE(_::isQKeyValueType(QVariantMap{}),         true);
-    QCOMPARE(_::isQKeyValueType(new QObject(this)),     true);
-    QCOMPARE(_::isQKeyValueType(QJSValue()),            true);
-    QCOMPARE(_::isQKeyValueType(GadgetObject()),        true);
+    QCOMPARE(_::isQMetaObject(QMap<int,int>{}),       true);
+    QCOMPARE(_::isQMetaObject(QVariantMap{}),         true);
+    QCOMPARE(_::isQMetaObject(new QObject(this)),     true);
+    QCOMPARE(_::isQMetaObject(QJSValue()),            true);
+    QCOMPARE(_::isQMetaObject(GadgetObject()),        true);
 
-    QCOMPARE(_::isQKeyValueType(std::vector<int>{}),    false);
-    QCOMPARE(_::isQKeyValueType(QVector<int>{ }),       false);
-    QCOMPARE(_::isQKeyValueType(QList<int>{ }),         false);
-    QCOMPARE(_::isQKeyValueType(QVariantList{ }),       false);
-    QCOMPARE(_::isQKeyValueType(QString{ }),            false);
-    QCOMPARE(_::isQKeyValueType(10),                    false);
-    QCOMPARE(_::isQKeyValueType(std::map<int,int>{}),   false);
+    QCOMPARE(_::isQMetaObject(std::vector<int>{}),    false);
+    QCOMPARE(_::isQMetaObject(QVector<int>{ }),       false);
+    QCOMPARE(_::isQMetaObject(QList<int>{ }),         false);
+    QCOMPARE(_::isQMetaObject(QVariantList{ }),       false);
+    QCOMPARE(_::isQMetaObject(QString{ }),            false);
+    QCOMPARE(_::isQMetaObject(10),                    false);
+    QCOMPARE(_::isQMetaObject(std::map<int,int>{}),   false);
 }
 
 

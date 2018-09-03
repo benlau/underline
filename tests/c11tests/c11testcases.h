@@ -65,7 +65,7 @@ private slots:
 
     void test_isKeyValueType();
 
-    void test_isQKeyValueType();
+    void test_isQMetaObject();
 
 };
 
