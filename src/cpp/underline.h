@@ -755,7 +755,7 @@ namespace _ {
         };
 
         template <typename T, typename F1, typename F2, typename F3>
-        inline bool try_cast_to_real_key_value_type(T& value, F1 func1, F2 func2, F3 func3) {
+        inline bool try_cast_to_real_qmeta_object(T& value, F1 func1, F2 func2, F3 func3) {
             auto qobject = cast_to_qobject(value);
             if (qobject) {
                 func1(qobject);
@@ -775,7 +775,7 @@ namespace _ {
         }
 
         template <typename T, typename F1, typename F2, typename F3, typename F4>
-        inline bool try_cast_to_key_value_type(T& value, F1 func1, F2 func2, F3 func3, F4 func4) {
+        inline bool try_cast_to_qmeta_object(T& value, F1 func1, F2 func2, F3 func3, F4 func4) {
             if (is_qjsvalue<T>::value && can_cast_to_qvariantmap(value)) {
                 QJSValue jsValue = cast_to_qjsvalue(value);
                 func4(jsValue);
@@ -1438,7 +1438,7 @@ namespace _ {
             QVariant value;
             bool hasKey = false;
 
-            try_cast_to_real_key_value_type(object, [&](const QObject* kyt){
+            try_cast_to_real_qmeta_object(object, [&](const QObject* kyt){
                 if (contains(kyt, k.data)) { value = read(kyt, k.data); hasKey = true;}
             },[&](GadgetContainer& kyt) {
                 if (contains(kyt, k.data)) { value = read(kyt, k.data); hasKey = true;}
@@ -1510,7 +1510,7 @@ namespace _ {
             int remaining = (int) tokens.size() - index - 1;
 
             if (remaining == 0) {
-                try_cast_to_real_key_value_type(object, [&](QObject* kyt){
+                try_cast_to_real_qmeta_object(object, [&](QObject* kyt){
                     write(kyt, k.data, value);
                 },[&](GadgetContainer& kyt) {
                     write(kyt, k.data, value);
@@ -1520,7 +1520,7 @@ namespace _ {
                 });
 
             } else {
-                try_cast_to_real_key_value_type(object, [&](const QObject* kyt){
+                try_cast_to_real_qmeta_object(object, [&](const QObject* kyt){
                     if (contains(kyt, k.data)) {
                         auto v = read(kyt, k.data); _recursive_set(v , tokens, index + 1, value);
                     }
@@ -1712,7 +1712,7 @@ namespace _ {
             typename std::enable_if<is_real_key_value_type<V1>::value && !is_real_key_value_type<V2>::value, V1&>::type {
 
             __UNDERLINE_DEBUG("_::merge(kyt, non-kyt)");
-            try_cast_to_key_value_type(v2, [&](QObject* kyt){
+            try_cast_to_qmeta_object(v2, [&](QObject* kyt){
                 forIn_merge(v1, kyt);
             },[&](GadgetContainer& kyt) {
                 forIn_merge(v1, kyt);
@@ -1730,7 +1730,7 @@ namespace _ {
 #ifdef QT_CORE_LIB
         template <typename V2>
         inline QVariant merge(QVariant &v1, const V2 &v2) {
-            auto handled = try_cast_to_real_key_value_type(v1, [&](QObject* qobject){
+            auto handled = try_cast_to_real_qmeta_object(v1, [&](QObject* qobject){
                 merge(qobject, v2);
             },[&](GadgetContainer container) {
                 merge(container, v2);
@@ -1747,7 +1747,7 @@ namespace _ {
             auto map = v1.toMap();
             QVariant res;
 
-            handled = try_cast_to_real_key_value_type(v2, [&](const QObject* qobject){
+            handled = try_cast_to_real_qmeta_object(v2, [&](const QObject* qobject){
                 res = merge(map, qobject);
             },[&](GadgetContainer container) {
                 res = merge(map, container);
@@ -1884,62 +1884,26 @@ namespace _ {
         return object;
     }
 
-    /// Creates an QVariantMap composed of the picked object properties at paths.
-    /*
-     Example:
+    template <typename QMetaObject>
+    inline QVariantMap pick(QMetaObject& object, const QStringList& paths) {
+        QVariantMap res;
 
-         pick(object, QStringList() << "a" << "b.c");
-
-     If a property contains QObject pointer, it will be converted to QVariantMap.
-
-     In case you need to obtain a QObject pointer, please use get().
-
-     */
-
-    inline QVariantMap pick(QObject *object, const QStringList &paths)
-    {
-        QVariantMap data;
-        foreach (QString path, paths) {
+        for (auto path: paths) {
             QVariant value = get(object, path);
-            if (value.isNull()) {
-                continue;
-            }
-
-            if (value.canConvert<QObject*>()) {
-                QVariantMap map;
-                assign(map, value.value<QObject*>());
-                value = map;
-            }
-
-            set(data, path, value);
+            set(res, path, value);
         }
-        return data;
+
+        return res;
     }
 
+    template <typename QMetaObject>
+    inline QVariantMap pick(QMetaObject& object, const QString& path) {
+        QVariantMap res;
 
-    inline QVariantMap pick(QVariantMap source, const QStringList &paths)
-    {
-        QVariantMap data;
-        foreach (QString path, paths) {
-            QVariant value = get(source, path);
-            if (value.isNull()) {
-                continue;
-            }
+        QVariant value = get(object, path);
+        set(res, path, value);
 
-            if (value.canConvert<QObject*>()) {
-                QVariantMap map;
-                assign(map, value.value<QObject*>());
-                value = map;
-            }
-
-            set(data, path, value);
-        }
-        return data;
-    }
-
-    inline QVariantMap pick(QVariantMap source, const QVariantMap &paths)
-    {
-        return pick(source, paths.keys());
+        return res;
     }
 
     /// The opposite of pick(), this method creates an QVariantMap composed of the own properties that are not omitted.

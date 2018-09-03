@@ -25,19 +25,18 @@ static QObject* createMockObject(QObject* parent) {
 C14TestCases::C14TestCases(QObject *parent) : QObject(parent)
 {
     auto ref = [=]() {
-        QTest::qExec(this, 0, 0); // Autotest detect available test cases of a QObject by looking for "QTest::qExec" in source code
+        QTest::qExec(this, 0, nullptr); // Autotest detect available test cases of a QObject by looking for "QTest::qExec" in source code
     };
     Q_UNUSED(ref);
 }
 
 void C14TestCases::test_private_is_qobject()
 {
-    QCOMPARE((bool) _::Private::is_qobject<C14TestCases>::value, true);
-    QCOMPARE((bool) _::Private::is_qobject<GadgetObject>::value, false);
+    QCOMPARE(static_cast<bool>(_::Private::is_qobject<C14TestCases>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_qobject<GadgetObject>::value), false);
 
-    QCOMPARE((bool) _::Private::is_gadget<C14TestCases>::value, false);
-    QCOMPARE((bool) _::Private::is_gadget<GadgetObject>::value, true);
-
+    QCOMPARE(static_cast<bool>(_::Private::is_gadget<C14TestCases>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_gadget<GadgetObject>::value), true);
 }
 
 template <typename F, typename T>
@@ -469,8 +468,8 @@ void C14TestCases::test_pick()
     QVERIFY(data["value4"].toMap()["value1"].toInt() == 5);
 
     // Pick an QObject
-    data = _::pick(root, QStringList() << "value4");
-    QVERIFY(data["value4"].type() == QVariant::Map);
+    data = _::pick(root, "value4");
+    QVERIFY(data["value4"].canConvert<QObject*>());
 
     /* _::pick(QVariant, paths) */
     QVariantMap source;
