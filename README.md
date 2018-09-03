@@ -2,12 +2,28 @@
 [![Build Status](https://www.travis-ci.org/benlau/underline.svg?branch=master)](https://www.travis-ci.org/benlau/underline)
 [![Build status](https://ci.appveyor.com/api/projects/status/p6jsldfoj73ep630?svg=true)](https://ci.appveyor.com/project/benlau/underline)
 
-A C++ utility library provides useful functional programming helpers like the lodash.js.
+Underline is a C++ utility library provides useful functional programming helpers like the lodash.js.
 
 Features:
 -----
 
-**1) C++11 compliant coding. Support C++14 generic lambda function (using auto as parameter) and return type detection.**
+**1) Designed for user-friendly error handling. Get rid of the horrific and misleading template compilation error messages.**
+
+Example:
+
+```C++
+    auto output = _::map(QList<QString>{"1","2","3"}, [](auto item, QString index) { return item;});
+```
+
+The 2nd argument of the iteratee function should be an int type instead of a QString. Usually, it triggers a compilation error at somewhere that user has no idea what is it doing. The error message is super long and hard to understand.
+
+Underline captures the argument type mismatched error by using static_assert() in the early stage. The actual error message on above example is:
+
+```
+error: static_assert failed "_::map(): Mismatched argument types in the iteratee function. Please validate the number of argument and their type."
+```
+
+**2) C++11 compliant coding. Support C++14 generic lambda function (using auto as parameter) and return type detection.**
 
 ```C++
 
@@ -21,7 +37,7 @@ QVector<int> output3 = _::map(QVector<QString>{"1","2","3"},
                               [](QString, int index, auto collection) { return collection[index].toInt();});
 ```
 
-**2) Support Qt types but it is still compilable even the Qt library is missing.**
+**3) Support Qt types but it is still compilable even the Qt library is missing.**
 
 ```C++
 // Serialize a QObject
@@ -32,27 +48,18 @@ _::merge( /* QVariantMap */ dest, /* QObject* */ source );
 QVariant property = _::get(object, "parent.objectName");
 ```
 
-**3) Strong static type checking. Get rid of the horrific and misleading template compilation error messages.**
-
-Example:
-
-```C++
-    auto output = _::map(QList<QString>{"1","2","3"}, [](auto item, QString index) { return item;});
-```
-
-The 2nd argument of the iteratee function should be an int type, but it got a QString. Usually, it triggers a compilation error at somewhere that user has no idea what is it doing. The error message is super long and hard to understand.
-
-Underline captures the argument type mismatched error by using static_assert(). The actual error message on above example becomes:
-
-```
-error: static_assert failed "_::map(): Mismatched argument types in the iteratee function. Please validate the number of argument and their type."
-```
-
 **4) Single Header Library**
 
-**5) All the helper functions are reentrant, and thead-safe**
+**5) All the helper functions are reentrant, and thread-safe**
 
-Use-cases
+Use-cases for regular C++
+-------
+
+```C++
+TODO
+```
+
+Use-cases for Qt
 -------
 
  1) Serialize a QObject
@@ -90,17 +97,16 @@ assign
 -----
 
 ```C++
-KeyValueType& _::assign(KeyValueType& dest, const KeyValueType& source, ...);
+template <typename KeyValueType>
+KeyValueType& _::assign(KeyValueType& object, const KeyValueType& source, ...);
 ```
 
-Assigns the properties from the source to the destination object. The input should be an valid Key Value Type where [_::iskeyvaluetype](#isKeyValueType) returns true. The sequence to apply source objects is from left to right. Subsequent sources overwrite property assignments of previous sources. It is a non-recursive function. For deep copying and merge, you should use [_::merge](#merge).
+This function assigns the properties from the source object to the destination object. The input should be an valid Key Value Type where [_::isKeyValueType](#iskeyvaluetype) returns true. The sequence to apply source objects is from left to right. Subsequent sources overwrite property assignments of previous sources. It is a non-recursive function. For deep copying and merge, you should use [_::merge](#merge).
 
 Arguments:
 
  * object: The destination object
- * source && ... : The source object(s) to be assigned to the destination object
-
-Supported types: std::map, QMap, QObject, Gadget, QJSValue
+ * source && ... : The source object(s) to be assigned to the destination object. The key type of source object should be convertible to the destination object key type.
 
 Returns:
 
@@ -109,7 +115,7 @@ Returns:
 Example
 
 ```C++
-_::assign(object, QVariantMap{{"objectName", "Test"}});
+_::assign(/*QObject*/ object, QVariantMap{{"objectName", "Test"}});
 _::assign(map, object, QVariantMap{{"objectName", "Test"}});
 ```
 
@@ -117,7 +123,8 @@ clamp
 -----
 
 ```
-_::clamp(number, lower, upper)
+template <typename Number>
+Number _::clamp( number, Number lower, Number upper)
 ```
 
 Clamps number within the inclusive lower and upper bounds.
@@ -131,8 +138,38 @@ Returns
 
  * The clamped number.
 
+Example
+```
+    ASSERT_EQ(_::clamp(5,4,7), 5);
+    ASSERT_EQ(_::clamp(-7,-4,7), -4);
+    ASSERT_EQ(_::clamp(1,-20,-10), -10);
+```
+
 countBy
 -------
+
+```
+template <typename Array,  typename Iteratee>
+Map countBy(const Array& collection, Iteratee iteratee)
+```
+
+Iteratees all the elements in the array container ([_::isArray](#isarray) returns true)  and pass to the iteratee function, then count the number of the occurrence of the result. The iteratee function takes only one argument. [value]
+
+The return is a Map object in a type either of std::map or QMap. The actual type chosen depends on the array container. If it is a Qt container class, it will be a QMap. Otherwise, it will be a std::map. The key type is the same as the return of the iteratee, and the value type is an integer storing the counting.
+
+Arguments:
+
+ * collection: The input source. Check [_::isArray](#isarray) function for the supported type
+ * iteratee:  The iteratee function to transform the element in the array to a key value.
+
+Arguments:
+
+ * collection: The input source. Check [_::isArray](#isarray) function for the supported type
+ * iteratee:  The iteratee function to transform the element in the array to a key value.
+
+Example:
+```
+```
 
 forEach
 -------
@@ -145,7 +182,7 @@ _::forIn(Map<Key,Value> object, iteratee) // std::map, QMap, QVariantMap
 _::forIn(QObject* object, iteratee)
 ```
 
-Iterates all the string key proeprties of an object and calls the iteratee function. The iteratee function is invoked with one to three arguments: [value, [key, [collection]]].
+Iterates all the string key properties of an object and calls the iteratee function. The iteratee function is invoked with one to three arguments: [value, [key, [collection]]].
 
 Arguments:
 
@@ -170,7 +207,7 @@ QVariant _::get(const KeyValueType& object, QString path,QVariant defaultValue =
 
 Obtain the value from the source object at the given path. If the path does not exist, it returns the default value.
 
-The input could be any valid Key Value Type where [_::iskeyvaluetype](#isKeyValueType) returns true and using string as the key type.
+The input could be any valid Key Value Type where [_::iskeyvaluetype](#isKeyValueType) returns true and using a string as the key type.
 
 Example (Qt):
 
@@ -343,7 +380,7 @@ void _::set(QVariantMap &object, const QStringList &path, const QVariant &value)
 void _::set(QVariantMap &object, const QString &path, const QVariant &value)
 ```
 
-Set the property from the source object at the given path. If the path does not exist, it does nothinbg.
+Set the property from the source object at the given path. If the path does not exist, it does nothing.
 
 Arguments
 

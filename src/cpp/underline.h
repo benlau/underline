@@ -2014,18 +2014,18 @@ namespace _ {
         return res;
     }
 
-    template <typename Collection,  typename Iteratee>
-    inline auto countBy(const Collection& collection, Iteratee iteratee) -> typename Private::rebind_to_map_collection_iteratee_t<Collection, Iteratee, int>  {
+    template <typename Array,  typename Iteratee>
+    inline auto countBy(const Array& collection, Iteratee iteratee) -> typename Private::rebind_to_map_collection_iteratee_t<Array, Iteratee, int>  {
 
-        __UNDERLINE_STATIC_ASSERT_IS_ARRAY("_::countBy: ", Collection);
+        __UNDERLINE_STATIC_ASSERT_IS_ARRAY("_::countBy: ", Array);
 
-        __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_INVOKABLE("_::countBy: ", (Private::is_invokable1<Iteratee, _::Private::array_value_type_t<Collection>>::value));
+        __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_INVOKABLE("_::countBy: ", (Private::is_invokable1<Iteratee, _::Private::array_value_type_t<Array>>::value));
 
-        __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_NOT_VOID("_::countBy: ", (Private::ret_invoke_is_not_void<Iteratee, _::Private::array_value_type_t<Collection>>::value));
+        __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_NOT_VOID("_::countBy: ", (Private::ret_invoke_is_not_void<Iteratee, _::Private::array_value_type_t<Array>>::value));
 
-        typename Private::rebind_to_map_collection_iteratee_t<Collection, Iteratee, int>  res;
+        typename Private::rebind_to_map_collection_iteratee_t<Array, Iteratee, int>  res;
 
-        Private::Value<typename Private::ret_invoke<Iteratee, _::Private::array_value_type_t<Collection>>::type> wrapper;
+        Private::Value<typename Private::ret_invoke<Iteratee, _::Private::array_value_type_t<Array>>::type> wrapper;
 
         for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
             wrapper.invoke(iteratee, collection[i]);
