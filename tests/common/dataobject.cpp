@@ -4,6 +4,9 @@ DataObject::DataObject(QObject *parent) : QObject(parent)
 {
     setObjectName("Root");
     m_value4 = new DataObject2(this);
+    m_value1 = 1;
+    m_value2 = 2.0;
+    m_value3 = "3";
 }
 
 int DataObject::value1() const

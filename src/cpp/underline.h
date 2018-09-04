@@ -1805,6 +1805,47 @@ namespace _ {
 
         /* PRIVATE_MERGE end */
 
+#ifdef QT_CORE_LIB
+        template <typename QtMetable>
+        QVariantMap _omit(const QtMetable& object, const QVariantMap& properties) {
+            using Key = typename key_value_type<QtMetable>::key_type;
+            using Value = typename key_value_type<QtMetable>::value_type;
+            QVariantMap result;
+
+            forIn(object, [&](const Value& value, const Key& key) {
+                if (properties.contains(key) && properties[key].type() == QVariant::Bool) {
+                    return;
+                }
+                QVariant newValue;
+                bool handled = Private::try_cast_to_qt_metable(value, [&](QObject* kyt){
+                    newValue = _omit(kyt, properties[key].toMap());
+                },[&](Private::GadgetContainer& kyt) {
+                    newValue = _omit(kyt, properties[key].toMap());
+                },[&](QVariantMap& kyt) {
+                    newValue = _omit(kyt, properties[key].toMap());
+                },[&](const QJSValue& kyt) {
+                    newValue = _omit(kyt, properties[key].toMap());
+                });
+
+                if (!handled) {
+                    convertTo(value, newValue);
+                }
+
+                result[key] = newValue;
+            });
+            return result;
+        }
+
+        template <typename QtMetable>
+        QVariantMap _omit(const QtMetable& object, const QStringList& paths) {
+            QVariantMap properties;
+            for (auto path: paths) {
+                _set(properties, path , true);
+            }
+            return _omit(object, properties);
+        }
+#endif
+
     } /* End of Private Session */
 
     template <typename Object, typename Functor>
@@ -1934,34 +1975,9 @@ namespace _ {
         return pick(object , QStringList{path});
     }
 
-    /// The opposite of pick(), this method creates an QVariantMap composed of the own properties that are not omitted.
-
-    inline QVariantMap omit(const QVariantMap &source, const QVariantMap &properties)
-    {
-
-        QMap<QString,QVariant>::const_iterator iter = source.begin();
-        QVariantMap result;
-
-        while (iter != source.end()) {
-
-            if (properties.contains(iter.key())) {
-                iter++;
-                continue;
-            }
-
-            QVariant value = source[iter.key()];
-
-            if (value.canConvert<QObject*>()) {
-                QVariantMap map;
-                assign(map, value.value<QObject*>());
-                value = map;
-            }
-
-            result[iter.key()] = value;
-            iter++;
-        }
-
-        return result;
+    template <typename QMetable>
+    inline QVariantMap omit(const QMetable& object, const QStringList& paths) {
+        return Private::_omit(object, paths);
     }
 #endif
 
@@ -1973,7 +1989,7 @@ namespace _ {
         static_assert(std::is_same<typename Private::ret_invoke<Predicate, typename Private::array_value_type<Collection>::type,int, Collection>::type,bool>::value,
                       "_::some(): " _underline_predicate_return_type_mismatch_error);
 
-        for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
+        for (unsigned int i = 0 ; i < static_cast<unsigned int>(collection.size()) ; i++) {
             if (Private::invoke(predicate, collection[i], i, collection)) {
                 res = true;
                 break;

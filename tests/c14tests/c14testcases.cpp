@@ -8,6 +8,7 @@
 #include "underline.h"
 #include "dataobject.h"
 #include "gadgetobject.h"
+#include "complexqobject.h"
 
 static bool isOdd(int value) {
     return value % 2 == 1;
@@ -456,9 +457,7 @@ void C14TestCases::test_pick()
 
     /* _::pick(QObject*, paths) */
 
-    QVariantMap data = _::pick(root, QStringList()
-                                       << "value1"
-                                       << "value4.value1");
+    QVariantMap data = _::pick(root, QStringList{"value1","value4.value1"});
 
     QCOMPARE(data.size(), 2);
     QVERIFY(data.contains("value1"));
@@ -488,26 +487,18 @@ void C14TestCases::test_pick()
 
 void C14TestCases::test_omit()
 {
-    QObject* root = createMockObject(this);
+    QObject* root = new ComplexQObject(this);
 
     QVERIFY(root);
 
-    QVariantMap data1;
+    QStringList paths{"value4", "value2.value1"};
 
-    _::assign(data1, root);
-    QCOMPARE(data1.contains("value2"), true);
+    QVariantMap data = _::omit(root, paths);
 
-    QVariantMap properties;
-    properties["value1"] = true;
-    properties["value3"] = false; // omit do not care the content
-
-    QVariantMap data2 = _::omit(data1, properties);
-
-    QVERIFY(!data2.contains("value1"));
-    QVERIFY(data2.contains("value2"));
-    QVERIFY(!data2.contains("value3"));
-    QVERIFY(data2.contains("value4"));
-    QVERIFY(data2["value4"].type() == QVariant::Map);
+    QCOMPARE(_::get(data, "value4").isNull(), true);
+    QCOMPARE(_::get(data, "value2.value1").isNull(), true);
+    QCOMPARE(_::get(data, "value1.value").toInt(), 11);
+    QCOMPARE(_::get(data, "value2.value4.value1").toInt(), 5);
 }
 
 void C14TestCases::test_forIn()
