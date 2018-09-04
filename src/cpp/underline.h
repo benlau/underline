@@ -1692,16 +1692,13 @@ namespace _ {
         inline auto merge(V1& v1, const V2& v2) ->
             typename std::enable_if<is_real_key_value_type<V1>::value && !is_real_key_value_type<V2>::value, V1&>::type {
 
-            _underline_debug("_::merge(kyt, non-kyt)");
             try_cast_to_qt_metable(v2, [&](QObject* kyt){
                 forIn_merge(v1, kyt);
             },[&](GadgetContainer& kyt) {
                 forIn_merge(v1, kyt);
             },[&](QVariantMap& kyt) {
-                _underline_debug("_::merge(kyt, non-kyt): Cast v2 to QVariantMap");
                 merge(v1, kyt);
             },[&](const QJSValue& kyt) {
-                _underline_debug("_::merge(kyt, non-kyt): v2 is QJSValue(object)");
                 forIn_merge(v1, kyt);
             });
 
@@ -1716,7 +1713,6 @@ namespace _ {
             },[&](GadgetContainer container) {
                 merge(container, v2);
             },[&](QVariantMap map) {
-                _underline_debug("_::merge(QVariant) - cast to QVariantMap");
                 merge(map, v2);
                 v1 = map;
             });
@@ -1747,10 +1743,6 @@ namespace _ {
 #ifdef QT_QUICK_LIB
         template <typename V2>
         inline auto merge(QJSValue& v1, const V2 & v2) -> typename std::enable_if<std::is_same<V2, QJSValue>::value, QJSValue&>::type {
-            _underline_debug(QString("Begin of merge(QJSValue, QJSValue):"));
-            _underline_debug(v1.toVariant());
-            _underline_debug(v2.toVariant());
-
             if (v1.isQObject()) {
                 auto ptr = v1.toQObject();
                 merge(ptr, v2);
@@ -1759,8 +1751,6 @@ namespace _ {
             } else {
                 v1 = v2;
             }
-            _underline_debug("End of merge(QJSValue, QJSValue):");
-            _underline_debug(v1.toVariant());
             return v1;
         }
 #endif
@@ -1771,8 +1761,6 @@ namespace _ {
             using Value = typename key_value_type<V2>::value_type;
 
             forIn(v2, [&](const Value& value, const Key& key) {
-                _underline_debug(QString("forIn_merge:" ) + cast_to_qstring(key));
-
                 auto srcValue = read(v1, key);
 
                 QObject* v1_qobject_ptr = cast_to_qobject(srcValue);
@@ -1836,11 +1824,11 @@ namespace _ {
         return object;
     }
 
-    template <typename Collection, typename Iteratee>
-    inline const Collection& forEach(const Collection& collection, Iteratee iteratee) {
-        static_assert(Private::via_func_info<Iteratee, Collection>::is_invokable, "_::forEach(): " _underline_iteratee_mismatched_error);
+    template <typename Array, typename Iteratee>
+    inline const Array& forEach(const Array& collection, Iteratee iteratee) {
+        static_assert(Private::via_func_info<Iteratee, Array>::is_invokable, "_::forEach(): " _underline_iteratee_mismatched_error);
 
-        Private::Value<typename Private::ret_invoke<Iteratee, typename Private::array_value_type<Collection>::type, int, Collection >::type> value;
+        Private::Value<typename Private::ret_invoke<Iteratee, typename Private::array_value_type<Array>::type, int, Array >::type> value;
 
         for (unsigned int i = 0 ; i < static_cast<unsigned int>(collection.size()) ; i++) {
             value.invoke(iteratee, collection[i], i, collection);

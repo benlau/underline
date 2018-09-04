@@ -153,9 +153,9 @@ template <typename Array, typename Iteratee>
 Map countBy(const Array& collection, Iteratee iteratee)
 ```
 
-Iteratees all the elements in the array container ([_::isArray](#isarray) returns true)  and pass to the iteratee function, then count the number of the occurrence of the result. The iteratee function takes only one argument. [value]
+Iterates all the elements in the array container ([_::isArray](#isarray) returns true)  and pass to the iteratee function, then count the number of the occurrence of the result. The iteratee function takes only one argument. [value]
 
-The return is a Map object in a type either of std::map or QMap. The actual type chosen depends on the array container. If it is a Qt container class, it will be a QMap. Otherwise, it will be a std::map. The key type is the same as the return of the iteratee, and the value type is an integer storing the counting.
+The return is a Map object in a type either of std::map or QMap. The actual type chosen depends on the array container. If it is a Qt container class, it will be a QMap. Otherwise, it will be an std::map. The key type is the same as the return of the iteratee, and the value type is an integer storing the counting.
 
 Arguments:
 
@@ -195,20 +195,38 @@ Qt
 forEach
 -------
 
+```C++
+template <typename Array, typename Iteratee>
+inline const Array& forEach(const Array& collection, Iteratee iteratee);
+```
+
+Iterates all the elements in the array container and calls the iteratee function.  The iteratee function can take from one to three arguments [value [index [array]]]. If the iteratee function returns a false value, the looping stop immediately.
+
+Arguments:
+ * object: The source object. Check [_::isArray](#isarray) function for the supported types.
+ * iteratee: The function invoked per iteration.
+
+Return:
+ * object: The input object
+
+Example
+```C++
+```
+
 forIn
 -----
 
 ```
-_::forIn(Map<Key,Value> object, iteratee) // std::map, QMap, QVariantMap
-_::forIn(QObject* object, iteratee)
+template <typename KeyValueType, typename Iteratee>
+KeyValueType& _::forIn(const KeyValueType& object, Iteratee iteratee)
 ```
 
-Iterates all the string key properties of an object and calls the iteratee function. The iteratee function is invoked with one to three arguments: [value, [key, [collection]]].
+Iterates all the string key properties of an object and calls the iteratee function. The iteratee function is invoked with one to three arguments: [value, [key, [object]]].
 
 Arguments:
 
- * object: The source object. Support types: QObject*, QMap, QVariantMap, std::map
- * iteratee: The function invoked per iteration. If the source object is a QObject, the data type of the key argument is QString.
+ * object: The source object. Check [_::isKeyValueType](#iskeyvaluetype) function for the supported types.
+ * iteratee: The function invoked per iteration.
 
 Returns:
 
@@ -222,17 +240,23 @@ get
 ---
 
 ```C++
-/* Qt5 */
-QVariant _::get(const KeyValueType& object, QString path,QVariant defaultValue = QVariant())
+template <typename isQtMetable>
+QVariant _::get(const isQtMetable& object, const QString &path,QVariant defaultValue = QVariant());
 ```
 
 Obtain the value from the source object at the given path. If the path does not exist, it returns the default value.
 
-The input could be any valid Key Value Type where [_::iskeyvaluetype](#isKeyValueType) returns true and using a string as the key type.
+Arguments
+ * object: The source check. Check [_::isQtMetable](#isqtmetable) for the supported types
+ * path (QString): The path of the property to get
+ * defaultValue(QVariant): The default value to return if the path does not exist.
+
+Return:
+ * value: The value in the given path. If the path doesn't exit, it will return the defaultValue.
 
 Example (Qt):
 
-```
+```C++
 // Obtain the objectName property from object's parent
 QVariant property = _::get(/* QObject* */ object, "parent.objectName");
 ```
@@ -241,22 +265,23 @@ map
 ----
 
 ```C++
-_::map(Array, Iteratee)
+template <typename Array, typename Iteratee>
+_::map(Array array, Iteratee iteratee)
 ```
 
-Iterate all the elements of the collection and call the iteratee function. It creates a new collection obtain the result. The iteratee is invoked with one to three arguments: [value, [index, [collection]]].
+Iterate all the elements of the array container and call the iteratee function. It creates a new array obtaining the result. The iteratee is invoked with one to three arguments: [value, [index, [array]]].
 
 Arguments:
 
- * collection: The input collection. e.g std::vector, std:list, QList, QVector
+ * array: The input array collection. Check [_::isArray](#isarray) for the supported types.
  * iteratee: The function invoked per iteration.
 
 Returns:
+ * (Array) The new mapped array. The container type is the same as the input collection.
 
- * (Collection) The new mapped array. The container type is the same as the input collection.
+**Example:**
 
-Example:
-
+STD:
 ```C++
 QList<int> output1 = _::map(QList<QString>(){"1","2","3"},  [](auto item) { return item.toInt();});
 
