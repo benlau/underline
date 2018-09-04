@@ -236,6 +236,27 @@ namespace _ {
         template <typename T>
         using remove_cvref_t = typename std::remove_reference<typename std::remove_cv<T>::type>::type;
 
+        /* BEGIN is_xxx */
+
+        template <typename T>
+        struct is_array {
+            enum {
+                value = std::is_class<T>::value &&
+                        has_push_back<remove_cvref_t<T>>::value &&
+                        has_operator_round_backets_int<remove_cvref_t<T>>::value &&
+                        has_reserve<remove_cvref_t<T>>::value
+            };
+        };
+
+        template <typename T>
+        struct is_map {
+            enum {
+                value = has_key_type<T>::value &&
+                        has_mapped_type<T>::value &&
+                        has_operator_round_backets_key<T>::value
+            };
+        };
+
         template <typename Object>
         struct is_qobject {
             enum { value = std::is_convertible<typename std::add_pointer<typename std::remove_pointer< remove_cvref_t<Object>>::type>::type, const QObject*>::value };
@@ -254,6 +275,18 @@ namespace _ {
                 value = std::is_same<T,QJSValue>::value || std::is_same<T,QVariant>::value
             };
         };
+
+        template <typename ...Args>
+        struct is_std_map {
+            enum { value = 0 };
+        };
+
+        template <typename K, typename V>
+        struct is_std_map<std::map<K, V>> {
+            enum { value = 1 };
+        };
+
+        /* END is_xxx */
 
         template <typename T>
         auto inline cast_to_pointer(const T& value) -> typename std::enable_if<std::is_pointer<T>::value, const T&>::type {
@@ -428,38 +461,47 @@ namespace _ {
             return v;
         }
 
-        /* cast_to_* END */
+        /* END of cast_to_xxx */
+
+        /* BEGIN key_value_xxx */
 
         template <typename ...Args>
-        struct _meta_object_info {
+        struct _key_value_info {
             enum {
-                is_meta_object = false
+                is_key_value_type = false
             };
             using key_type = Undefined;
             using value_type = Undefined;
         };
 
         template <typename T>
-        struct _meta_object_info<T,
+        struct _key_value_info<T,
                 typename std::enable_if<has_static_meta_object<T>::value || std::is_same<T, GadgetContainer>::value
                 , std::true_type>::type> {
-            enum { is_meta_object = true};
+            enum { is_key_value_type = true};
             using key_type = QString;
             using value_type = QVariant;
         };
 
         template <typename T>
-        struct _meta_object_info<T, typename std::enable_if<std::is_same<T, QJSValue>::value, std::true_type>::type> {
-            enum { is_meta_object = true};
+        struct _key_value_info<T, typename std::enable_if<std::is_same<T, QJSValue>::value, std::true_type>::type> {
+            enum { is_key_value_type = true};
             using key_type = QString;
             using value_type = QJSValue;
         };
 
         template <typename T>
-        struct meta_object_info : _meta_object_info<T, std::true_type>{};
+        struct key_value_info : _key_value_info<T, std::true_type>{};
+
+        template <typename T>
+        struct _key_value_info<T, typename std::enable_if<is_map<T>::value,  std::true_type>::type> {
+            enum { is_key_value_type = true};
+            typedef typename T::key_type key_type;
+            typedef typename T::mapped_type value_type;
+        };
 
         template <typename Meta, typename Key>
-        inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_gadget<Meta>::value, QVariant>::type {
+        inline auto key_value_read(const Meta& meta, const Key& key) -> typename std::enable_if<is_gadget<Meta>::value, QVariant>::type {
             auto ptr = cast_to_pointer<Meta>(meta);
             auto k = cast_to_const_char_container(key);
             auto metaObject = ptr->staticMetaObject;
@@ -472,19 +514,19 @@ namespace _ {
         }
 
         template <typename Meta, typename Key>
-        inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_qobject<Meta>::value, QVariant>::type {
+        inline auto key_value_read(const Meta& meta, const Key& key) -> typename std::enable_if<is_qobject<Meta>::value, QVariant>::type {
             auto k = cast_to_const_char_container(key);
             return meta->property(k.data);
         }
 
         template <typename Meta, typename Key>
-        inline auto meta_object_value(const Meta& meta, const Key& key) -> typename std::enable_if<is_qjsvalue<Meta>::value, QJSValue>::type {
+        inline auto key_value_read(const Meta& meta, const Key& key) -> typename std::enable_if<is_qjsvalue<Meta>::value, QJSValue>::type {
             return meta.property(cast_to_qstring(key));
         }
 
 #ifdef QT_CORE_LIB
         template <typename Meta, typename Key>
-        inline auto meta_object_value(const Meta& gadget, const Key& key) -> typename std::enable_if<std::is_same<GadgetContainer, Meta>::value, QVariant>::type {
+        inline auto key_value_read(const Meta& gadget, const Key& key) -> typename std::enable_if<std::is_same<GadgetContainer, Meta>::value, QVariant>::type {
             if (gadget.constData == nullptr) {
                 return QVariant();
             }
@@ -499,7 +541,7 @@ namespace _ {
 #endif
 
         template <typename Meta, typename Key, typename Value>
-        inline auto meta_object_set_value(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_gadget<Meta>::value, bool>::type {
+        inline auto key_value_write(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_gadget<Meta>::value, bool>::type {
             auto ptr = cast_to_pointer<Meta>(meta);
             auto metaObject = ptr->staticMetaObject;
             auto k = cast_to_const_char_container(key);
@@ -512,15 +554,14 @@ namespace _ {
             return true;
         }
 
-
         template <typename Meta, typename Key, typename Value>
-        inline auto meta_object_set_value(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_qobject<Meta>::value, bool>::type {
+        inline auto key_value_write(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_qobject<Meta>::value, bool>::type {
             auto k = cast_to_const_char_container(key);
             return meta->setProperty(k.data, value);
         }
 
         template <typename Meta, typename Key, typename Value>
-        inline auto meta_object_set_value(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_qjsvalue<Meta>::value, bool>::type {
+        inline auto key_value_write(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_qjsvalue<Meta>::value, bool>::type {
             meta.setProperty(cast_to_qstring(key), value);
             return true;
         }
@@ -528,7 +569,7 @@ namespace _ {
 
 #ifdef QT_CORE_LIB
         template <typename Meta, typename Key, typename Value>
-        inline auto meta_object_set_value(Meta& gadget, const Key& key, const Value& value) -> typename std::enable_if<std::is_same<GadgetContainer, Meta>::value, bool>::type {
+        inline auto key_value_write(Meta& gadget, const Key& key, const Value& value) -> typename std::enable_if<std::is_same<GadgetContainer, Meta>::value, bool>::type {
             if (gadget.data == nullptr) {
                 return false;
             }
@@ -543,62 +584,38 @@ namespace _ {
 
 #endif
 
-        template <typename T>
-        struct is_array {
-            enum {
-                value = std::is_class<T>::value &&
-                        has_push_back<remove_cvref_t<T>>::value &&
-                        has_operator_round_backets_int<remove_cvref_t<T>>::value &&
-                        has_reserve<remove_cvref_t<T>>::value
-            };
-        };
+        /* END key_value_xxx */
 
-        template <typename T>
-        struct is_map {
-            enum {
-                value = has_key_type<T>::value &&
-                        has_mapped_type<T>::value &&
-                        has_operator_round_backets_key<T>::value
-            };
-        };
-
-        template <typename ...Args>
-        struct _map_info {
-            typedef Undefined key_type;
-            typedef Undefined mapped_type;
-        };
-
-        template <typename T>
-        struct _map_info<T, typename std::enable_if<is_map<T>::value,  std::true_type>::type> {
-            typedef typename T::key_type key_type;
-            typedef typename T::mapped_type mapped_type;
-        };
-
-        template <typename T>
-        struct map_info: public _map_info<T, std::true_type> {
-        };
-
-        template <typename T>
-        using map_key_type_t = typename map_info<T>::key_type;
-
-        template <typename T>
-        using map_mapped_type_t = typename map_info<T>::mapped_type;
 
         template <typename T, typename Key>
-        struct is_map_key_matched {
+        struct is_kyt_key_matched {
+            using Info = key_value_info<T>;
             enum {
-                value = is_map<T>::value && std::is_convertible<Key, map_key_type_t<T>>::value
+                value = Info::is_key_value_type &&
+                        std::is_convertible<Key, typename Info::key_type>::value
             };
         };
 
         template <typename T, typename Key, typename Value>
-        struct is_map_key_value_matched {
+        struct is_kyt_key_value_matched {
+            using Info = key_value_info<T>;
             enum {
-                value = is_map<T>::value &&
-                std::is_convertible<Key, map_key_type_t<T>>::value &&
-                std::is_convertible<Value, map_mapped_type_t<T>>::value
+                value = Info::is_key_value_type &&
+                        std::is_convertible<Key, typename Info::key_type>::value &&
+                        std::is_convertible<Value, typename Info::value_type>::value
+
             };
         };
+
+        template <typename T, typename Key, typename Value, typename Ret>
+        using enable_if_is_kyt_type_key_value_matched_ret = typename std::enable_if<is_kyt_key_value_matched<T, Key, Value>::value, Ret>;
+
+
+        template <typename T>
+        using map_key_type_t = typename key_value_info<T>::key_type;
+
+        template <typename T>
+        using map_mapped_type_t = typename key_value_info<T>::value_type;
 
         template <typename Key, typename Value>
         inline Value map_iterator_value(typename std::map<Key,Value>::const_iterator & iter) {
@@ -641,13 +658,21 @@ namespace _ {
         }
 
         template <typename Map>
-        inline auto map_value(const Map& map, const map_key_type_t<Map> &key) -> map_mapped_type_t<Map> {
+        inline auto key_value_read(const Map& map, const map_key_type_t<Map> &key) ->
+            typename std::enable_if<is_map<Map>::value, map_mapped_type_t<Map>>::type {
             map_mapped_type_t<Map> ret = map_mapped_type_t<Map>();
             auto iter = map.find(key);
             if (iter != map.end()) {
                 ret = map_iterator_value<map_key_type_t<Map>, map_mapped_type_t<Map> >(iter);
             }
             return ret;
+        }
+
+        template <typename Map, typename Key, typename Value>
+        inline auto key_value_write(Map& map, const Key& key, const Value& value) ->
+        typename std::enable_if<is_map<Map>::value, bool>::type {
+            map[key] = value;
+            return true;
         }
 
         template <typename T, typename Ret>
@@ -657,10 +682,7 @@ namespace _ {
         using enable_if_is_map_ret_mapped_type = typename std::enable_if<is_map<T>::value, map_mapped_type_t<T>>;
 
         template <typename T, typename Key>
-        using enable_if_is_map_key_matched = typename std::enable_if<is_map_key_matched<T,Key>::value, map_mapped_type_t<T>>;
-
-        template <typename T, typename Key, typename Value, typename Ret>
-        using enable_if_is_map_key_value_matched_ret = typename std::enable_if<is_map_key_value_matched<T, Key, Value>::value, Ret>;
+        using enable_if_is_kyt_key_matched = typename std::enable_if<is_kyt_key_matched<T,Key>::value, map_mapped_type_t<T>>;
 
         template <typename T>
         using enable_if_is_array_ret_value_type = typename std::enable_if< is_array<typename std::remove_reference<T>::type>::value, typename std::remove_reference<T>::type::value_type>;
@@ -668,7 +690,7 @@ namespace _ {
         template <typename Meta>
         struct is_meta_object {
             enum {
-                value = meta_object_info<Meta>::is_meta_object
+                value = key_value_info<Meta>::is_key_value_type
             };
         };
 
@@ -676,7 +698,7 @@ namespace _ {
         struct is_meta_object_key_matched {
             enum {
                 value = is_meta_object<Meta>::value &&
-                std::is_convertible<Key, typename meta_object_info<Meta>::key_type>::value
+                std::is_convertible<Key, typename key_value_info<Meta>::key_type>::value
             };
         };
 
@@ -684,8 +706,8 @@ namespace _ {
         struct is_meta_object_key_value_matched {
             enum {
                 value = is_meta_object<Meta>::value &&
-                std::is_convertible<Key, typename meta_object_info<Meta>::key_type>::value &&
-                std::is_convertible<Value, typename meta_object_info<Meta>::value_type>::value
+                std::is_convertible<Key, typename key_value_info<Meta>::key_type>::value &&
+                std::is_convertible<Value, typename key_value_info<Meta>::value_type>::value
             };
         };
 
@@ -693,13 +715,13 @@ namespace _ {
         struct is_meta_object_key_value_custom_matched {
             enum {
                 value = is_meta_object<Meta>::value &&
-                is_custom_convertible<Key, typename meta_object_info<Meta>::key_type>::value &&
-                is_custom_convertible<Value, typename meta_object_info<Meta>::value_type>::value
+                is_custom_convertible<Key, typename key_value_info<Meta>::key_type>::value &&
+                is_custom_convertible<Value, typename key_value_info<Meta>::value_type>::value
             };
         };
 
         template <typename Meta, typename Key>
-        using enable_if_is_meta_object_key_matched = typename std::enable_if<is_meta_object_key_matched<Meta, Key>::value, typename meta_object_info<Meta>::value_type>;
+        using enable_if_is_meta_object_key_matched = typename std::enable_if<is_meta_object_key_matched<Meta, Key>::value, typename key_value_info<Meta>::value_type>;
 
         template <typename Meta, typename Key, typename Value, typename Ret>
         using enable_if_is_meta_object_key_value_matched_ret = typename std::enable_if<is_meta_object_key_value_matched<Meta, Key, Value>::value, Ret>;
@@ -707,56 +729,20 @@ namespace _ {
         template <typename Meta, typename Key, typename Value, typename Ret>
         using enable_if_is_meta_object_key_value_only_custom_matched_ret = typename std::enable_if<!is_meta_object_key_value_matched<Meta, Key, Value>::value && is_meta_object_key_value_custom_matched<Meta, Key, Value>::value, Ret>;
 
-        template <typename ...Args>
-        struct is_std_map {
-            enum { value = 0 };
-        };
-
-        template <typename K, typename V>
-        struct is_std_map<std::map<K, V>> {
-            enum { value = 1 };
-        };
-
-        template <typename ...Args>
-        struct _key_value_type_info {
-            enum {
-                is_key_value_type = false
-            };
-            using key_type = Undefined;
-            using value_type = Undefined;
-        };
-
-        template <typename T>
-        struct _key_value_type_info<T, typename std::enable_if<is_meta_object<T>::value, std::true_type>::type> {
-            enum { is_key_value_type = true};
-            using key_type = typename meta_object_info<T>::key_type;
-            using value_type = typename meta_object_info<T>::value_type;
-        };
-
-        template <typename T>
-        struct _key_value_type_info<T, typename std::enable_if<is_map<T>::value, std::true_type>::type> {
-            enum { is_key_value_type = true};
-            using key_type = typename map_info<T>::key_type;
-            using value_type = typename map_info<T>::mapped_type;
-        };
-
-        template <typename T>
-        struct key_value_type: public _key_value_type_info<T, std::true_type> {};
-
         template <typename T>
         struct is_key_value_type {
-            enum { value = key_value_type<T>::is_key_value_type};
+            enum { value = key_value_info<T>::is_key_value_type};
         };
 
         template <typename T>
         struct is_real_key_value_type {
-            enum { value = key_value_type<T>::is_key_value_type && !std::is_same<T,QJSValue>::value};
+            enum { value = key_value_info<T>::is_key_value_type && !std::is_same<T,QJSValue>::value};
         };
 
         template <typename T>
         struct is_q_key_value_type {
             enum {
-                value = key_value_type<T>::is_key_value_type && !is_std_map<T>::value
+                value = key_value_info<T>::is_key_value_type && !is_std_map<T>::value
             };
         };
 
@@ -977,8 +963,8 @@ namespace _ {
         /// Read a property from the target container object
         template <typename Map, typename Key>
         inline auto read(const Map &map, Key key) ->
-            typename enable_if_is_map_key_matched<Map, Key>::type {
-            return map_value<Map>(map, key);
+            typename enable_if_is_kyt_key_matched<Map, Key>::type {
+            return key_value_read<Map>(map, key);
         }
 
         template <typename Collection, typename Index>
@@ -986,17 +972,11 @@ namespace _ {
             return collection[index];
         }
 
-        template <typename Meta, typename Key>
-        inline auto read(const Meta& meta, const Key &key) -> typename enable_if_is_meta_object_key_matched<Meta, Key>::type {
-            return meta_object_value(meta, key);
-        }
-
         template <typename Any, typename Key>
         struct is_readable {
             enum {
-                value = is_meta_object_key_matched<Any, Key>::value ||
-                is_map_key_matched<Any, Key>::value ||
-                is_array_index_matched<Any, Key>::value
+                value = is_kyt_key_matched<Any, Key>::value ||
+                        is_array_index_matched<Any, Key>::value
             };
         };
 
@@ -1009,17 +989,8 @@ namespace _ {
 
         template <typename Map, typename Key, typename Value>
         inline auto write(Map &map, const Key& key, const Value& value) ->
-            typename enable_if_is_map_key_value_matched_ret
-<Map, Key, Value, bool>::type {
-            map[key] = value;
-            return true;
-        }
-
-        template <typename Meta, typename Key, typename Value>
-        inline auto write(Meta &map, const Key& key, const Value& value) ->
-            typename enable_if_is_meta_object_key_value_matched_ret
-<Meta, Key, Value, bool>::type {
-            meta_object_set_value(map, key, value);
+            typename enable_if_is_kyt_type_key_value_matched_ret<Map, Key, Value, bool>::type {
+            key_value_write(map, key, value);
             return true;
         }
 
@@ -1027,12 +998,12 @@ namespace _ {
         inline auto write(Meta &map, const Key& key, const Value& value) ->
             typename enable_if_is_meta_object_key_value_only_custom_matched_ret
 <Meta, Key, Value, bool>::type { // eg. QJSValue to QVariant
-            typename meta_object_info<Meta>::key_type k;
-            typename meta_object_info<Meta>::value_type v;
+            typename key_value_info<Meta>::key_type k;
+            typename key_value_info<Meta>::value_type v;
             convertTo(key, k);
             convertTo(value, v);
 
-            meta_object_set_value(map, k, v);
+            key_value_write(map, k, v);
             return true;
         }
 
@@ -1526,8 +1497,8 @@ namespace _ {
         template <typename Map, typename Functor>
         inline auto forIn(Map& object, Functor iteratee) -> typename std::enable_if<Private::is_map<Map>::value, Map&>::type {
 
-            using K = typename Private::map_info<Map>::key_type;
-            using V = typename Private::map_info<Map>::mapped_type;
+            using K = typename Private::key_value_info<Map>::key_type;
+            using V = typename Private::key_value_info<Map>::value_type;
 
             static_assert(Private::is_invokable3<Functor, V, K, Map>::value, "_::forIn: " _underline_iteratee_mismatched_error);
 
@@ -1550,8 +1521,8 @@ namespace _ {
 
         template <typename Map, typename Functor>
         inline auto forIn(const Map& object, Functor iteratee) -> typename std::enable_if<Private::is_map<Map>::value, const Map&>::type {
-            using K = typename Private::map_info<Map>::key_type;
-            using V = typename Private::map_info<Map>::mapped_type;
+            using K = typename Private::key_value_info<Map>::key_type;
+            using V = typename Private::key_value_info<Map>::value_type;
 
             static_assert(Private::is_invokable3<Functor, V, K, Map>::value, "_::forIn: " _underline_iteratee_mismatched_error);
 
@@ -1752,8 +1723,8 @@ namespace _ {
 
         template <typename V1, typename V2>
         inline void forIn_merge(V1& v1 , const V2& v2) {
-            using Key = typename key_value_type<V2>::key_type;
-            using Value = typename key_value_type<V2>::value_type;
+            using Key = typename key_value_info<V2>::key_type;
+            using Value = typename key_value_info<V2>::value_type;
 
             forIn(v2, [&](const Value& value, const Key& key) {
                 auto srcValue = read(v1, key);
@@ -1773,8 +1744,8 @@ namespace _ {
 #ifdef QT_CORE_LIB
         template <typename QtMetable>
         QVariantMap _omit(const QtMetable& object, const QVariantMap& properties) {
-            using Key = typename key_value_type<QtMetable>::key_type;
-            using Value = typename key_value_type<QtMetable>::value_type;
+            using Key = typename key_value_info<QtMetable>::key_type;
+            using Value = typename key_value_info<QtMetable>::value_type;
             QVariantMap result;
 
             forIn(object, [&](const Value& value, const Key& key) {
@@ -1837,8 +1808,8 @@ namespace _ {
     template <typename Object, typename Source>
     inline auto assign(Object& object, const Source& source) -> typename Private::pointer_or_reference_t<Object> {
 
-        using OBJECT_TYPE = typename Private::key_value_type<Object>;
-        using SOURCE_TYPE = typename Private::key_value_type<Source>;
+        using OBJECT_TYPE = typename Private::key_value_info<Object>;
+        using SOURCE_TYPE = typename Private::key_value_info<Source>;
 
         _underline_static_assert_is_object_source_key_matched("_::assign: ", typename OBJECT_TYPE::key_type, typename SOURCE_TYPE::key_type);
 
@@ -1851,8 +1822,8 @@ namespace _ {
         static_assert( !(Private::is_qjsvalue<Object>::value && !Private::is_qjsvalue<Source>::value),
                       "_::assign(QJSValue): It could not take source argument another then the type of QJSValue.");
 
-        using Key = typename Private::key_value_type<Source>::key_type;
-        using Value = typename Private::key_value_type<Source>::value_type;
+        using Key = typename Private::key_value_info<Source>::key_type;
+        using Value = typename Private::key_value_info<Source>::value_type;
 
         if (Private::is_null_ptr(object)) {
             return object;
@@ -1875,8 +1846,8 @@ namespace _ {
     template <typename Object, typename Source>
     inline auto merge(Object& object, const Source& source) -> typename std::conditional<std::is_pointer<Object>::value, Object, Object&>::type {
 
-        using OBJECT_TYPE = typename Private::key_value_type<Object>;
-        using SOURCE_TYPE = typename Private::key_value_type<Source>;
+        using OBJECT_TYPE = typename Private::key_value_info<Object>;
+        using SOURCE_TYPE = typename Private::key_value_info<Source>;
 
         _underline_static_assert_is_object_source_key_matched("_::merge: ", typename OBJECT_TYPE::key_type, typename SOURCE_TYPE::key_type);
 
@@ -2127,8 +2098,8 @@ namespace _ {
 
     template <typename Object, typename Source, typename Iteratee>
     inline Object assignWith(Object& object, const Source & source, Iteratee iteratee ) {
-        using source_info = _::Private::key_value_type<Source>;
-        using object_info = _::Private::key_value_type<Object>;
+        using source_info = _::Private::key_value_info<Source>;
+        using object_info = _::Private::key_value_info<Object>;
 
         _underline_static_assert_is_iteratee_invokable("_::assignWith: ", (_::Private::is_invokable5<Iteratee,
                                                         typename object_info::value_type,

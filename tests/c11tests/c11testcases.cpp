@@ -130,11 +130,7 @@ void C11TestCases::test_private_is_map()
 
     QVERIFY((std::is_same<_::Private::map_mapped_type_t<QVariantMap>, QVariant>::value));
 
-    QVERIFY((std::is_same<_::Private::map_info<C11TestCases>::mapped_type, _::Private::Undefined>::value));
-
-    QVERIFY((std::is_same<_::Private::map_info<QVariantMap>::mapped_type, QVariant>::value));
-
-    QVERIFY(!(std::is_same<_::Private::map_mapped_type_t<C11TestCases>, QVariant>::value));
+    QVERIFY((std::is_same<_::Private::map_mapped_type_t<C11TestCases>, QVariant>::value));
 
 }
 
@@ -289,6 +285,8 @@ void C11TestCases::test_private_invoke_by_read()
         /* QMap */
         QMap<QString, int> map{{"value1", 1}};
 
+        static_assert(_::Private::is_kyt_key_matched<QMap<QString,int>, const char*>::value, "");
+        static_assert(_::Private::is_readable<QMap<QString,int>, const char*>::value, "");
         QCOMPARE(_::Private::invoke("value1", map), 1);
     }
 }
@@ -349,12 +347,12 @@ void C11TestCases::test_private_read()
     // Gadget Object
     GadgetObject gadget;
     gadget.value = 10;
-    QCOMPARE((_::Private::meta_object_value(&gadget, "value")), QVariant(10));
-    QCOMPARE((_::Private::meta_object_value(gadget, "value")), QVariant(10));
-    QCOMPARE((_::Private::meta_object_value(gadget, "value1")), QVariant());
+    QCOMPARE((_::Private::key_value_read(&gadget, "value")), QVariant(10));
+    QCOMPARE((_::Private::key_value_read(gadget, "value")), QVariant(10));
+    QCOMPARE((_::Private::key_value_read(gadget, "value1")), QVariant());
 
     QVERIFY((_::Private::is_meta_object_key_matched<decltype(gadget), decltype("value")>::value));
-    QVERIFY(!(_::Private::is_map_key_matched<decltype(gadget), decltype("value")>::value));
+    QVERIFY((_::Private::is_kyt_key_matched<decltype(gadget), decltype("value")>::value));
     QVERIFY(!(_::Private::is_array_index_matched<decltype(gadget), decltype("value")>::value));
 
     QCOMPARE((_::Private::read(&gadget, "value")), QVariant(10));
@@ -363,7 +361,7 @@ void C11TestCases::test_private_read()
 
     QObject* object = new QObject(this);
     object->setObjectName("objectName");
-    QCOMPARE((_::Private::meta_object_value(object, "objectName")), QVariant("objectName"));
+    QCOMPARE((_::Private::key_value_read(object, "objectName")), QVariant("objectName"));
     QCOMPARE((_::Private::read(object, "objectName")), QVariant("objectName"));
 
 }

@@ -712,8 +712,8 @@ void C14TestCases::test_assignWith()
         QVariantMap object{{"value1",1}};
         std::map<QString,double> source{{"value2", 2.0}};
 
-        QVERIFY((std::is_same<QString, typename _::Private::key_value_type<QVariantMap>::key_type>::value));
-        QVERIFY((std::is_same<std::string, _::Private::key_value_type<std::map<std::string,double>>::key_type>::value));
+        QVERIFY((std::is_same<QString, typename _::Private::key_value_info<QVariantMap>::key_type>::value));
+        QVERIFY((std::is_same<std::string, _::Private::key_value_info<std::map<std::string,double>>::key_type>::value));
 
         _::assignWith(object, source, [](auto , auto srcValue, auto , auto , auto ) -> double {
             return srcValue + 1;
