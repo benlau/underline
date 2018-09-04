@@ -476,18 +476,34 @@ void C14TestCases::test_pick()
 
 void C14TestCases::test_omit()
 {
-    QObject* root = new ComplexQObject(this);
+    {
+        QObject* root = new ComplexQObject(this);
 
-    QVERIFY(root);
+        QVERIFY(root);
 
-    QStringList paths{"value4", "value2.value1"};
+        QStringList paths{"value4", "value2.value1"};
 
-    QVariantMap data = _::omit(root, paths);
+        QVariantMap data = _::omit(root, paths);
 
-    QCOMPARE(_::get(data, "value4").isNull(), true);
-    QCOMPARE(_::get(data, "value2.value1").isNull(), true);
-    QCOMPARE(_::get(data, "value1.value").toInt(), 11);
-    QCOMPARE(_::get(data, "value2.value4.value1").toInt(), 5);
+        QCOMPARE(_::get(data, "value4").isNull(), true);
+        QCOMPARE(_::get(data, "value2.value1").isNull(), true);
+        QCOMPARE(_::get(data, "value1.value").toInt(), 11);
+        QCOMPARE(_::get(data, "value2.value4.value1").toInt(), 5);
+    }
+
+    {
+        QObject* root = new ComplexQObject(this);
+
+        QVERIFY(root);
+
+        QStringList paths{"value4", "value2.value1"};
+
+        QVariantMap data = _::omit(root, "value2.value1");
+
+        QCOMPARE(_::get(data, "value2.value1").isNull(), true);
+        QCOMPARE(_::get(data, "value1.value").toInt(), 11);
+        QCOMPARE(_::get(data, "value2.value4.value1").toInt(), 5);
+    }
 }
 
 void C14TestCases::test_forIn()
@@ -657,7 +673,7 @@ void C14TestCases::test_countBy()
     }
 
     {
-        auto input = _::map(_::range_q(5) , [](auto item) {
+        auto input = _::map(_::rangeQ(5) , [](auto item) {
             QMap<QString, bool> map;
             map["isOdd"] = item % 2 == 1;
             return map;
@@ -672,7 +688,7 @@ void C14TestCases::test_countBy()
             return _::countBy(input, [](auto value) {return value % 2 == 0 ? "even" : "odd"; });
         };
 
-        QCOMPARE(worker(_::range_q(5))["odd"], 2);
+        QCOMPARE(worker(_::rangeQ(5))["odd"], 2);
     }
 }
 

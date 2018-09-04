@@ -1962,6 +1962,11 @@ namespace _ {
     inline QVariantMap omit(const QMetable& object, const QStringList& paths) {
         return Private::_omit(object, paths);
     }
+
+    template <typename QMetable>
+    inline QVariantMap omit(const QMetable& object, const QString& path) {
+        return Private::_omit(object, QStringList{path});
+    }
 #endif
 
     template <typename Collection, typename Predicate>
@@ -2132,7 +2137,7 @@ namespace _ {
 
 #ifdef QT_CORE_LIB
     template <typename ...Args>
-    QList<int> range_q(Args ...args) {
+    QList<int> rangeQ(Args ...args) {
         return range<QList<int>>(args...);
     }
 #endif

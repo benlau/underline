@@ -59,7 +59,7 @@ private slots:
 
     void test_range();
 
-    void test_range_q();
+    void test_rangeQ();
 
     void test_isMap();
 
