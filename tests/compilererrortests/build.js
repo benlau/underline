@@ -3,6 +3,7 @@ var resolve = require("path").resolve;
 var Mustache = require("mustache");
 
 var errors =[
+    "auto map = std::map<std::string,int>{};_::get(map,\"value1\");",
     "auto v1 = std::map<std::string,int>{};auto v2 = std::map<int,int>{};_::assign(v1, v2);",
     "auto v1 = std::map<std::string,std::string>{};auto v2 = std::map<std::string,int>{};_::assign(v1, v2);",
     "auto v1 = std::map<std::string,int>{};auto v2 = std::map<int,int>{};_::merge(v1, v2);",

@@ -409,17 +409,6 @@ void C14TestCases::test_get()
         value = _::get(source, "valueX");
         QVERIFY(value.isNull());
     }
-
-    /* get(std::map, std::string) */
-
-    {
-        std::map<std::string, int> object{{"value1", 11}};
-
-        auto value = _::get(object, "value1");
-        QCOMPARE(value.toInt(), 11);
-
-    }
-
 }
 
 void C14TestCases::test_set()

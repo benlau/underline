@@ -64,6 +64,9 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
 #define _underline_static_assert_is_object_source_value_matched(prefix, object, source) \
     static_assert(Private::is_custom_convertible<source,object>::value, prefix "The value type of 'source' argument cannot convert to the value type of 'object' argument.")
 
+#define _underline_static_assert_is_object_a_qt_metable(prefix, object) \
+    static_assert(Private::is_q_key_value_type<object>::value, prefix "Invalid object type. It should be a QtMetable type. Check the document of _::isQtMetable for further information.")
+
 #define _underline_private_ns_begin \
     namespace _ ::Private {
 
@@ -1456,27 +1459,6 @@ namespace _ {
         }
 
         template <typename KeyValueType>
-        inline auto _recursive_get(const KeyValueType& object, const std::vector<std::string>& tokens,int index, QVariant& result) -> typename std::enable_if<is_real_key_value_type<KeyValueType>::value, void>::type {
-            auto k = cast_to_const_char_container(tokens[index]);
-
-            bool hasKey = contains(object, k.data);
-            QVariant value;
-
-            if (hasKey) {
-                value = read(object, k.data);
-            }
-
-            int remaining = (int) tokens.size() - index - 1;
-            if (remaining == 0 && hasKey) {
-                result = value;
-            }
-
-            if (remaining != 0 && hasKey) {
-                _recursive_get(value, tokens, index + 1, result);
-            }
-        }
-
-        template <typename KeyValueType>
         inline QVariant _get(const KeyValueType& object, const QString& path, const QVariant& defaultValue) {
             QVariant result = defaultValue;
             auto tokens = split(path.toStdString(), ".");
@@ -1931,9 +1913,10 @@ namespace _ {
 
 #ifdef QT_CORE_LIB
 
-    template <typename KeyValueType>
-    inline QVariant get(const KeyValueType &object, const QString &path, const QVariant& defaultValue = QVariant())
+    template <typename QtMetable>
+    inline QVariant get(const QtMetable &object, const QString &path, const QVariant& defaultValue = QVariant())
     {
+        _underline_static_assert_is_object_a_qt_metable("_::get: ", QtMetable);
         return Private::_get(object, path, defaultValue);
     }
 
