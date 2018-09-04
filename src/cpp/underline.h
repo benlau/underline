@@ -1435,7 +1435,7 @@ namespace _ {
         };
 
         template <typename KeyValueType>
-        inline auto _recursive_get(const KeyValueType& object, const std::vector<std::string>& tokens ,int index , QVariant& result) -> typename std::enable_if<!is_real_key_value_type<KeyValueType>::value, void>::type {
+        inline auto _recursive_get(const KeyValueType& object, const std::vector<std::string>& tokens ,int index , QVariant& result) -> void {
             auto k = cast_to_const_char_container(tokens[index]);
             QVariant value;
             bool hasKey = false;
