@@ -414,20 +414,20 @@ QCOMPARE(_::isKeyValueType(QVariantList{ }),       false);
 QCOMPARE(_::isKeyValueType(QString{ }),            false);
 ```
 
-isQMetaObject
+isQtMetable
 ------------
 
 ```C++
     template <typename T>
-    bool isQMetaObject();
+    bool isQtMetable();
 
     template <typename T>
-    bool isQMetaObject(const T&);
+    bool isQtMetable(const T&);
 ```
 
-It is a static type checker to validate is the input type classified as a meta object in Qt supported by _. You rarely need to use this function directly.
+It is a static type checker to validate is the input type classified as Qt type with a metable interface supported by _. This kind of object supports a string-keyed properties system. A typical example is QObject* or arbitrary classes with Q_GADGET macro.  QVariantMap and QJSValue are also classified as this kind of type.  You may use them as an input to functions like [forIn](#forIn), [assign](#assign), and [merge](#merge) etc.
 
-It is a kind of data structure contains a set of key-value pairs with unique keys. A typical example is QObject*. QVariantMap and QJSValue are also classified as this kind of type.  You may use them as an input to functions like [forIn](#forIn), [assign](#assign), and [merge](#merge) etc.
+You rarely need to use this function directly.
 
 Examples:
 
@@ -439,10 +439,10 @@ public:
     int value;
 };
 
-QCOMPARE(_::isQMetaObject(GadgetObject()),        true);
-QCOMPARE(_::isQMetaObject(QVariantMap{}),         true);
-QCOMPARE(_::isQMetaObject(new QObject(this)),     true);
-QCOMPARE(_::isQMetaObject(QJSValue()),            true);
+QCOMPARE(_::isQtMetable(GadgetObject()),        true);
+QCOMPARE(_::isQtMetable(QVariantMap{}),         true);
+QCOMPARE(_::isQtMetable(new QObject(this)),     true);
+QCOMPARE(_::isQtMetable(QJSValue()),            true);
 ```
 
 isMap
