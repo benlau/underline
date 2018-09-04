@@ -16,7 +16,7 @@ QuickTests::QuickTests(QObject *parent) : QObject(parent)
 
 void QuickTests::test_QJSValue()
 {
-    QCOMPARE((bool) _::Private::is_meta_object<QJSValue>::value, true);
+    QCOMPARE(static_cast<bool>(_::Private::is_meta_object<QJSValue>::value), true);
 
     QJSEngine engine;
     QJSValue value = engine.toScriptValue(QVariantMap{});
@@ -30,7 +30,7 @@ void QuickTests::test_QJSValue()
 
 void QuickTests::test_private_is_convertible()
 {
-    QCOMPARE( (bool) (_::Private::is_custom_convertible<QJSValue, QVariant>::value) , true);
+    QCOMPARE( static_cast<bool> (_::Private::is_custom_convertible<QJSValue, QVariant>::value) , true);
 
     QQmlApplicationEngine engine;
     QString content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");

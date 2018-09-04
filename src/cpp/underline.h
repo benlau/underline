@@ -37,7 +37,6 @@ c++ - enable_if not working in Visual Studio when using a constexpr function as 
 https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-studio-when-using-a-constexpr-function-as-argume
 
  */
-
 #define _underline_iteratee_mismatched_error "Mismatched argument types in the iteratee function. Please validate the number of argument and their type."
 #define _underline_predicate_mismatched_error "Mismatched argument types in the predicate function. Please validate the number of argument and their type."
 #define _underline_predicate_return_type_mismatch_error "The return type of predicate function must be bool"
@@ -1363,7 +1362,7 @@ namespace _ {
             template <typename Any>
             inline typename std::enable_if<std::is_convertible<Any, T>::value, bool>::type
             equals(Any&& other) {
-                return (T) other == value;
+                return static_cast<T>(other) == value;
             }
 
             template <typename Any>
@@ -1820,7 +1819,7 @@ namespace _ {
 
         Private::Value<typename Private::ret_invoke<Iteratee, typename Private::array_value_type<Collection>::type, int, Collection >::type> value;
 
-        for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
+        for (unsigned int i = 0 ; i < static_cast<unsigned int>(collection.size()) ; i++) {
             value.invoke(iteratee, collection[i], i, collection);
             if (value.template canConvert<bool>() && value.equals(false)) {
                 break;
@@ -1867,7 +1866,27 @@ namespace _ {
         return dest;
     }
 
-    /* End of assign() */
+    template <typename Object, typename Source>
+    inline auto merge(Object& object, const Source& source) -> typename std::conditional<std::is_pointer<Object>::value, Object, Object&>::type {
+
+        using OBJECT_TYPE = typename Private::key_value_type<Object>;
+        using SOURCE_TYPE = typename Private::key_value_type<Source>;
+
+        _underline_static_assert_is_object_source_key_matched("_::merge: ", typename OBJECT_TYPE::key_type, typename SOURCE_TYPE::key_type);
+
+        _underline_static_assert_is_object_source_value_matched("_::merge: ", typename OBJECT_TYPE::value_type, typename SOURCE_TYPE::value_type);
+
+        _underline_static_assert_is_key_value_type("_::merge: ", Object);
+
+        _underline_static_assert_is_key_value_type("_::merge: ", Source);
+
+        static_assert( !(Private::is_qjsvalue<Object>::value && !Private::is_qjsvalue<Source>::value),
+                      "_::merge(QJSValue, source): It could not take source argument another then the type of QJSValue.");
+
+        Private::merge(object, source);
+
+        return object;
+    }
 
 #ifdef QT_CORE_LIB
 
@@ -1890,6 +1909,20 @@ namespace _ {
 
         for (auto path: paths) {
             QVariant value = get(object, path);
+
+            QVariantMap map;
+            bool handled = Private::try_cast_to_qt_metable(value, [&](QObject* kyt){
+                merge(map, kyt);
+            },[&](Private::GadgetContainer& kyt) {
+                _::merge(map, kyt);
+            },[&](QVariantMap&) {
+                map = value.toMap();
+            },[&](const QJSValue& kyt) {
+                merge(map, kyt);
+            });
+
+            if (handled) value = map;
+
             set(res, path, value);
         }
 
@@ -1898,12 +1931,7 @@ namespace _ {
 
     template <typename QMetaObject>
     inline QVariantMap pick(QMetaObject& object, const QString& path) {
-        QVariantMap res;
-
-        QVariant value = get(object, path);
-        set(res, path, value);
-
-        return res;
+        return pick(object , QStringList{path});
     }
 
     /// The opposite of pick(), this method creates an QVariantMap composed of the own properties that are not omitted.
@@ -2142,27 +2170,6 @@ namespace _ {
         return object;
     }
 
-    template <typename Object, typename Source>
-    inline auto merge(Object& object, const Source& source) -> typename std::conditional<std::is_pointer<Object>::value, Object, Object&>::type {
-
-        using OBJECT_TYPE = typename Private::key_value_type<Object>;
-        using SOURCE_TYPE = typename Private::key_value_type<Source>;
-
-        _underline_static_assert_is_object_source_key_matched("_::merge: ", typename OBJECT_TYPE::key_type, typename SOURCE_TYPE::key_type);
-
-        _underline_static_assert_is_object_source_value_matched("_::merge: ", typename OBJECT_TYPE::value_type, typename SOURCE_TYPE::value_type);
-
-        _underline_static_assert_is_key_value_type("_::merge: ", Object);
-
-        _underline_static_assert_is_key_value_type("_::merge: ", Source);
-
-        static_assert( !(Private::is_qjsvalue<Object>::value && !Private::is_qjsvalue<Source>::value),
-                      "_::merge(QJSValue, source): It could not take source argument another then the type of QJSValue.");
-
-        Private::merge(object, source);
-
-        return object;
-    }
 
 } // End of _ namespace
 

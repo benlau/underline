@@ -30,7 +30,7 @@ static DataObject* createMockObject(QObject* parent) {
 C11TestCases::C11TestCases(QObject *parent) : QObject(parent)
 {
     auto ref = [=]() {
-        QTest::qExec(this, 0, 0); // Autotest detect available test cases of a QObject by looking for "QTest::qExec" in source code
+        QTest::qExec(this, 0, nullptr); // Autotest detect available test cases of a QObject by looking for "QTest::qExec" in source code
     };
     Q_UNUSED(ref);
 }
@@ -41,94 +41,92 @@ void C11TestCases::test_private_has()
 
     };
 
-    QCOMPARE((bool) _::Private::has_reserve<std::vector<int>>::value, true);
-    QCOMPARE((bool) _::Private::has_reserve<std::string>::value, true);
-    QCOMPARE((bool) _::Private::has_reserve<QVector<int>>::value, true);
+    QCOMPARE(static_cast<bool>(_::Private::has_reserve<std::vector<int>>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::has_reserve<std::string>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::has_reserve<QVector<int>>::value), true);
 
-    QCOMPARE((bool) _::Private::has_reserve<C11TestCases>::value, false);
+    QCOMPARE(static_cast<bool>(_::Private::has_reserve<C11TestCases>::value), false);
 
     /* has_operator_round_backets_int */
 
-    QCOMPARE((bool) _::Private::has_operator_round_backets_int<std::vector<int>>::value, true);
-    QCOMPARE((bool) _::Private::has_operator_round_backets_int<const std::vector<int>>::value, true);
+    QCOMPARE(static_cast<bool>(_::Private::has_operator_round_backets_int<std::vector<int>>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::has_operator_round_backets_int<const std::vector<int>>::value), true);
 
-    QCOMPARE((bool) _::Private::has_operator_round_backets_int<std::string>::value, true);
-    QCOMPARE((bool)
-    _::Private::has_operator_round_backets_int<QVector<int>>::value, true);
-    QCOMPARE((bool)
-    _::Private::has_operator_round_backets_int<const QVector<int>>::value, true);
-    QCOMPARE((bool) _::Private::has_operator_round_backets_int<C11TestCases>::value, false);
+    QCOMPARE(static_cast<bool>(_::Private::has_operator_round_backets_int<std::string>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::has_operator_round_backets_int<QVector<int>>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::has_operator_round_backets_int<const QVector<int>>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::has_operator_round_backets_int<C11TestCases>::value), false);
 
-    QCOMPARE((bool)( _::Private::has_operator_round_backets_int<std::map<int,int>>::value), false);
+    QCOMPARE(static_cast<bool>( _::Private::has_operator_round_backets_int<std::map<int,int>>::value), false);
 
     /* has_operator_round_backets_key */
 
-    QCOMPARE((bool)( _::Private::has_operator_round_backets_key<std::map<std::string,int>>::value), true);
+    QCOMPARE(static_cast<bool>( _::Private::has_operator_round_backets_key<std::map<std::string,int>>::value), true);
 
-    QCOMPARE((bool)( _::Private::has_operator_round_backets_key<C11TestCases>::value), false);
+    QCOMPARE(static_cast<bool>( _::Private::has_operator_round_backets_key<C11TestCases>::value), false);
 
-    QCOMPARE((bool)( _::Private::has_operator_round_backets_key<std::vector<int>>::value), false);
+    QCOMPARE(static_cast<bool>( _::Private::has_operator_round_backets_key<std::vector<int>>::value), false);
 
-    QCOMPARE((bool)( _::Private::has_operator_round_backets_key<QVector<int>>::value), false);
+    QCOMPARE(static_cast<bool>( _::Private::has_operator_round_backets_key<QVector<int>>::value), false);
 
-    QCOMPARE((bool)( _::Private::has_operator_round_backets_key<QVariantMap>::value), true);
+    QCOMPARE(static_cast<bool>( _::Private::has_operator_round_backets_key<QVariantMap>::value), true);
 
 
     /* has_push_back */
 
-    QCOMPARE((bool) _::Private::has_push_back<QVector<int>>::value, true);
-    QCOMPARE((bool) _::Private::has_push_back< QList<QString>>::value, true);
-    QCOMPARE((bool) _::Private::has_push_back<std::vector<A>>::value, true);
-    QCOMPARE((bool) _::Private::has_push_back<std::string>::value, true);
-    QCOMPARE((bool) _::Private::has_push_back<C11TestCases>::value, false);
+    QCOMPARE(static_cast<bool>(_::Private::has_push_back<QVector<int>>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::has_push_back< QList<QString>>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::has_push_back<std::vector<A>>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::has_push_back<std::string>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::has_push_back<C11TestCases>::value), false);
 
     /* has_mapped_type */
 
-    QCOMPARE((bool) _::Private::has_mapped_type<QVariantMap>::value, true);
-    QCOMPARE((bool) _::Private::has_mapped_type<C11TestCases>::value, false);
+    QCOMPARE(static_cast<bool>(_::Private::has_mapped_type<QVariantMap>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::has_mapped_type<C11TestCases>::value), false);
 
     /* has_key_type */
 
-    QCOMPARE((bool) _::Private::has_key_type<QVariantMap>::value, true);
-    QCOMPARE((bool) _::Private::has_key_type<C11TestCases>::value, false);
+    QCOMPARE(static_cast<bool>(_::Private::has_key_type<QVariantMap>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::has_key_type<C11TestCases>::value), false);
 }
 
 void C11TestCases::test_private_is_array()
 {
-    QCOMPARE((bool)(_::Private::is_array<std::vector<int>>::value), true);
-    QCOMPARE((bool)(_::Private::is_array<QStringList>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_array<std::vector<int>>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_array<QStringList>::value), true);
 
-    QCOMPARE((bool)(_::Private::is_array<QVariantList>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_array<QVariantList>::value), true);
 
-    QCOMPARE((bool)(_::Private::is_array<std::string>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_array<std::string>::value), true);
 
-    QCOMPARE((bool)(_::Private::is_array<std::list<std::string>>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_array<std::list<std::string>>::value), false);
 
-    QCOMPARE((bool)(_::Private::is_array<QVector<int>>::value), true);
-    QCOMPARE((bool)(_::Private::is_array<QList<int>>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_array<QVector<int>>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_array<QList<int>>::value), true);
 
-    QCOMPARE((bool)(_::Private::is_array<C11TestCases>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_array<C11TestCases>::value), false);
 
-    QCOMPARE((bool)(_::Private::is_array<std::map<int, bool>>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_array<std::map<int, bool>>::value), false);
 
-    QCOMPARE((bool)(_::Private::is_array<QMap<int, bool>>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_array<QMap<int, bool>>::value), false);
 
-    QCOMPARE((bool)(_::Private::is_array<int>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_array<int>::value), false);
 }
 
 void C11TestCases::test_private_is_map()
 {
-    QCOMPARE((bool)(_::Private::is_map<std::vector<int>>::value), false);
-    QCOMPARE((bool)(_::Private::is_map<std::string>::value), false);
-    QCOMPARE((bool)(_::Private::is_map<std::list<std::string>>::value), false);
-    QCOMPARE((bool)(_::Private::is_map<QVector<int>>::value), false);
-    QCOMPARE((bool)(_::Private::is_map<QList<int>>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_map<std::vector<int>>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_map<std::string>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_map<std::list<std::string>>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_map<QVector<int>>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_map<QList<int>>::value), false);
 
-    QCOMPARE((bool)(_::Private::is_map<std::map<int, std::string>>::value), true);
-    QCOMPARE((bool)(_::Private::is_map<std::unordered_map<int, std::string>>::value), true);
-    QCOMPARE((bool)(_::Private::is_map<QMap<int, QString>>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_map<std::map<int, std::string>>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_map<std::unordered_map<int, std::string>>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_map<QMap<int, QString>>::value), true);
 
-    QCOMPARE((bool)(_::Private::is_map<QVariantMap>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_map<QVariantMap>::value), true);
 
     QVERIFY((std::is_same<_::Private::map_mapped_type_t<QVariantMap>, QVariant>::value));
 
@@ -142,43 +140,37 @@ void C11TestCases::test_private_is_map()
 
 void C11TestCases::test_private_is_meta_object()
 {
-    QCOMPARE((bool)(_::Private::is_meta_object<QObject>::value),        true);
-    QCOMPARE((bool)(_::Private::is_meta_object<QObject*>::value),       true);
-    QCOMPARE((bool)(_::Private::is_meta_object<QObject**>::value),      false);
+    QCOMPARE(static_cast<bool>(_::Private::is_meta_object<QObject>::value),        true);
+    QCOMPARE(static_cast<bool>(_::Private::is_meta_object<QObject*>::value),       true);
+    QCOMPARE(static_cast<bool>(_::Private::is_meta_object<QObject**>::value),      false);
 
-    QCOMPARE((bool)(_::Private::is_meta_object<GadgetObject>::value),    true);
-    QCOMPARE((bool)(_::Private::is_meta_object<GadgetObject*>::value),   true);
-    QCOMPARE((bool)(_::Private::is_meta_object<GadgetObject**>::value),  false);
+    QCOMPARE(static_cast<bool>(_::Private::is_meta_object<GadgetObject>::value),    true);
+    QCOMPARE(static_cast<bool>(_::Private::is_meta_object<GadgetObject*>::value),   true);
+    QCOMPARE(static_cast<bool>(_::Private::is_meta_object<GadgetObject**>::value),  false);
 
-    QCOMPARE((bool)(_::Private::is_meta_object<QString>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_meta_object<QString>::value), false);
 }
 
 void C11TestCases::test_private_is_qobject()
 {
-    QCOMPARE((bool)_::Private::is_qobject<QObject>::value,          true);
-    QCOMPARE((bool)_::Private::is_qobject<QObject*>::value,         true);
-    QCOMPARE((bool)_::Private::is_qobject<QObject*&>::value,        true);
-    QCOMPARE((bool)_::Private::is_qobject<const QObject*>::value,   true);
-
-    QCOMPARE((bool)_::Private::is_qobject<C11TestCases>::value,     true);
-    QCOMPARE((bool)_::Private::is_qobject<C11TestCases*>::value,    true);
-
-    QCOMPARE((bool)_::Private::is_qobject<GadgetObject>::value,     false);
+    QCOMPARE(static_cast<bool>(_::Private::is_qobject<QObject>::value),          true);
+    QCOMPARE(static_cast<bool>(_::Private::is_qobject<QObject*>::value),         true);
+    QCOMPARE(static_cast<bool>(_::Private::is_qobject<QObject*&>::value),        true);
+    QCOMPARE(static_cast<bool>(_::Private::is_qobject<const QObject*>::value),   true);
+    QCOMPARE(static_cast<bool>(_::Private::is_qobject<C11TestCases>::value),     true);
+    QCOMPARE(static_cast<bool>(_::Private::is_qobject<C11TestCases*>::value),    true);
+    QCOMPARE(static_cast<bool>(_::Private::is_qobject<GadgetObject>::value),     false);
 }
 
 void C11TestCases::test_private_is_key_value_type()
 {
-    QCOMPARE((bool)_::Private::is_key_value_type<QObject>::value, true);
-    QCOMPARE((bool)_::Private::is_key_value_type<QObject*>::value, true);
-
-    QCOMPARE((bool)_::Private::is_key_value_type<C11TestCases>::value, true);
-    QCOMPARE((bool)_::Private::is_key_value_type<C11TestCases*>::value, true);
-
-    QCOMPARE((bool)_::Private::is_key_value_type<GadgetObject>::value, true);
-    QCOMPARE((bool)_::Private::is_key_value_type<QVariantMap>::value, true);
-
-    QCOMPARE((bool)_::Private::is_key_value_type<int>::value, false);
-
+    QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<QObject>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<QObject*>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<C11TestCases>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<C11TestCases*>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<GadgetObject>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<QVariantMap>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<int>::value), false);
 }
 
 template <typename F, typename T>
@@ -287,8 +279,8 @@ void C11TestCases::test_private_invoke()
 
     QCOMPARE((std::is_same<_::Private::ret_invoke<decltype(myFunc0),QString, int>::type , int>::value), true);
 
-    QCOMPARE((bool) (_::Private::is_invokable3<decltype(myFunc2), int, int, int>::value), true);
-    QCOMPARE((bool) (_::Private::is_invokable3<decltype(myFunc2), int, QString, int>::value), false);
+    QCOMPARE(static_cast<bool> (_::Private::is_invokable3<decltype(myFunc2), int, int, int>::value), true);
+    QCOMPARE(static_cast<bool> (_::Private::is_invokable3<decltype(myFunc2), int, QString, int>::value), false);
 }
 
 void C11TestCases::test_private_invoke_by_read()
@@ -327,13 +319,13 @@ void C11TestCases::test_private_has_static_meta_object()
 
     };
 
-    QCOMPARE((bool) (_::Private::has_static_meta_object<A>::value), false);
-    QCOMPARE((bool) (_::Private::has_static_meta_object<DataObject*>::value), true);
-    QCOMPARE((bool) (_::Private::has_static_meta_object<GadgetObject>::value), true);
-    QCOMPARE((bool) (_::Private::has_static_meta_object<GadgetObject*>::value), true);
+    QCOMPARE(static_cast<bool> (_::Private::has_static_meta_object<A>::value), false);
+    QCOMPARE(static_cast<bool> (_::Private::has_static_meta_object<DataObject*>::value), true);
+    QCOMPARE(static_cast<bool> (_::Private::has_static_meta_object<GadgetObject>::value), true);
+    QCOMPARE(static_cast<bool> (_::Private::has_static_meta_object<GadgetObject*>::value), true);
 
 
-    QCOMPARE((bool) (_::Private::has_static_meta_object<DummyClassWithStaticMetaObject>::value), false);
+    QCOMPARE(static_cast<bool> (_::Private::has_static_meta_object<DummyClassWithStaticMetaObject>::value), false);
 
 }
 
@@ -523,7 +515,7 @@ void C11TestCases::test_private_GadgetContainer()
         /* Initialization */
         _::Private::GadgetContainer gadget;
 
-        QCOMPARE((bool) _::Private::is_meta_object<_::Private::GadgetContainer>::value, true);
+        QCOMPARE(static_cast<bool>(_::Private::is_meta_object<_::Private::GadgetContainer>::value), true);
         QCOMPARE(_::isKeyValueType(gadget), true);
         QVERIFY(gadget.data == nullptr);
         QVERIFY(gadget.metaObject == nullptr);

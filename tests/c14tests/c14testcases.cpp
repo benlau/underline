@@ -469,7 +469,7 @@ void C14TestCases::test_pick()
 
     // Pick an QObject
     data = _::pick(root, "value4");
-    QVERIFY(data["value4"].canConvert<QObject*>());
+    QVERIFY(data["value4"].type() == QVariant::Map);
 
     /* _::pick(QVariant, paths) */
     QVariantMap source;

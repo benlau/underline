@@ -27,7 +27,7 @@ TEST(UnderlineTests, test_has_static_method) {
 
     };
 
-    ASSERT_EQ((bool) (_::Private::has_static_meta_object<A>::value), false);
+    ASSERT_EQ(static_cast<bool> (_::Private::has_static_meta_object<A>::value), false);
 
 }
 
@@ -37,7 +37,7 @@ TEST(UnderlineTests, is_qobject) {
 
     };
 
-    ASSERT_EQ((bool) (_::Private::is_qobject<A>::value), false);
+    ASSERT_EQ(static_cast<bool> (_::Private::is_qobject<A>::value), false);
 }
 
 TEST(UnderlineTests, private_split_std_string) {
