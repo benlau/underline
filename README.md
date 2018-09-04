@@ -150,16 +150,16 @@ countBy
 
 ```C++
 template <typename Array, typename Iteratee>
-Map countBy(const Array& collection, Iteratee iteratee)
+Map countBy(const Array& array, Iteratee iteratee)
 ```
 
-Iterates all the elements in the array container ([_::isArray](#isarray) returns true)  and pass to the iteratee function, then count the number of the occurrence of the result. The iteratee function takes only one argument. [value]
+Iterates all the elements in the array container and pass to the iteratee function, then count the number of the occurrence of the result. The iteratee function takes only one argument. [value]
 
 The return is a Map object in a type either of std::map or QMap. The actual type chosen depends on the array container. If it is a Qt container class, it will be a QMap. Otherwise, it will be an std::map. The key type is the same as the return of the iteratee, and the value type is an integer storing the counting.
 
 Arguments:
 
- * collection: The input source. Check [_::isArray](#isarray) function for the supported types
+ * array: The input source. Check [_::isArray](#isarray) function for the supported types
  * iteratee:  The iteratee function to transform the element in the array to a key value.
 
 Examples:
@@ -252,7 +252,7 @@ Arguments
  * defaultValue(QVariant): The default value to return if the path does not exist.
 
 Return:
- * value: The value in the given path. If the path doesn't exit, it will return the defaultValue.
+ * value: The value in the given path. If the path doesn't exist, it will return the defaultValue.
 
 Example (Qt):
 
@@ -293,12 +293,28 @@ QVector<int> output3 = _::map(std::vector<QString>(){"1","2","3"}, [](auto item,
 merge
 ------
 
+```c++
+template <typename QtMetable1, typename QtMetable2>
+QtMetable1& merge(QtMetable1& object, QtMetable2& source)
+```
+
+Iterates all the string-keyed properties from the source object then copy to the destination object.  If the property exists on the destination object, it will call itself recursively for merging.
+
+Arguments:
+ * object: The destination object. Check [_::isQtMetable](#isqtmetable) for the supported types.
+ * source: The source object. Check [_::isQtMetable](#isqtmetable) for the supported types.
+
+Return:
+ * object: The destination object
 
 omit
 ----
 
-```
-QVariantMap omit(QVariantMap source, QVariantMap paths)
+```C++
+template <typename QtMetable>
+QVariantMap omit(const QtMetable& source, const QStringList& paths)
+template <typename QtMetable>
+QVariantMap omit(const QtMetable& source, const QString& path)
 ```
 
 Creates a new object which is a clone of the source, but the properties listed in the paths are omitted.
@@ -312,19 +328,15 @@ Returns
 
  * QVariantMap: Returns the new object.
 
-TODO:
-
- * QVariantMap omit(QVariantMap source, QStringList paths)
- * omit(Map source, QStringList paths)
- * omit(QObject* source, QStringList paths)
-
 pick
 ---
 
-```
-QVariantMap _::pick(QObject* source, QStringList &paths);
-QVariantMap _::pick(QVariantMap source, QStringList &paths);
+```C++
+template <typename QtMetable>
+QVariantMap _::pick(QtMetable* source, QStringList &paths);
 
+template <typename QtMetable>
+QVariantMap _::pick(QVariantMap source, QString path);
 ```
 
 Creates a new object which is a clone of the source but only the properties listed in the paths are picked.
@@ -344,8 +356,9 @@ set
 
 
 ```C++
-void _::set(QVariantMap &object, const QStringList &path, const QVariant &value)
-void _::set(QVariantMap &object, const QString &path, const QVariant &value)
+
+template <typename QtMetable>
+void _::set(QtMetable &object, const QString &path, const QVariant &value)
 ```
 
 Set the property from the source object at the given path. If the path does not exist, it does nothing.
