@@ -23,6 +23,8 @@ private slots:
     void test_assign_args_QJSValue_other();
 
     void test_merge_QJSValue_other();
+
+    void test_set_args_QJSValue();
 };
 
 #endif // QUICKTESTS_H

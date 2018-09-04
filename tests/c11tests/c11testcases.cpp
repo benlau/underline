@@ -351,7 +351,6 @@ void C11TestCases::test_private_read()
     QCOMPARE((_::Private::key_value_read(gadget, "value")), QVariant(10));
     QCOMPARE((_::Private::key_value_read(gadget, "value1")), QVariant());
 
-    QVERIFY((_::Private::is_meta_object_key_matched<decltype(gadget), decltype("value")>::value));
     QVERIFY((_::Private::is_kyt_key_matched<decltype(gadget), decltype("value")>::value));
     QVERIFY(!(_::Private::is_array_index_matched<decltype(gadget), decltype("value")>::value));
 

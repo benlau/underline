@@ -607,9 +607,21 @@ namespace _ {
             };
         };
 
+        template <typename Meta,typename Key, typename Value>
+        struct is_kyt_key_value_custom_matched {
+            using Info = key_value_info<Meta>;
+            enum {
+                value = Info::is_key_value_type &&
+                is_custom_convertible<Key, typename Info::key_type>::value &&
+                is_custom_convertible<Value, typename Info::value_type>::value
+            };
+        };
+
         template <typename T, typename Key, typename Value, typename Ret>
         using enable_if_is_kyt_type_key_value_matched_ret = typename std::enable_if<is_kyt_key_value_matched<T, Key, Value>::value, Ret>;
 
+        template <typename Meta, typename Key, typename Value, typename Ret>
+        using enable_if_is_kyt_key_value_only_custom_matched_ret = typename std::enable_if<!is_kyt_key_value_matched<Meta, Key, Value>::value && is_kyt_key_value_custom_matched<Meta, Key, Value>::value, Ret>;
 
         template <typename T>
         using map_key_type_t = typename key_value_info<T>::key_type;
@@ -693,41 +705,6 @@ namespace _ {
                 value = key_value_info<Meta>::is_key_value_type
             };
         };
-
-        template <typename Meta,typename Key>
-        struct is_meta_object_key_matched {
-            enum {
-                value = is_meta_object<Meta>::value &&
-                std::is_convertible<Key, typename key_value_info<Meta>::key_type>::value
-            };
-        };
-
-        template <typename Meta,typename Key, typename Value>
-        struct is_meta_object_key_value_matched {
-            enum {
-                value = is_meta_object<Meta>::value &&
-                std::is_convertible<Key, typename key_value_info<Meta>::key_type>::value &&
-                std::is_convertible<Value, typename key_value_info<Meta>::value_type>::value
-            };
-        };
-
-        template <typename Meta,typename Key, typename Value>
-        struct is_meta_object_key_value_custom_matched {
-            enum {
-                value = is_meta_object<Meta>::value &&
-                is_custom_convertible<Key, typename key_value_info<Meta>::key_type>::value &&
-                is_custom_convertible<Value, typename key_value_info<Meta>::value_type>::value
-            };
-        };
-
-        template <typename Meta, typename Key>
-        using enable_if_is_meta_object_key_matched = typename std::enable_if<is_meta_object_key_matched<Meta, Key>::value, typename key_value_info<Meta>::value_type>;
-
-        template <typename Meta, typename Key, typename Value, typename Ret>
-        using enable_if_is_meta_object_key_value_matched_ret = typename std::enable_if<is_meta_object_key_value_matched<Meta, Key, Value>::value, Ret>;
-
-        template <typename Meta, typename Key, typename Value, typename Ret>
-        using enable_if_is_meta_object_key_value_only_custom_matched_ret = typename std::enable_if<!is_meta_object_key_value_matched<Meta, Key, Value>::value && is_meta_object_key_value_custom_matched<Meta, Key, Value>::value, Ret>;
 
         template <typename T>
         struct is_key_value_type {
@@ -996,7 +973,7 @@ namespace _ {
 
         template <typename Meta, typename Key, typename Value>
         inline auto write(Meta &map, const Key& key, const Value& value) ->
-            typename enable_if_is_meta_object_key_value_only_custom_matched_ret
+            typename enable_if_is_kyt_key_value_only_custom_matched_ret
 <Meta, Key, Value, bool>::type { // eg. QJSValue to QVariant
             typename key_value_info<Meta>::key_type k;
             typename key_value_info<Meta>::value_type v;
@@ -1006,6 +983,13 @@ namespace _ {
             key_value_write(map, k, v);
             return true;
         }
+
+#ifdef QT_QUICK_LIB
+        template <typename Key>
+        inline auto write(QJSValue &, const Key&, const QVariant&) -> bool {
+            return false;
+        }
+#endif
 
         template <typename Any, typename Key>
         struct ret_read {
@@ -1450,24 +1434,28 @@ namespace _ {
             return result;
         }
 
-        template <typename KeyValueType>
-        inline pointer_or_reference_t<KeyValueType> _recursive_set(KeyValueType& object, const std::vector<std::string>& tokens,int index, const QVariant& value) {
+        template <typename KeyValueType, typename QtAny>
+        inline pointer_or_reference_t<KeyValueType> _recursive_set(KeyValueType& object, const std::vector<std::string>& tokens,int index, const QtAny& value) {
             auto k = cast_to_const_char_container(tokens[index]);
 
             int remaining = (int) tokens.size() - index - 1;
 
             if (remaining == 0) {
-                try_cast_to_real_qt_metable(object, [&](QObject* kyt){
+
+                try_cast_to_qt_metable(object, [&](QObject* kyt){
                     write(kyt, k.data, value);
                 },[&](GadgetContainer& kyt) {
                     write(kyt, k.data, value);
                 },[&](QVariantMap& kyt) {
                     write(kyt, k.data, value);
                     copy_if_same_type(object, kyt);
+                },[&](QJSValue &kyt) {
+                    write(kyt, k.data, value);
+                    copy_if_same_type(object, kyt);
                 });
 
             } else {
-                try_cast_to_real_qt_metable(object, [&](const QObject* kyt){
+                try_cast_to_qt_metable(object, [&](const QObject* kyt){
                     if (contains(kyt, k.data)) {
                         auto v = read(kyt, k.data); _recursive_set(v , tokens, index + 1, value);
                     }
@@ -1479,14 +1467,18 @@ namespace _ {
                     auto v = read(kyt, k.data).toMap();
                     _recursive_set(v , tokens, index + 1, value);
                     write_if_same_type(object, k.data, v);
+                },[&](QJSValue &kyt) {
+                    auto v = read(kyt, k.data);
+                    _recursive_set(v , tokens, index + 1, value);
+                    write_if_same_type(object, k.data, v);
                 });
             }
 
             return object;
         }
 
-        template <typename KeyValueType>
-        inline void _set(KeyValueType& object, const QString& path, const QVariant& value) {
+        template <typename KeyValueType, typename QtAny>
+        inline void _set(KeyValueType& object, const QString& path, const QtAny& value) {
             auto tokens = split(path.toStdString(), ".");
             _recursive_set(object, tokens, 0, value);
         }
@@ -1874,8 +1866,8 @@ namespace _ {
         return Private::_get(object, path, defaultValue);
     }
 
-    template <typename KeyValueType>
-    inline Private::pointer_or_reference_t<KeyValueType> set(KeyValueType &object, const QString &path, const QVariant& value)
+    template <typename QtMetable, typename QtAny>
+    inline Private::pointer_or_reference_t<QtMetable> set(QtMetable &object, const QString &path, const QtAny& value)
     {
         Private::_set(object, path, value);
         return object;

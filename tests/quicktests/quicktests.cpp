@@ -16,9 +16,9 @@ QuickTests::QuickTests(QObject *parent) : QObject(parent)
 
 void QuickTests::test_spec_QJSValue()
 {
-    QCOMPARE(static_cast<bool>(_::Private::is_meta_object<QJSValue>::value),    true);
-    QCOMPARE(static_cast<bool>(_::isQtMetable<QJSValue>()),                     true);
-    QCOMPARE(static_cast<bool>(_::Private::is_qt_any_type<QJSValue>::value),    true);
+    QCOMPARE(static_cast<bool>(_::Private::is_meta_object<QJSValue>::value),         true);
+    QCOMPARE(static_cast<bool>(_::Private::is_qt_any_type<QJSValue>::value),         true);
+    QCOMPARE(static_cast<bool>(_::isQtMetable<QJSValue>()),                          true);
 
     QCOMPARE(static_cast<bool>(_::Private::is_real_key_value_type<QJSValue>::value), false);
 
@@ -153,8 +153,20 @@ void QuickTests::test_merge_QJSValue_other()
 
         QCOMPARE(map["value4"].toMap()["value1"].toInt(), 21);
         QCOMPARE(map["value4"].toMap()["value2"].toDouble(), 2.0);
-
     }
-
 }
 
+void QuickTests::test_set_args_QJSValue()
+{
+    QVariantMap templ;
+    _::set(templ, "value1.value1", 1);
+    _::set(templ, "value1.value2.value2", 2.0);
+
+    QQmlEngine engine;
+    QJSValue object = engine.toScriptValue(templ);
+    QJSValue value = engine.toScriptValue(QString("3"));
+
+    _::set(object, "value1.value2.value1", value);
+
+    QCOMPARE(object.property("value1").property("value2").property("value1").toString(), QString("3"));
+}
