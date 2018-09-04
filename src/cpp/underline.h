@@ -38,44 +38,44 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
 
  */
 
-#define __UNDERLINE_ITERATEE_MISMATCHED_ERROR "Mismatched argument types in the iteratee function. Please validate the number of argument and their type."
-#define __UNDERLINE_PREDICATE_MISMATCHED_ERROR "Mismatched argument types in the predicate function. Please validate the number of argument and their type."
-#define __UNDERLINE_PREDICATE_RETURN_TYPE_MISMATCH_ERROR "The return type of predicate function must be bool"
-#define __UNDERLINE_INPUT_TYPE_IS_NOT_ARRAY "The expected input is an valid array class, where _::isArray() returns true (e.g std::vector , QList , QVector) "
-#define __UNDERLINE_ITERATEE_VOID_RET_ERROR "The return type of iteratee function cannot be void"
+#define _underline_iteratee_mismatched_error "Mismatched argument types in the iteratee function. Please validate the number of argument and their type."
+#define _underline_predicate_mismatched_error "Mismatched argument types in the predicate function. Please validate the number of argument and their type."
+#define _underline_predicate_return_type_mismatch_error "The return type of predicate function must be bool"
+#define _underline_input_type_is_not_array "The expected input is an valid array class, where _::isArray() returns true (e.g std::vector , QList , QVector) "
+#define _underline_iteratee_void_ret_error "The return type of iteratee function cannot be void"
 
-#define __UNDERLINE_STATIC_ASSERT_IS_ARRAY(prefix, type) \
-    static_assert(_::Private::is_array<type>::value, prefix __UNDERLINE_INPUT_TYPE_IS_NOT_ARRAY)
+#define _underline_static_assert_is_array(prefix, type) \
+    static_assert(_::Private::is_array<type>::value, prefix _underline_input_type_is_not_array)
 
-#define __UNDERLINE_STATIC_ASSERT_IS_MAP(prefix, type) \
+#define _underline_static_assert_is_map(prefix, type) \
     static_assert(_::Private::is_map<type>::value, prefix "The expected input is an valid Map container class, where _::isMap() returns true.")
 
-#define __UNDERLINE_STATIC_ASSERT_IS_KEY_VALUE_TYPE(prefix, type) \
+#define _underline_static_assert_is_key_value_type(prefix, type) \
     static_assert(_::Private::is_key_value_type<type>::value, prefix "Invalid argument type. It should be a Map container class, or a meta object type likes QObject*, gadget*, QJSValue where _::isKeyValueType() returns true.")
 
-#define __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_INVOKABLE(prefix, value) \
-    static_assert(value, prefix __UNDERLINE_ITERATEE_MISMATCHED_ERROR)
+#define _underline_static_assert_is_iteratee_invokable(prefix, value) \
+    static_assert(value, prefix _underline_iteratee_mismatched_error)
 
-#define __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_NOT_VOID(prefix, value) \
-    static_assert(value, prefix __UNDERLINE_ITERATEE_VOID_RET_ERROR)
+#define _underline_static_assert_is_iteratee_not_void(prefix, value) \
+    static_assert(value, prefix _underline_iteratee_void_ret_error)
 
-#define __UNDERLINE_STATIC_ASSERT_IS_OBJECT_SOURCE_KEY_MATCHED(prefix, object, source) \
+#define _underline_static_assert_is_object_source_key_matched(prefix, object, source) \
     static_assert(Private::is_custom_convertible<source,object>::value, prefix "The key type of 'source' argument cannot convert to the key type of 'object' argument.")
 
-#define __UNDERLINE_STATIC_ASSERT_IS_OBJECT_SOURCE_VALUE_MATCHED(prefix, object, source) \
+#define _underline_static_assert_is_object_source_value_matched(prefix, object, source) \
     static_assert(Private::is_custom_convertible<source,object>::value, prefix "The value type of 'source' argument cannot convert to the value type of 'object' argument.")
 
-#define __UNDERLINE_PRIVATE_NS_BEGIN \
+#define _underline_private_ns_begin \
     namespace _ ::Private {
 
-#define __UNDERLINE_PRIVATE_NS_END \
+#define _underline_private_ns_end \
     }
 
-#ifndef __UNDERLINE_DEBUG
-#define __UNDERLINE_DEBUG(msg)
+#ifndef _underline_debug
+#define _underline_debug(msg)
 #endif
 
-#define __DECLARE_UNDERLINE_HAS(name, expr1, expr2) \
+#define _declare_underline_has(name, expr1, expr2) \
         template <typename T> \
         struct has_##name { \
             template <typename Type> \
@@ -88,7 +88,7 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
         }; \
 
 /// Register rebind_to_map and test_is_array
-#define __UNDERLINE_REGISTER_REBIND_TO_MAP(CollectionType, MapType) \
+#define _underline_register_rebind_to_map(CollectionType, MapType) \
     namespace _ { \
         namespace Private { \
             template <class ValueType, class NewKeyType, class NewValueType> \
@@ -172,19 +172,19 @@ namespace _ {
             QByteArray bytes;
         };
 
-        __DECLARE_UNDERLINE_HAS(reserve, decltype(std::declval<Type>().reserve(0)), void)
+        _declare_underline_has(reserve, decltype(std::declval<Type>().reserve(0)), void)
 
-        __DECLARE_UNDERLINE_HAS(push_back, decltype(std::declval<Type>().push_back(std::declval<typename std::remove_reference<typename std::remove_cv<Type>::type::value_type>::type>())), void)
+        _declare_underline_has(push_back, decltype(std::declval<Type>().push_back(std::declval<typename std::remove_reference<typename std::remove_cv<Type>::type::value_type>::type>())), void)
 
-        __DECLARE_UNDERLINE_HAS(static_meta_object, typename std::remove_cv<decltype(std::remove_pointer<Type>::type::staticMetaObject)>::type, QMetaObject)
+        _declare_underline_has(static_meta_object, typename std::remove_cv<decltype(std::remove_pointer<Type>::type::staticMetaObject)>::type, QMetaObject)
 
-        __DECLARE_UNDERLINE_HAS(operator_round_backets_int, decltype(std::declval<Type>()[0]), typename std::remove_cv<Type>::type::value_type)
+        _declare_underline_has(operator_round_backets_int, decltype(std::declval<Type>()[0]), typename std::remove_cv<Type>::type::value_type)
 
-        __DECLARE_UNDERLINE_HAS(operator_round_backets_key, decltype(std::declval<Type>()[std::declval<typename std::remove_cv<Type>::type::key_type>()]), typename std::remove_cv<Type>::type::mapped_type)
+        _declare_underline_has(operator_round_backets_key, decltype(std::declval<Type>()[std::declval<typename std::remove_cv<Type>::type::key_type>()]), typename std::remove_cv<Type>::type::mapped_type)
 
-        __DECLARE_UNDERLINE_HAS(mapped_type,typename std::remove_cv<Type>::type::mapped_type,typename std::remove_cv<Type>::type::mapped_type)
+        _declare_underline_has(mapped_type,typename std::remove_cv<Type>::type::mapped_type,typename std::remove_cv<Type>::type::mapped_type)
 
-        __DECLARE_UNDERLINE_HAS(key_type,typename std::remove_cv<Type>::type::key_type,typename std::remove_cv<Type>::type::key_type)
+        _declare_underline_has(key_type,typename std::remove_cv<Type>::type::key_type,typename std::remove_cv<Type>::type::key_type)
 
         template <typename T>
         using pointer_or_reference_t = typename std::conditional<std::is_pointer<T>::value, T, T&>::type;
@@ -1553,7 +1553,7 @@ namespace _ {
             using K = typename Private::map_info<Map>::key_type;
             using V = typename Private::map_info<Map>::mapped_type;
 
-            static_assert(Private::is_invokable3<Functor, V, K, Map>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+            static_assert(Private::is_invokable3<Functor, V, K, Map>::value, "_::forIn: " _underline_iteratee_mismatched_error);
 
             Private::Value<typename Private::ret_invoke<Functor, V, K, Map>::type> value;
 
@@ -1577,7 +1577,7 @@ namespace _ {
             using K = typename Private::map_info<Map>::key_type;
             using V = typename Private::map_info<Map>::mapped_type;
 
-            static_assert(Private::is_invokable3<Functor, V, K, Map>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+            static_assert(Private::is_invokable3<Functor, V, K, Map>::value, "_::forIn: " _underline_iteratee_mismatched_error);
 
             Private::Value<typename Private::ret_invoke<Functor, V, K, Map>::type> value;
 
@@ -1618,7 +1618,7 @@ namespace _ {
         template <typename Object, typename Functor>
         inline auto forIn(const Object* object, Functor iteratee) -> typename std::enable_if<Private::is_qobject<Object>::value, const Object*>::type {
             const QMetaObject* meta = object->metaObject();
-            static_assert(Private::is_invokable3<Functor, QVariant, QString, QObject*>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+            static_assert(Private::is_invokable3<Functor, QVariant, QString, QObject*>::value, "_::forIn: " _underline_iteratee_mismatched_error);
             Private::Value<typename Private::ret_invoke<Functor, QVariant, QString, QObject*>::type> invokeHelper;
 
             for (int i = 0 ; i < meta->propertyCount(); i++) {
@@ -1641,7 +1641,7 @@ namespace _ {
 
             const QMetaObject meta = ptr->staticMetaObject;
 
-            static_assert(Private::is_invokable3<Functor, QVariant, QString, const Object&>::value, "_::forIn: " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+            static_assert(Private::is_invokable3<Functor, QVariant, QString, const Object&>::value, "_::forIn: " _underline_iteratee_mismatched_error);
             Private::Value<typename Private::ret_invoke<Functor, QVariant, QString, const Object&>::type> invokeHelper;
 
             for (int i = 0 ; i < meta.propertyCount(); i++) {
@@ -1711,16 +1711,16 @@ namespace _ {
         inline auto merge(V1& v1, const V2& v2) ->
             typename std::enable_if<is_real_key_value_type<V1>::value && !is_real_key_value_type<V2>::value, V1&>::type {
 
-            __UNDERLINE_DEBUG("_::merge(kyt, non-kyt)");
+            _underline_debug("_::merge(kyt, non-kyt)");
             try_cast_to_qt_metable(v2, [&](QObject* kyt){
                 forIn_merge(v1, kyt);
             },[&](GadgetContainer& kyt) {
                 forIn_merge(v1, kyt);
             },[&](QVariantMap& kyt) {
-                __UNDERLINE_DEBUG("_::merge(kyt, non-kyt): Cast v2 to QVariantMap");
+                _underline_debug("_::merge(kyt, non-kyt): Cast v2 to QVariantMap");
                 merge(v1, kyt);
             },[&](const QJSValue& kyt) {
-                __UNDERLINE_DEBUG("_::merge(kyt, non-kyt): v2 is QJSValue(object)");
+                _underline_debug("_::merge(kyt, non-kyt): v2 is QJSValue(object)");
                 forIn_merge(v1, kyt);
             });
 
@@ -1735,7 +1735,7 @@ namespace _ {
             },[&](GadgetContainer container) {
                 merge(container, v2);
             },[&](QVariantMap map) {
-                __UNDERLINE_DEBUG("_::merge(QVariant) - cast to QVariantMap");
+                _underline_debug("_::merge(QVariant) - cast to QVariantMap");
                 merge(map, v2);
                 v1 = map;
             });
@@ -1766,9 +1766,9 @@ namespace _ {
 #ifdef QT_QUICK_LIB
         template <typename V2>
         inline auto merge(QJSValue& v1, const V2 & v2) -> typename std::enable_if<std::is_same<V2, QJSValue>::value, QJSValue&>::type {
-            __UNDERLINE_DEBUG(QString("Begin of merge(QJSValue, QJSValue):"));
-            __UNDERLINE_DEBUG(v1.toVariant());
-            __UNDERLINE_DEBUG(v2.toVariant());
+            _underline_debug(QString("Begin of merge(QJSValue, QJSValue):"));
+            _underline_debug(v1.toVariant());
+            _underline_debug(v2.toVariant());
 
             if (v1.isQObject()) {
                 auto ptr = v1.toQObject();
@@ -1778,8 +1778,8 @@ namespace _ {
             } else {
                 v1 = v2;
             }
-            __UNDERLINE_DEBUG("End of merge(QJSValue, QJSValue):");
-            __UNDERLINE_DEBUG(v1.toVariant());
+            _underline_debug("End of merge(QJSValue, QJSValue):");
+            _underline_debug(v1.toVariant());
             return v1;
         }
 #endif
@@ -1790,7 +1790,7 @@ namespace _ {
             using Value = typename key_value_type<V2>::value_type;
 
             forIn(v2, [&](const Value& value, const Key& key) {
-                __UNDERLINE_DEBUG(QString("forIn_merge:" ) + cast_to_qstring(key));
+                _underline_debug(QString("forIn_merge:" ) + cast_to_qstring(key));
 
                 auto srcValue = read(v1, key);
 
@@ -1816,7 +1816,7 @@ namespace _ {
 
     template <typename Collection, typename Iteratee>
     inline const Collection& forEach(const Collection& collection, Iteratee iteratee) {
-        static_assert(Private::via_func_info<Iteratee, Collection>::is_invokable, "_::forEach(): " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+        static_assert(Private::via_func_info<Iteratee, Collection>::is_invokable, "_::forEach(): " _underline_iteratee_mismatched_error);
 
         Private::Value<typename Private::ret_invoke<Iteratee, typename Private::array_value_type<Collection>::type, int, Collection >::type> value;
 
@@ -1835,13 +1835,13 @@ namespace _ {
         using OBJECT_TYPE = typename Private::key_value_type<Object>;
         using SOURCE_TYPE = typename Private::key_value_type<Source>;
 
-        __UNDERLINE_STATIC_ASSERT_IS_OBJECT_SOURCE_KEY_MATCHED("_::assign: ", typename OBJECT_TYPE::key_type, typename SOURCE_TYPE::key_type);
+        _underline_static_assert_is_object_source_key_matched("_::assign: ", typename OBJECT_TYPE::key_type, typename SOURCE_TYPE::key_type);
 
-        __UNDERLINE_STATIC_ASSERT_IS_OBJECT_SOURCE_VALUE_MATCHED("_::assign: ", typename OBJECT_TYPE::value_type, typename SOURCE_TYPE::value_type);
+        _underline_static_assert_is_object_source_value_matched("_::assign: ", typename OBJECT_TYPE::value_type, typename SOURCE_TYPE::value_type);
 
-        __UNDERLINE_STATIC_ASSERT_IS_KEY_VALUE_TYPE("_::assign: ", Object);
+        _underline_static_assert_is_key_value_type("_::assign: ", Object);
 
-        __UNDERLINE_STATIC_ASSERT_IS_KEY_VALUE_TYPE("_::assign: ", Source);
+        _underline_static_assert_is_key_value_type("_::assign: ", Source);
 
         static_assert( !(Private::is_qjsvalue<Object>::value && !Private::is_qjsvalue<Source>::value),
                       "_::assign(QJSValue): It could not take source argument another then the type of QJSValue.");
@@ -1941,9 +1941,9 @@ namespace _ {
     inline bool some(const Collection& collection, Predicate predicate) {
         bool res = false;
 
-        static_assert(Private::via_func_info<Predicate, Collection>::is_invokable, "_::some(): " __UNDERLINE_PREDICATE_MISMATCHED_ERROR);
+        static_assert(Private::via_func_info<Predicate, Collection>::is_invokable, "_::some(): " _underline_predicate_mismatched_error);
         static_assert(std::is_same<typename Private::ret_invoke<Predicate, typename Private::array_value_type<Collection>::type,int, Collection>::type,bool>::value,
-                      "_::some(): " __UNDERLINE_PREDICATE_RETURN_TYPE_MISMATCH_ERROR);
+                      "_::some(): " _underline_predicate_return_type_mismatch_error);
 
         for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
             if (Private::invoke(predicate, collection[i], i, collection)) {
@@ -1961,11 +1961,11 @@ namespace _ {
 
         using func_info = Private::via_func_info<Iteratee, Collection>;
 
-        __UNDERLINE_STATIC_ASSERT_IS_ARRAY("_::map(): ", Collection);
+        _underline_static_assert_is_array("_::map(): ", Collection);
 
-        __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_INVOKABLE("_::map(): ", func_info::is_invokable);
+        _underline_static_assert_is_iteratee_invokable("_::map(): ", func_info::is_invokable);
 
-        __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_NOT_VOID("_::map() ", !func_info::is_void_ret);
+        _underline_static_assert_is_iteratee_not_void("_::map() ", !func_info::is_void_ret);
 
         typename Private::array_rebinder<Collection, typename func_info::non_void_ret_type>::type res;
 
@@ -1981,11 +1981,11 @@ namespace _ {
     template <typename Array,  typename Iteratee>
     inline auto countBy(const Array& collection, Iteratee iteratee) -> typename Private::rebind_to_map_collection_iteratee_t<Array, Iteratee, int>  {
 
-        __UNDERLINE_STATIC_ASSERT_IS_ARRAY("_::countBy: ", Array);
+        _underline_static_assert_is_array("_::countBy: ", Array);
 
-        __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_INVOKABLE("_::countBy: ", (Private::is_invokable1<Iteratee, _::Private::array_value_type_t<Array>>::value));
+        _underline_static_assert_is_iteratee_invokable("_::countBy: ", (Private::is_invokable1<Iteratee, _::Private::array_value_type_t<Array>>::value));
 
-        __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_NOT_VOID("_::countBy: ", (Private::ret_invoke_is_not_void<Iteratee, _::Private::array_value_type_t<Array>>::value));
+        _underline_static_assert_is_iteratee_not_void("_::countBy: ", (Private::ret_invoke_is_not_void<Iteratee, _::Private::array_value_type_t<Array>>::value));
 
         typename Private::rebind_to_map_collection_iteratee_t<Array, Iteratee, int>  res;
 
@@ -2022,7 +2022,7 @@ namespace _ {
         static_assert(Private::is_invokable4<Iteratee,
                                              Accumulator,
                                              typename Private::array_value_type<Collection>::type,
-                                             int, Collection>::value, "_::reduce(): " __UNDERLINE_ITERATEE_MISMATCHED_ERROR);
+                                             int, Collection>::value, "_::reduce(): " _underline_iteratee_mismatched_error);
 
         Accumulator ret = accumulator;
         Private::Value<RET> value;
@@ -2115,7 +2115,7 @@ namespace _ {
         using source_info = _::Private::key_value_type<Source>;
         using object_info = _::Private::key_value_type<Object>;
 
-        __UNDERLINE_STATIC_ASSERT_IS_ITERATEE_INVOKABLE("_::assignWith: ", (_::Private::is_invokable5<Iteratee,
+        _underline_static_assert_is_iteratee_invokable("_::assignWith: ", (_::Private::is_invokable5<Iteratee,
                                                         typename object_info::value_type,
                                                         typename source_info::value_type,
                                                         typename source_info::key_type,
@@ -2148,13 +2148,13 @@ namespace _ {
         using OBJECT_TYPE = typename Private::key_value_type<Object>;
         using SOURCE_TYPE = typename Private::key_value_type<Source>;
 
-        __UNDERLINE_STATIC_ASSERT_IS_OBJECT_SOURCE_KEY_MATCHED("_::merge: ", typename OBJECT_TYPE::key_type, typename SOURCE_TYPE::key_type);
+        _underline_static_assert_is_object_source_key_matched("_::merge: ", typename OBJECT_TYPE::key_type, typename SOURCE_TYPE::key_type);
 
-        __UNDERLINE_STATIC_ASSERT_IS_OBJECT_SOURCE_VALUE_MATCHED("_::merge: ", typename OBJECT_TYPE::value_type, typename SOURCE_TYPE::value_type);
+        _underline_static_assert_is_object_source_value_matched("_::merge: ", typename OBJECT_TYPE::value_type, typename SOURCE_TYPE::value_type);
 
-        __UNDERLINE_STATIC_ASSERT_IS_KEY_VALUE_TYPE("_::merge: ", Object);
+        _underline_static_assert_is_key_value_type("_::merge: ", Object);
 
-        __UNDERLINE_STATIC_ASSERT_IS_KEY_VALUE_TYPE("_::merge: ", Source);
+        _underline_static_assert_is_key_value_type("_::merge: ", Source);
 
         static_assert( !(Private::is_qjsvalue<Object>::value && !Private::is_qjsvalue<Source>::value),
                       "_::merge(QJSValue, source): It could not take source argument another then the type of QJSValue.");
@@ -2168,12 +2168,13 @@ namespace _ {
 
 /* Type Registration */
 
-__UNDERLINE_REGISTER_REBIND_TO_MAP(std::list, std::map)
-__UNDERLINE_REGISTER_REBIND_TO_MAP(std::vector, std::map)
+_underline_register_rebind_to_map(std::list, std::map)
+_underline_register_rebind_to_map(std::vector, std::map)
 
 #ifdef QT_CORE_LIB
-__UNDERLINE_REGISTER_REBIND_TO_MAP(QVector, QMap)
-__UNDERLINE_REGISTER_REBIND_TO_MAP(QList, QMap)
+_underline_register_rebind_to_map(QVector, QMap)
+_underline_register_rebind_to_map(QList, QMap)
 #endif
 
 /* End of Type Registration */
+

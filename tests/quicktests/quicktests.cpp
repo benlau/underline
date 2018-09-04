@@ -3,13 +3,13 @@
 #include <QtShell>
 #include "quicktests.h"
 
-#define __UNDERLINE_DEBUG(x) { qDebug() << x;}
+#define _underline_debug(x) { qDebug() << x;}
 #include <underline.h>
 
 QuickTests::QuickTests(QObject *parent) : QObject(parent)
 {
     auto ref = [=]() {
-        QTest::qExec(this, 0, 0); // Autotest detect available test cases of a QObject by looking for "QTest::qExec" in source code
+        QTest::qExec(this, 0, nullptr); // Autotest detect available test cases of a QObject by looking for "QTest::qExec" in source code
     };
     Q_UNUSED(ref);
 }
