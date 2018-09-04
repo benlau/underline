@@ -14,12 +14,15 @@ signals:
 public slots:
 
 private slots:
-    void test_QJSValue();
-    void test_private_is_convertible();
-    void test_forIn();
-    void test_assign_QJSValue();
+    void test_spec_QJSValue();
 
-    void test_merge_QJSValue();
+    void test_private_is_convertible_args_QJSValue_QVariant();
+
+    void test_forIn();
+
+    void test_assign_args_QJSValue_other();
+
+    void test_merge_QJSValue_other();
 };
 
 #endif // QUICKTESTS_H

@@ -312,9 +312,10 @@ omit
 
 ```C++
 template <typename QtMetable>
-QVariantMap omit(const QtMetable& source, const QStringList& paths)
+QVariantMap omit(const QtMetable& source, const QStringList& paths);
+
 template <typename QtMetable>
-QVariantMap omit(const QtMetable& source, const QString& path)
+QVariantMap omit(const QtMetable& source, const QString& path);
 ```
 
 Creates a new object which is a clone of the source, but the properties listed in the paths are omitted.
@@ -354,27 +355,25 @@ Returns
 set
 ---
 
-
 ```C++
-
 template <typename QtMetable>
 void _::set(QtMetable &object, const QString &path, const QVariant &value)
 ```
 
-Set the property from the source object at the given path. If the path does not exist, it does nothing.
+Set the property from the source object at the given path. If the object is a QVariantMap and portion of path doesn't exist, it is created.
 
 Arguments
 
- * source: The input object
+ * source: The input object. Check [_::isQtMetable](#isqtmetable) for the supported types.
  * paths: The property paths to set
  * value: The property value to be set
 
 Returns
-
  * void
 
-
 Example:
+```C++
+```
 
 range
 ----

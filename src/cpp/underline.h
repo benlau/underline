@@ -201,6 +201,15 @@ namespace _ {
             return t == nullptr;
         }
 
+        template <typename V1, typename V2>
+        inline auto copy_if_same_type(V1 &v1, const V2 &v2) -> typename std::enable_if<std::is_same<V1,V2>::value>::type {
+            v1 = v2;
+        }
+
+        template <typename V1, typename V2>
+        inline auto copy_if_same_type(V1 &, const V2&) -> typename std::enable_if<!std::is_same<V1,V2>::value>::type {
+        }
+
         template <typename From, typename To>
         inline auto convertTo(const From&,  To&) -> typename std::enable_if<!std::is_convertible<From,To>::value, Undefined>::type { return Undefined(); }
 
@@ -227,11 +236,6 @@ namespace _ {
         template <typename T>
         using remove_cvref_t = typename std::remove_reference<typename std::remove_cv<T>::type>::type;
 
-        template <typename V1, typename V2>
-        struct is_qvariantmap_pair {
-            enum { value = std::is_same<QVariantMap, V1>::value && std::is_same<QVariantMap, V2>::value };
-        };
-
         template <typename Object>
         struct is_qobject {
             enum { value = std::is_convertible<typename std::add_pointer<typename std::remove_pointer< remove_cvref_t<Object>>::type>::type, const QObject*>::value };
@@ -245,7 +249,7 @@ namespace _ {
             enum { value = std::is_same<remove_cvref_t<T>, QJSValue>::value};
         };
 
-        template <typename T> struct is_qany_type {
+        template <typename T> struct is_qt_any_type {
             enum {
                 value = std::is_same<T,QJSValue>::value || std::is_same<T,QVariant>::value
             };
@@ -311,7 +315,7 @@ namespace _ {
         }
 
         template <typename T>
-        inline auto can_cast_to_qvariantmap(const T&) -> typename std::enable_if<!is_qany_type<T>::value, bool>::type {
+        inline auto can_cast_to_qvariantmap(const T&) -> typename std::enable_if<!is_qt_any_type<T>::value, bool>::type {
             return false;
         }
 
@@ -1422,6 +1426,15 @@ namespace _ {
 
         };
 
+        template <typename V1, typename V2, typename K>
+        inline auto write_if_same_type(V1 &v1, const K& k, const V2& v2) -> typename std::enable_if<std::is_same<V1,V2>::value, void>::type {
+            write(v1, k, v2);
+        }
+
+        template <typename V1, typename V2, typename K>
+        inline auto write_if_same_type(V1 &, const K&, const V2&) -> typename std::enable_if<!std::is_same<V1,V2>::value, void>::type {
+        }
+
 #ifdef QT_CORE_LIB
 
         template <class NewType>
@@ -1466,24 +1479,6 @@ namespace _ {
             return result;
         }
 
-        template <typename V1, typename V2>
-        inline auto qvariantmap_pair_assignment(V1 &v1, const V2& v2) -> typename std::enable_if<is_qvariantmap_pair<V1,V2>::value, void>::type {
-            v1 = v2;
-        }
-
-        template <typename V1, typename V2>
-        inline auto qvariantmap_pair_assignment(V1 &, const V2&) -> typename std::enable_if<!is_qvariantmap_pair<V1,V2>::value , void>::type {
-        }
-
-        template <typename V1, typename V2, typename K>
-        inline auto qvariantmap_pair_write(V1 &v1, const K& k, const V2& v2) -> typename std::enable_if<is_qvariantmap_pair<V1,V2>::value, void>::type {
-            write(v1, k, v2);
-        }
-
-        template <typename V1, typename V2, typename K>
-        inline auto qvariantmap_pair_write(V1 &, const K&, const V2&) -> typename std::enable_if<!is_qvariantmap_pair<V1,V2>::value, void>::type {
-        }
-
         template <typename KeyValueType>
         inline pointer_or_reference_t<KeyValueType> _recursive_set(KeyValueType& object, const std::vector<std::string>& tokens,int index, const QVariant& value) {
             auto k = cast_to_const_char_container(tokens[index]);
@@ -1497,7 +1492,7 @@ namespace _ {
                     write(kyt, k.data, value);
                 },[&](QVariantMap& kyt) {
                     write(kyt, k.data, value);
-                    qvariantmap_pair_assignment(object, kyt);
+                    copy_if_same_type(object, kyt);
                 });
 
             } else {
@@ -1512,7 +1507,7 @@ namespace _ {
                 },[&](QVariantMap& kyt) {
                     auto v = read(kyt, k.data).toMap();
                     _recursive_set(v , tokens, index + 1, value);
-                    qvariantmap_pair_write(object, k.data, v);
+                    write_if_same_type(object, k.data, v);
                 });
             }
 
@@ -1989,9 +1984,9 @@ namespace _ {
 
         typename Private::array_rebinder<Collection, typename func_info::non_void_ret_type>::type res;
 
-        res.reserve((int) collection.size());
+        res.reserve(static_cast<int>(collection.size()));
 
-        for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
+        for (unsigned int i = 0 ; i < static_cast<unsigned int>(collection.size()) ; i++) {
             res.push_back(Private::invoke(iteratee, collection[i], i, collection));
         }
 
@@ -2011,7 +2006,7 @@ namespace _ {
 
         Private::Value<typename Private::ret_invoke<Iteratee, _::Private::array_value_type_t<Array>>::type> wrapper;
 
-        for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
+        for (unsigned int i = 0 ; i < static_cast<unsigned int>(collection.size()) ; i++) {
             wrapper.invoke(iteratee, collection[i]);
             auto key = wrapper.get();
             auto c = res[key] + 1;

@@ -14,21 +14,23 @@ QuickTests::QuickTests(QObject *parent) : QObject(parent)
     Q_UNUSED(ref);
 }
 
-void QuickTests::test_QJSValue()
+void QuickTests::test_spec_QJSValue()
 {
-    QCOMPARE(static_cast<bool>(_::Private::is_meta_object<QJSValue>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_meta_object<QJSValue>::value),    true);
+    QCOMPARE(static_cast<bool>(_::isQtMetable<QJSValue>()),                     true);
+    QCOMPARE(static_cast<bool>(_::Private::is_qt_any_type<QJSValue>::value),    true);
+
+    QCOMPARE(static_cast<bool>(_::Private::is_real_key_value_type<QJSValue>::value), false);
 
     QJSEngine engine;
     QJSValue value = engine.toScriptValue(QVariantMap{});
-
     _::Private::write(value, "value1", 1);
 
     QCOMPARE(value.property("value1").toInt(), 1);
-
     QCOMPARE(_::Private::read(value, "value1").toInt(), 1);
 }
 
-void QuickTests::test_private_is_convertible()
+void QuickTests::test_private_is_convertible_args_QJSValue_QVariant()
 {
     QCOMPARE( static_cast<bool> (_::Private::is_custom_convertible<QJSValue, QVariant>::value) , true);
 
@@ -65,7 +67,7 @@ void QuickTests::test_forIn()
 
 }
 
-void QuickTests::test_assign_QJSValue()
+void QuickTests::test_assign_args_QJSValue_other()
 {
     {
         QQmlApplicationEngine engine;
@@ -96,7 +98,7 @@ void QuickTests::test_assign_QJSValue()
     }
 }
 
-void QuickTests::test_merge_QJSValue()
+void QuickTests::test_merge_QJSValue_other()
 {
     /* Remarks: merge(QJSValue, any_type_other_then_QJSValue) is not supported.
      */
@@ -155,3 +157,4 @@ void QuickTests::test_merge_QJSValue()
     }
 
 }
+
