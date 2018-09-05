@@ -2,6 +2,7 @@
 #include <QQmlApplicationEngine>
 #include <QtShell>
 #include "quicktests.h"
+#include "quicktests.h"
 
 #define _underline_debug(x) { qDebug() << x;}
 #include <underline.h>
@@ -156,7 +157,7 @@ void QuickTests::test_merge_QJSValue_other()
     }
 }
 
-void QuickTests::test_set_args_QJSValue()
+void QuickTests::test_set_args_QJSValue_key_QJSValue()
 {
     QVariantMap templ;
     _::set(templ, "value1.value1", 1);
@@ -169,4 +170,35 @@ void QuickTests::test_set_args_QJSValue()
     _::set(object, "value1.value2.value1", value);
 
     QCOMPARE(object.property("value1").property("value2").property("value1").toString(), QString("3"));
+}
+
+void QuickTests::test_set_args_QJSValue_key_QJSValue_shouldnt_create_non_exist_path()
+{
+    QVariantMap templ;
+    _::set(templ, "value1.value1", 1);
+    _::set(templ, "value1.value2.value2", 2.0);
+
+    QQmlEngine engine;
+    QJSValue object = engine.toScriptValue(templ);
+    QJSValue value = engine.toScriptValue(QString("3"));
+
+    _::set(object, "value1.value3.value1", value);
+
+    QCOMPARE(object.property("value1").property("value3").property("value1").isUndefined(), true);
+
+}
+
+void QuickTests::test_set_args_QVariantMap_key_QJSValue()
+{
+    QVariantMap object;
+    _::set(object, "value1.value1", 1);
+    _::set(object, "value1.value2.value2", 2.0);
+    QQmlEngine engine;
+    QJSValue value = engine.toScriptValue(QString("3"));
+
+    _::set(object, "value1.value2.value1", value);
+
+    QVariant actualValue = _::get(object, "value1.value2.value1");
+
+    QCOMPARE(actualValue.toString(), QString("3"));
 }

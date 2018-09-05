@@ -239,13 +239,13 @@ void C11TestCases::test_private_invoke()
         return i.toInt();
     };
 
-    QCOMPARE((int) (_::Private::is_args_compatible<decltype(myFunc0)>::value), 1);
-    QCOMPARE((int) (_::Private::is_args_compatible<decltype(myFunc0), int>::value), 0);
+    QCOMPARE(static_cast<int> (_::Private::is_args_compatible<decltype(myFunc0)>::value), 1);
+    QCOMPARE(static_cast<int> (_::Private::is_args_compatible<decltype(myFunc0), int>::value), 0);
 
-    QCOMPARE((int) (_::Private::is_args_compatible<decltype(myFunc1),int>::value), 1);
-    QCOMPARE((int) (_::Private::is_args_compatible<decltype(myFunc1),int>::value), 1);
-    QCOMPARE((int) (_::Private::is_args_compatible<decltype(myFunc1),QString, int>::value), 0);
-    QCOMPARE((int) (_::Private::is_args_compatible<decltype(myFunc1),QString, int>::value), 0);
+    QCOMPARE(static_cast<int> (_::Private::is_args_compatible<decltype(myFunc1),int>::value), 1);
+    QCOMPARE(static_cast<int> (_::Private::is_args_compatible<decltype(myFunc1),int>::value), 1);
+    QCOMPARE(static_cast<int> (_::Private::is_args_compatible<decltype(myFunc1),QString, int>::value), 0);
+    QCOMPARE(static_cast<int> (_::Private::is_args_compatible<decltype(myFunc1),QString, int>::value), 0);
 
     QCOMPARE((std::is_same<decltype(_::Private::decl_func0<decltype(myFunc0)>()), int>::value), true);
 
@@ -626,17 +626,6 @@ void C11TestCases::test_merge()
         QCOMPARE(object["value1"].toInt(), 1);
         QCOMPARE(object["value2"].toDouble(), 2.0);
         QCOMPARE(object["value3"].toString(), QString("3"));
-    }
-
-
-    {
-        /* std::map , std::map */
-        auto source = std::map<std::string,int>{ {"value1", 1} };
-        auto dest = std::map<std::string,int>{ {"value2", 2} };
-        _::merge(dest, source);
-
-        QCOMPARE(dest["value1"], 1);
-        QCOMPARE(dest["value2"], 2);
     }
 }
 

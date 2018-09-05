@@ -43,6 +43,8 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
 #define _underline_input_type_is_not_array "The expected input is an valid array class, where _::isArray() returns true (e.g std::vector , QList , QVector) "
 #define _underline_iteratee_void_ret_error "The return type of iteratee function cannot be void"
 
+#define _underline_qjsvalue_set_error "It should only modify the value of a QJSValue object by another QJSValeu"
+
 #define _underline_static_assert_is_array(prefix, type) \
     static_assert(_::Private::is_array<type>::value, prefix _underline_input_type_is_not_array)
 
@@ -50,7 +52,11 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
     static_assert(_::Private::is_map<type>::value, prefix "The expected input is an valid Map container class, where _::isMap() returns true.")
 
 #define _underline_static_assert_is_key_value_type(prefix, type) \
-    static_assert(_::Private::is_key_value_type<type>::value, prefix "Invalid argument type. It should be a Map container class, or a meta object type likes QObject*, gadget*, QJSValue where _::isKeyValueType() returns true.")
+    static_assert(_::Private::is_key_value_type<type>::value, prefix "Invalid argument type. It should be a valie Key-Value-Type. Check the document of _::isKeyValueType for the list of supported types")
+
+#define _underline_static_assert_is_qt_metable(func, type) \
+    static_assert(_::Private::is_qt_metable<type>::value, "_::" func ": Invalid argument type. It should be a QtMetable type. Check the document of _::isQtMetable for the list of supported types.")
+
 
 #define _underline_static_assert_is_iteratee_invokable(prefix, value) \
     static_assert(value, prefix _underline_iteratee_mismatched_error)
@@ -65,7 +71,7 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
     static_assert(Private::is_custom_convertible<source,object>::value, prefix "The value type of 'source' argument cannot convert to the value type of 'object' argument.")
 
 #define _underline_static_assert_is_object_a_qt_metable(prefix, object) \
-    static_assert(Private::is_q_key_value_type<object>::value, prefix "Invalid object type. It should be a QtMetable type. Check the document of _::isQtMetable for further information.")
+    static_assert(Private::is_qt_metable<object>::value, prefix "Invalid object type. It should be a QtMetable type. Check the document of _::isQtMetable for further information.")
 
 #define _underline_private_ns_begin \
     namespace _ ::Private {
@@ -717,7 +723,7 @@ namespace _ {
         };
 
         template <typename T>
-        struct is_q_key_value_type {
+        struct is_qt_metable {
             enum {
                 value = key_value_info<T>::is_key_value_type && !is_std_map<T>::value
             };
@@ -1416,7 +1422,7 @@ namespace _ {
                 if (contains(kyt, k.data)) { value = read(kyt, k.data); hasKey = true;}
             });
 
-            int remaining = (int) tokens.size() - index - 1;
+            int remaining = static_cast<int>(tokens.size()) - index - 1;
             if (remaining == 0 && hasKey) {
                 result = value;
             }
@@ -1438,7 +1444,7 @@ namespace _ {
         inline pointer_or_reference_t<KeyValueType> _recursive_set(KeyValueType& object, const std::vector<std::string>& tokens,int index, const QtAny& value) {
             auto k = cast_to_const_char_container(tokens[index]);
 
-            int remaining = (int) tokens.size() - index - 1;
+            int remaining = static_cast<int>(tokens.size()) - index - 1;
 
             if (remaining == 0) {
 
@@ -1812,7 +1818,7 @@ namespace _ {
         _underline_static_assert_is_key_value_type("_::assign: ", Source);
 
         static_assert( !(Private::is_qjsvalue<Object>::value && !Private::is_qjsvalue<Source>::value),
-                      "_::assign(QJSValue): It could not take source argument another then the type of QJSValue.");
+                      "_::assign(QJSValue): " _underline_qjsvalue_set_error);
 
         using Key = typename Private::key_value_info<Source>::key_type;
         using Value = typename Private::key_value_info<Source>::value_type;
@@ -1845,12 +1851,12 @@ namespace _ {
 
         _underline_static_assert_is_object_source_value_matched("_::merge: ", typename OBJECT_TYPE::value_type, typename SOURCE_TYPE::value_type);
 
-        _underline_static_assert_is_key_value_type("_::merge: ", Object);
+        _underline_static_assert_is_qt_metable("_::merge: ", Object);
 
         _underline_static_assert_is_key_value_type("_::merge: ", Source);
 
         static_assert( !(Private::is_qjsvalue<Object>::value && !Private::is_qjsvalue<Source>::value),
-                      "_::merge(QJSValue, source): It could not take source argument another then the type of QJSValue.");
+                      "_::merge(QJSValue, source): " _underline_qjsvalue_set_error);
 
         Private::merge(object, source);
 
@@ -1869,7 +1875,11 @@ namespace _ {
     template <typename QtMetable, typename QtAny>
     inline Private::pointer_or_reference_t<QtMetable> set(QtMetable &object, const QString &path, const QtAny& value)
     {
+        static_assert( !(Private::is_qjsvalue<QtMetable>::value && !Private::is_qjsvalue<QtAny>::value),
+                      "_::set(QJSValue): " _underline_qjsvalue_set_error);
+
         Private::_set(object, path, value);
+
         return object;
     }
 
@@ -2004,7 +2014,7 @@ namespace _ {
 
         Accumulator ret = accumulator;
         Private::Value<RET> value;
-        for (unsigned int i = 0 ; i < (unsigned int) collection.size() ; i++) {
+        for (unsigned int i = 0 ; i < static_cast<unsigned int>(collection.size()) ; i++) {
             value.invoke(iteratee, ret, collection[i], i, collection);
             ret = value.value;
         }
@@ -2072,12 +2082,12 @@ namespace _ {
 
     template <typename T>
     inline bool isQtMetable() {
-        return Private::is_q_key_value_type<T>::value;
+        return Private::is_qt_metable<T>::value;
     }
 
     template <typename T>
     inline bool isQtMetable(const T&) {
-        return Private::is_q_key_value_type<T>::value;
+        return Private::is_qt_metable<T>::value;
     }
 
 

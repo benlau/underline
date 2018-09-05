@@ -24,7 +24,12 @@ private slots:
 
     void test_merge_QJSValue_other();
 
-    void test_set_args_QJSValue();
+    void test_set_args_QJSValue_key_QJSValue();
+
+    void test_set_args_QJSValue_key_QJSValue_shouldnt_create_non_exist_path();
+
+    void test_set_args_QVariantMap_key_QJSValue();
+
 };
 
 #endif // QUICKTESTS_H

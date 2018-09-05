@@ -120,13 +120,13 @@ void C14TestCases::test_private_invoke()
         return i;
     };
 
-    QCOMPARE((int) (_::Private::is_args_compatible<decltype(func0)>::value), 1);
-    QCOMPARE((int) (_::Private::is_args_compatible<decltype(func0), int>::value), 0);
+    QCOMPARE(static_cast<int> (_::Private::is_args_compatible<decltype(func0)>::value), 1);
+    QCOMPARE(static_cast<int> (_::Private::is_args_compatible<decltype(func0), int>::value), 0);
 
-    QCOMPARE((int) (_::Private::is_args_compatible<decltype(func1),int>::value), 1);
-    QCOMPARE((int) (_::Private::is_args_compatible<decltype(func1),QString>::value), 1);
-    QCOMPARE((int) (_::Private::is_args_compatible<decltype(func1),QString, int>::value), 0);
-    QCOMPARE((int) (_::Private::is_args_compatible<decltype(func1),QString, int>::value), 0);
+    QCOMPARE(static_cast<int> (_::Private::is_args_compatible<decltype(func1),int>::value), 1);
+    QCOMPARE(static_cast<int> (_::Private::is_args_compatible<decltype(func1),QString>::value), 1);
+    QCOMPARE(static_cast<int> (_::Private::is_args_compatible<decltype(func1),QString, int>::value), 0);
+    QCOMPARE(static_cast<int> (_::Private::is_args_compatible<decltype(func1),QString, int>::value), 0);
 
     QCOMPARE((std::is_same<decltype(_::Private::decl_func0<decltype(func0)>()), int>::value), true);
 
