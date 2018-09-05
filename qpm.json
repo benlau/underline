@@ -1,5 +1,6 @@
 {
-    "name": "com.github.underline",
+    "name": "com.github.benlau.underline",
+    "description": " A C++ utility library provides useful functional programming helpers like lodash.js",
     "author": {
         "name": "Ben Lau",
         "email": "xbenlau@gmail.com"

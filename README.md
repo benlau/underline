@@ -85,10 +85,15 @@ QVariant property = _::get(object, "parent.objectName");
 Installation
 -----------
 
+Direct Download
 ```
 wget https://raw.githubusercontent.com/benlau/underline/master/src/cpp/underline.h
 ```
 
+QPM
+```
+qpm install com.github.benlau.underline
+```
 
 API
 ===
