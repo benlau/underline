@@ -18,7 +18,7 @@ private slots:
 
     void test_private_is_convertible_args_QJSValue_QVariant();
 
-    void test_forIn();
+    void test_forIn_arg1_QJSValue();
 
     void test_assign_args_QJSValue_other();
 

@@ -47,7 +47,7 @@ void QuickTests::test_private_is_convertible_args_QJSValue_QVariant()
     QCOMPARE(map["value1"].toInt(), 10);
 }
 
-void QuickTests::test_forIn()
+void QuickTests::test_forIn_arg1_QJSValue()
 {
     {
         QQmlApplicationEngine engine;

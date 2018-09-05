@@ -627,6 +627,21 @@ void C14TestCases::test_forIn()
 
 }
 
+void C14TestCases::test_forIn_arg1_QObject_should_support_dynamic_properties()
+{
+    QObject* object = new QObject(this);
+
+    object->setProperty("customValue1", 1);
+    QStringList keys;
+
+    _::forIn(object, [&](auto, auto key) {
+        keys << key;
+    });
+
+    QCOMPARE(keys, (QStringList{"objectName", "customValue1"}));
+
+}
+
 void C14TestCases::test_forEach()
 {
     {

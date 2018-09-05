@@ -1492,7 +1492,7 @@ namespace _ {
 #endif
 
         template <typename Map, typename Functor>
-        inline auto forIn(Map& object, Functor iteratee) -> typename std::enable_if<Private::is_map<Map>::value, Map&>::type {
+        inline auto p_forIn(Map& object, Functor iteratee) -> typename std::enable_if<Private::is_map<Map>::value, Map&>::type {
 
             using K = typename Private::key_value_info<Map>::key_type;
             using V = typename Private::key_value_info<Map>::value_type;
@@ -1517,7 +1517,7 @@ namespace _ {
         }
 
         template <typename Map, typename Functor>
-        inline auto forIn(const Map& object, Functor iteratee) -> typename std::enable_if<Private::is_map<Map>::value, const Map&>::type {
+        inline auto p_forIn(const Map& object, Functor iteratee) -> typename std::enable_if<Private::is_map<Map>::value, const Map&>::type {
             using K = typename Private::key_value_info<Map>::key_type;
             using V = typename Private::key_value_info<Map>::value_type;
 
@@ -1540,27 +1540,12 @@ namespace _ {
             return object;
         }
 
-        template <typename Value, typename Iteratee>
-        inline auto forIn(const Value& object, Iteratee iteratee)
-        -> typename std::enable_if<std::is_same<Value,QJSValue>::value, const Value&>::type
-        {
-            QJSValueIterator iter(object);
-            Private::Value<typename Private::ret_invoke<Iteratee, Value, QString, Value>::type> value;
-
-            while (iter.hasNext()) {
-                iter.next();
-                value.invoke(iteratee, iter.value(), iter.name(), object);
-
-                if (value.template canConvert<bool>() && value.equals(false)) {
-                    break;
-                }
-            }
-
-            return object;
-        }
-
+#ifdef QT_CORE_LIB
         template <typename Object, typename Functor>
-        inline auto forIn(const Object* object, Functor iteratee) -> typename std::enable_if<Private::is_qobject<Object>::value, const Object*>::type {
+        inline auto p_forIn(const Object* object, Functor iteratee) -> typename std::enable_if<Private::is_qobject<Object>::value, const Object*>::type {
+            if (object == nullptr) {
+                return object;
+            }
             const QMetaObject* meta = object->metaObject();
             static_assert(Private::is_invokable3<Functor, QVariant, QString, QObject*>::value, "_::forIn: " _underline_iteratee_mismatched_error);
             Private::Value<typename Private::ret_invoke<Functor, QVariant, QString, QObject*>::type> invokeHelper;
@@ -1573,14 +1558,24 @@ namespace _ {
                 invokeHelper.invoke(iteratee, value, key, object);
 
                 if (invokeHelper.template canConvert<bool>() && invokeHelper.equals(false)) {
-                    break;
+                    return object;
                 }
             }
+
+            QList<QByteArray> dynamicProperties = object->dynamicPropertyNames();
+            for (auto p : dynamicProperties) {
+                QVariant value = object->property(p);
+                invokeHelper.invoke(iteratee, value, QString(p), object);
+                if (invokeHelper.template canConvert<bool>() && invokeHelper.equals(false)) {
+                    return object;
+                }
+            }
+
             return object;
         }
 
         template <typename Object, typename Functor>
-        inline auto forIn(const Object& object, Functor iteratee) -> typename std::enable_if<Private::is_gadget<Object>::value, const Object&>::type {
+        inline auto p_forIn(const Object& object, Functor iteratee) -> typename std::enable_if<Private::is_gadget<Object>::value, const Object&>::type {
             auto ptr = cast_to_pointer(object);
 
             const QMetaObject meta = ptr->staticMetaObject;
@@ -1603,7 +1598,7 @@ namespace _ {
         }
 
         template <typename Object, typename Functor>
-        inline auto forIn(const Object& object, Functor iteratee) -> typename std::enable_if<std::is_same<Object, GadgetContainer>::value, const Object&>::type {
+        inline auto p_forIn(const Object& object, Functor iteratee) -> typename std::enable_if<std::is_same<Object, GadgetContainer>::value, const Object&>::type {
             if (object.constData == nullptr) {
                 return object;
             }
@@ -1624,6 +1619,28 @@ namespace _ {
             }
             return object;
         }
+#endif
+
+#ifdef QT_QUICK_LIB
+        template <typename Value, typename Iteratee>
+        inline auto p_forIn(const Value& object, Iteratee iteratee)
+        -> typename std::enable_if<std::is_same<Value,QJSValue>::value, const Value&>::type
+        {
+            QJSValueIterator iter(object);
+            Private::Value<typename Private::ret_invoke<Iteratee, Value, QString, Value>::type> value;
+
+            while (iter.hasNext()) {
+                iter.next();
+                value.invoke(iteratee, iter.value(), iter.name(), object);
+
+                if (value.template canConvert<bool>() && value.equals(false)) {
+                    break;
+                }
+            }
+
+            return object;
+        }
+#endif
 
         /* PRIVATE_MERGE begin */
         // Unlike the public version of the merge, it doesn't guarantee to return the object itself
@@ -1723,7 +1740,7 @@ namespace _ {
             using Key = typename key_value_info<V2>::key_type;
             using Value = typename key_value_info<V2>::value_type;
 
-            forIn(v2, [&](const Value& value, const Key& key) {
+            p_forIn(v2, [&](const Value& value, const Key& key) {
                 auto srcValue = read(v1, key);
 
                 QObject* v1_qobject_ptr = cast_to_qobject(srcValue);
@@ -1745,7 +1762,7 @@ namespace _ {
             using Value = typename key_value_info<QtMetable>::value_type;
             QVariantMap result;
 
-            forIn(object, [&](const Value& value, const Key& key) {
+            p_forIn(object, [&](const Value& value, const Key& key) {
                 if (properties.contains(key) && properties[key].type() == QVariant::Bool) {
                     return;
                 }
@@ -1783,7 +1800,7 @@ namespace _ {
 
     template <typename Object, typename Functor>
     inline const Object& forIn(const Object& object, Functor iteratee) {
-        Private::forIn(object, iteratee);
+        Private::p_forIn(object, iteratee);
         return object;
     }
 

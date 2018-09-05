@@ -4,8 +4,15 @@
 
 Underline is a C++ utility library provides useful functional programming helpers like the lodash.js.
 
-Features:
------
+An online demonstration with STL library is available at https://repl.it/@benlau/underline
+
+Features
+======
+
+ 1. Designed for user-friendly error handling
+ 1. C++11 compliant coding. Support C++14 generic lambda function (using auto as a parameter) and return type detection
+ 1. Support Qt types but it is still compilable even the Qt library is missing
+ 1. Single Header Library
 
 **1) Designed for user-friendly error handling. Get rid of the horrific and misleading template compilation error messages.**
 
@@ -47,10 +54,6 @@ _::merge( /* QVariantMap */ dest, /* QObject* */ source );
 // It is equivalent to object->parent()->objectName() but _::get will take care null pointer checking
 QVariant property = _::get(object, "parent.objectName");
 ```
-
-**4) Single Header Library**
-
-**5) All the helper functions are reentrant, and thread-safe**
 
 Use-cases for regular C++
 -------
