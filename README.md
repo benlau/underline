@@ -334,13 +334,13 @@ pick
 
 ```C++
 template <typename QtMetable>
-QVariantMap _::pick(QtMetable* source, QStringList &paths);
+QVariantMap _::pick(const QtMetable& object, QStringList &paths);
 
 template <typename QtMetable>
-QVariantMap _::pick(QVariantMap source, QString path);
+QVariantMap _::pick(const QtMetable& object, QString path);
 ```
 
-Creates a new object which is a clone of the source but only the properties listed in the paths are picked.
+Creates a new object which is a clone of the source object but only the properties listed in the paths are picked.
 
 Arguments
 
@@ -351,6 +351,9 @@ Returns
 
  * QVariantMap: Returns the new object.
 
+Example
+```C++
+```
 
 set
 ---
@@ -360,7 +363,7 @@ template <typename QtMetable>
 void _::set(QtMetable &object, const QString &path, const QVariant &value)
 ```
 
-Set the property from the source object at the given path. If the object is a QVariantMap and portion of path doesn't exist, it is created.
+Set the property from the destination object on the given path. If the object is a QVariantMap and portion of path doesn't exist, it is created.
 
 Arguments
 
@@ -368,11 +371,25 @@ Arguments
  * paths: The property paths to set
  * value: The property value to be set
 
-Returns
- * void
+Return
+ * object: The destination object
 
 Example:
+
 ```C++
+    // Input: {"a":1,"b":2,"c":{"d":"3"}}
+    QVariantMap object = {{"a", 1}, {"b", 2.0}, {"c", QVariantMap{{"d", "3"}}}};
+
+    _::set(object, "b", 2.1);
+    _::set(object, "c.e", "3.1");
+    _::set(object, "f.g", "4.1");
+
+    ASSERT_EQ(object["b"].toDouble() , 2.1);
+    ASSERT_EQ(object["c"].toMap()["d"].toString() , QString("3"));
+    ASSERT_EQ(object["c"].toMap()["e"].toString() , QString("3.1"));
+    ASSERT_EQ(object["f"].toMap()["g"].toString() , QString("4.1"));
+
+    // Result: {"a":1,"b":2.1,"c":{"d":"3","e":"3.1"},"f":{"g":"4.1"}}
 ```
 
 range

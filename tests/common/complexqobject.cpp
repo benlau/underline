@@ -29,6 +29,12 @@ DataObject *ComplexQObject::value2() const
     return m_value2;
 }
 
+void ComplexQObject::setValue2(DataObject *value)
+{
+    m_value2 = value;
+    emit value2Changed();
+}
+
 QVariantMap ComplexQObject::value3() const
 {
     return m_value3;

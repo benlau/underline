@@ -1397,7 +1397,6 @@ namespace _ {
         }
 
 #ifdef QT_CORE_LIB
-
         template <class NewType>
         struct array_rebinder<QStringList, NewType> {
             typedef QList<NewType> type;

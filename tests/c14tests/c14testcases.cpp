@@ -439,6 +439,27 @@ void C14TestCases::test_set()
     QVERIFY(value4.toMap()["value1"].toInt() == 3);
 }
 
+void C14TestCases::test_set_should_check_nullptr()
+{
+    {
+        QObject* ptr = nullptr;
+        _::set(ptr, "value", 13);
+        _::set(ptr, "value.value2", 13);
+    }
+
+    {
+        ComplexQObject* object = new ComplexQObject(this);
+
+        _::set(object, "value2.value1", 99);
+        QCOMPARE(_::get(object, "value2.value1").toInt(), 99);
+
+        object->setValue2(nullptr);
+        _::set(object, "value2.value1", 13);
+        QCOMPARE(_::get(object, "value2.value1").isNull(), true);
+    }
+
+}
+
 void C14TestCases::test_pick()
 {
     QObject* root = createMockObject(this);

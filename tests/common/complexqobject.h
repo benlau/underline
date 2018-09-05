@@ -10,7 +10,7 @@ class ComplexQObject : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(GadgetObject value1 READ value1 WRITE setValue1 NOTIFY value1Changed)
-    Q_PROPERTY(DataObject* value2 READ value2)
+    Q_PROPERTY(DataObject* value2 READ value2 WRITE setValue2 NOTIFY value2Changed)
     Q_PROPERTY(QVariantMap value3 READ value3 WRITE setValue3 NOTIFY value3Changed)
     Q_PROPERTY(QStringList value4 READ value4 WRITE setValue4 NOTIFY value4Changed)
 
@@ -21,6 +21,7 @@ public:
     void setValue1(const GadgetObject &value1);
 
     DataObject *value2() const;
+    void setValue2(DataObject* value);
 
     QVariantMap value3() const;
     void setValue3(const QVariantMap &value3);
@@ -30,6 +31,7 @@ public:
 
 signals:
     void value1Changed();
+    void value2Changed();
     void value3Changed();
     void value4Changed();
 

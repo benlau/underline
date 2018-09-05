@@ -5,7 +5,7 @@ class C14TestCases : public QObject
 {
     Q_OBJECT
 public:
-    explicit C14TestCases(QObject *parent = 0);
+    explicit C14TestCases(QObject *parent = nullptr);
 
 private slots:
 
@@ -24,6 +24,8 @@ private slots:
     void test_assign();
 
     void test_set();
+
+    void test_set_should_check_nullptr();
 
     void test_get();
 
