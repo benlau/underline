@@ -832,7 +832,11 @@ namespace _ {
             if (object == nullptr) return false;
             const QMetaObject* meta = object->metaObject();
             auto k = cast_to_const_char_container(key);
-            return meta->indexOfProperty(k.data) >= 0;
+            int index = meta->indexOfProperty(k.data);
+            if (index >= 0) return true;
+
+            auto dynamicProperties = object->dynamicPropertyNames();
+            return dynamicProperties.contains(key);
         }
 
         template <typename T, typename K>
@@ -853,18 +857,6 @@ namespace _ {
         }
 
 #endif
-
-        inline std::vector<std::string> split(const std::string &str , const std::string& delimiter) {
-            int current;
-            int next = -1;
-            std::vector<std::string> res;
-            do {
-                current = next + 1;
-                next = static_cast<int>(str.find_first_of( delimiter, current));
-                res.push_back(str.substr( current, next - current ));
-            } while (next != static_cast<int>(std::string::npos));
-            return res;
-        }
 
         /// Source: https://stackoverflow.com/questions/5052211/changing-value-type-of-a-given-stl-container
         template <class Container, class NewType>
@@ -1451,7 +1443,7 @@ namespace _ {
         };
 
         template <typename KeyValueType>
-        inline auto _recursive_get(const KeyValueType& object, const std::vector<std::string>& tokens ,int index , QVariant& result) -> void {
+        inline auto p_recursive_get_(const KeyValueType& object, const QStringList& tokens ,int index , QVariant& result) -> void {
             auto k = cast_to_const_char_container(tokens[index]);
             QVariant value;
             bool hasKey = false;
@@ -1470,20 +1462,20 @@ namespace _ {
             }
 
             if (remaining != 0 && hasKey) {
-                _recursive_get(value, tokens, index + 1, result);
+                p_recursive_get_(value, tokens, index + 1, result);
             }
         }
 
         template <typename KeyValueType>
-        inline QVariant _get(const KeyValueType& object, const QString& path, const QVariant& defaultValue) {
+        inline QVariant p_get_(const KeyValueType& object, const QString& path, const QVariant& defaultValue) {
             QVariant result = defaultValue;
-            auto tokens = split(path.toStdString(), ".");
-            _recursive_get(object, tokens, 0, result);
+            auto tokens = path.split(".");
+            p_recursive_get_(object, tokens, 0, result);
             return result;
         }
 
         template <typename KeyValueType, typename QtAny>
-        inline pointer_or_reference_t<KeyValueType> p_recursive_set_(KeyValueType& object, const std::vector<std::string>& tokens,int index, const QtAny& value) {
+        inline pointer_or_reference_t<KeyValueType> p_recursive_set_(KeyValueType& object, const QStringList& tokens,int index, const QtAny& value) {
             auto k = cast_to_const_char_container(tokens[index]);
 
             int remaining = static_cast<int>(tokens.size()) - index - 1;
@@ -1527,7 +1519,7 @@ namespace _ {
 
         template <typename KeyValueType, typename QtAny>
         inline void p_set_(KeyValueType& object, const QString& path, const QtAny& value) {
-            auto tokens = split(path.toStdString(), ".");
+            auto tokens = path.split(".");
             p_recursive_set_(object, tokens, 0, value);
         }
 
@@ -1723,34 +1715,44 @@ namespace _ {
         template <typename V1, typename V2>
         inline auto p_merge_(V1& v1, const V2& v2) -> pointer_or_reference_t<V1> {
 
-            if (is_qjsvalue<V1>::value && is_qjsvalue<V2>::value) {
-                if (can_cast_to_qvariantmap(v2)) {
-                    p_forIn_merge_(v1,v2);
-                } else {
-                    copy_if_same_type(v1, v2);
+            auto bothAreQJSValueThen = [&]() {
+                bool res = is_qjsvalue<V1>::value && is_qjsvalue<V2>::value;
+                if (res) {
+                    if (can_cast_to_qvariantmap(v2)) {
+                        p_forIn_merge_(v1,v2);
+                    } else {
+                        copy_if_same_type(v1, v2);
+                    }
                 }
-                return v1;
-            }
+                return res;
+            };
 
-            if (is_real_qt_metable<V1>::value && is_key_value_type<V2>::value) {
-                p_forIn_merge_(v1 ,v2);
-                return v1;
-            }
+            if (bothAreQJSValueThen()) return v1;
 
-            if (is_real_qt_metable<V1>::value) {
-                try_cast_to_qt_metable(v2, [&](QObject* metable){
-                    p_forIn_merge_(v1, metable);
-                },[&](GadgetContainer metable) {
-                    p_forIn_merge_(v1, metable);
-                },[&](QVariantMap& metable) {
-                    p_forIn_merge_(v1, metable);
-                },[&](QJSValue& metable) {
-                    p_forIn_merge_(v1, metable);
-                });
-                return v1;
-            }
+            auto bothAreForInAbleThen = [&]() {
+                bool res = is_real_qt_metable<V1>::value && is_key_value_type<V2>::value;
+                if (res) p_forIn_merge_(v1 ,v2);
+                return res;
+            };
 
-            bool canV1CastToMetable = try_cast_to_qt_metable(v1, [&](QObject* metable){
+            if (bothAreForInAbleThen()) return v1;
+
+            auto forInAbleByCastingV2 = [&]() {
+                return is_real_qt_metable<V1>::value &&
+                    try_cast_to_qt_metable(v2, [&](QObject* metable){
+                        p_forIn_merge_(v1, metable);
+                    },[&](GadgetContainer metable) {
+                        p_forIn_merge_(v1, metable);
+                    },[&](QVariantMap& metable) {
+                        p_forIn_merge_(v1, metable);
+                    },[&](QJSValue& metable) {
+                        p_forIn_merge_(v1, metable);
+                    });
+            };
+
+            if (forInAbleByCastingV2()) return v1;
+
+            bool forInAbleByCastingV1 = try_cast_to_qt_metable(v1, [&](QObject* metable){
                 p_merge_(metable, v2);
             },[&](GadgetContainer metable) {
                 p_merge_(metable, v2);
@@ -1769,22 +1771,27 @@ namespace _ {
                 }
             });
 
-            if (canV1CastToMetable) {
-                return v1;
-            }
+            if (forInAbleByCastingV1) return v1;
 
-            if (is_qjsvalue<V1>::value) {
-                copy_if_same_type(v1, v2);
-                return v1;
-            }
+            auto v1IsNotForinAble_checkIsQJSvalueThen = [&]() {
+                auto res = is_qjsvalue<V1>::value;
+                if (res) copy_if_same_type(v1, v2);
+                return res;
+            };
 
-            if (can_cast_to_qt_metable(v2)) {
-                QVariantMap map;
-                p_merge_(map, v2);
-                convertTo(map, v1);
-            } else {
-                copy_or_convert(v1, v2);
-            }
+            if (v1IsNotForinAble_checkIsQJSvalueThen()) return v1;
+
+            auto v1IsNotForinAbleVariant_convertToQVariantMapIfNeeded = [&]() {
+                if (can_cast_to_qt_metable(v2)) {
+                    QVariantMap map;
+                    p_merge_(map, v2);
+                    convertTo(map, v1);
+                } else {
+                    copy_or_convert(v1, v2);
+                }
+            };
+
+            v1IsNotForinAbleVariant_convertToQVariantMapIfNeeded();
 
             return v1;
         }
@@ -1839,7 +1846,7 @@ namespace _ {
             QVariant defaultValue;
 
             for (auto path: paths) {
-                QVariant value = _get(object, path, defaultValue);
+                QVariant value = p_get_(object, path, defaultValue);
 
                 QVariantMap map;
                 bool handled = Private::try_cast_to_qt_metable(value, [&](QObject* kyt){
@@ -1948,7 +1955,7 @@ namespace _ {
     inline QVariant get(const QtMetable &object, const QString &path, const QVariant& defaultValue = QVariant())
     {
         _underline_static_assert_is_object_a_qt_metable("_::get: ", QtMetable);
-        return Private::_get(object, path, defaultValue);
+        return Private::p_get_(object, path, defaultValue);
     }
 
     template <typename QtMetable, typename QtAny>

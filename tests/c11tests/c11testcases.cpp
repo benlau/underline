@@ -907,5 +907,13 @@ void C11TestCases::test_isQtMetable()
     QCOMPARE(_::isQtMetable(std::map<int,int>{}),   false);
 }
 
+void C11TestCases::test_get_should_support_path_in_qobject_dynamic_property()
+{
+    QObject* object = new QObject(this);
+    object->setProperty("value", 55);
+
+    QCOMPARE(_::get(object, "value").toInt(), 55);
+}
+
 
 

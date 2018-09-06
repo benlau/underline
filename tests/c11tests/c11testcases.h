@@ -5,7 +5,7 @@ class C11TestCases : public QObject
 {
     Q_OBJECT
 public:
-    explicit C11TestCases(QObject *parent = 0);
+    explicit C11TestCases(QObject *parent = nullptr);
 
 private slots:
 
@@ -70,6 +70,8 @@ private slots:
     void test_isKeyValueType();
 
     void test_isQtMetable();
+
+    void test_get_should_support_path_in_qobject_dynamic_property();
 
 };
 

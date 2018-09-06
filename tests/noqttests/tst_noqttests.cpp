@@ -40,16 +40,6 @@ TEST(UnderlineTests, is_qobject) {
     ASSERT_EQ(static_cast<bool> (_::Private::is_qobject<A>::value), false);
 }
 
-TEST(UnderlineTests, private_split_std_string) {
-    std::string str = "1.2.3";
-
-    std::vector<std::string> tokens;
-    tokens = _::Private::split(str, ".");
-
-    ASSERT_EQ(tokens.size(), (unsigned long) 3);
-    ASSERT_EQ(tokens[0], std::string("1"));
-}
-
 TEST(UnderlineTests, isMap) {
     ASSERT_EQ(_::isMap(std::map<int,int>{}),   true);
 
