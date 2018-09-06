@@ -4,7 +4,7 @@
 
 Underline is a C++ utility library provides useful functional programming helpers like the lodash.js.
 
-An online demonstration with STL library is available at https://repl.it/@benlau/underline
+An online demonstration for STL library is available at https://repl.it/@benlau/underline
 
 Features
 ======
@@ -402,6 +402,35 @@ Example:
 
 range
 ----
+
+```C++
+    template <typename Array, typename V1>
+    Array range(V1 end) ;
+
+    template <typename Array, typename V1, typename V2>
+    Array range(V1 start, V2 end);
+
+    template <typename Array, typename V1, typename V2, typename V3>
+    Array range(V1 start, V2 end, V3 step);
+```
+Create a Collection object of numbers and initialize the elements in the range from the start up to, but not including, the end value.
+
+Arguments:
+
+ * start: The starting value. If it is not specific, it will be 0.
+ * end: The ending value.
+ * step: The value to increment or decrement by. The default value is 1. It may set to a negative value.
+
+Return:
+* collection
+
+Example
+```C++
+ _::range<std::vector<int>>(5); // std::vector<int>{0,1,2,3,4}
+ _::range<std::vector<int>>(-5); // std::vector<int>{0,-1,-2,-3,-4}
+_::range<std::vecto<int>>(1,5),  // std::vector<int>{1,2,3,4}
+_::range<std::vecto<int>>(0,20,5),  // std::vector<int>{0,5,10,15}
+```
 
 reduce
 ------

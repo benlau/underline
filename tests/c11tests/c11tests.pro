@@ -1,5 +1,5 @@
 QT       += testlib
-QT -= quick qml
+QT -= quick qml gui
 
 TARGET = c11tests
 CONFIG   += console
