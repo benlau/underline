@@ -387,7 +387,7 @@ namespace _ {
         }
 
         inline auto can_cast_to_qvariantmap(const QVariant& t) -> bool {
-            return t.canConvert<QVariantMap>();
+            return t.type() == QVariant::Map;
         }
 
         inline auto can_cast_to_qvariantmap(const QVariantMap& ) -> bool {
@@ -855,14 +855,14 @@ namespace _ {
 #endif
 
         inline std::vector<std::string> split(const std::string &str , const std::string& delimiter) {
-            size_t current;
-            size_t next = -1;
+            int current;
+            int next = -1;
             std::vector<std::string> res;
             do {
                 current = next + 1;
-                next = str.find_first_of( delimiter, current);
+                next = static_cast<int>(str.find_first_of( delimiter, current));
                 res.push_back(str.substr( current, next - current ));
-            } while (next != std::string::npos);
+            } while (next != static_cast<int>(std::string::npos));
             return res;
         }
 
@@ -1483,7 +1483,7 @@ namespace _ {
         }
 
         template <typename KeyValueType, typename QtAny>
-        inline pointer_or_reference_t<KeyValueType> _recursive_set(KeyValueType& object, const std::vector<std::string>& tokens,int index, const QtAny& value) {
+        inline pointer_or_reference_t<KeyValueType> p_recursive_set_(KeyValueType& object, const std::vector<std::string>& tokens,int index, const QtAny& value) {
             auto k = cast_to_const_char_container(tokens[index]);
 
             int remaining = static_cast<int>(tokens.size()) - index - 1;
@@ -1505,19 +1505,19 @@ namespace _ {
             } else {
                 try_cast_to_qt_metable(object, [&](const QObject* kyt){
                     if (contains(kyt, k.data)) {
-                        auto v = read(kyt, k.data); _recursive_set(v , tokens, index + 1, value);
+                        auto v = read(kyt, k.data); p_recursive_set_(v , tokens, index + 1, value);
                     }
                 },[&](GadgetContainer& kyt) {
                     if (contains(kyt, k.data)) {
-                        auto v = read(kyt, k.data); _recursive_set(v , tokens, index + 1, value);
+                        auto v = read(kyt, k.data); p_recursive_set_(v , tokens, index + 1, value);
                     }
                 },[&](QVariantMap& kyt) {
                     auto v = read(kyt, k.data).toMap();
-                    _recursive_set(v , tokens, index + 1, value);
+                    p_recursive_set_(v , tokens, index + 1, value);
                     write_if_same_type(object, k.data, v);
                 },[&](QJSValue &kyt) {
                     auto v = read(kyt, k.data);
-                    _recursive_set(v , tokens, index + 1, value);
+                    p_recursive_set_(v , tokens, index + 1, value);
                     write_if_same_type(object, k.data, v);
                 });
             }
@@ -1526,9 +1526,9 @@ namespace _ {
         }
 
         template <typename KeyValueType, typename QtAny>
-        inline void _set(KeyValueType& object, const QString& path, const QtAny& value) {
+        inline void p_set_(KeyValueType& object, const QString& path, const QtAny& value) {
             auto tokens = split(path.toStdString(), ".");
-            _recursive_set(object, tokens, 0, value);
+            p_recursive_set_(object, tokens, 0, value);
         }
 
 
@@ -1826,7 +1826,7 @@ namespace _ {
         QVariantMap _omit(const QtMetable& object, const QStringList& paths) {
             QVariantMap properties;
             for (auto path: paths) {
-                _set(properties, path , true);
+               p_set_(properties, path , true);
             }
             return _omit(object, properties);
         }
@@ -1854,7 +1854,7 @@ namespace _ {
 
                 if (handled) value = map;
 
-                _set(res, path, value);
+               p_set_(res, path, value);
             }
             return res;
         }
@@ -1957,7 +1957,7 @@ namespace _ {
         static_assert( !(Private::is_qjsvalue<QtMetable>::value && !Private::is_qjsvalue<QtAny>::value),
                       "_::set(QJSValue): " _underline_qjsvalue_set_error);
 
-        Private::_set(object, path, value);
+        Private::p_set_(object, path, value);
 
         return object;
     }

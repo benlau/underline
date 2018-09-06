@@ -764,6 +764,21 @@ void C11TestCases::test_merge_complex()
 
 }
 
+void C11TestCases::test_merge_arg1_QVariantMap_containing_Gadget()
+{
+    GadgetObject gadget;
+    gadget.value = 99;
+    QVariantMap object;
+    object["value"] = QVariant::fromValue<GadgetObject>(gadget);
+
+    QVariantMap source = {{"value", QVariantMap{ {"value", 33} }}};
+
+    _::merge(object, source);
+
+    auto res = object["value"].value<GadgetObject>();
+    QCOMPARE(res.value, 33);
+}
+
 void C11TestCases::test_some()
 {
     {

@@ -55,6 +55,8 @@ private slots:
 
     void test_merge_complex();
 
+    void test_merge_arg1_QVariantMap_containing_Gadget();
+
     void test_some();
 
     void test_map();

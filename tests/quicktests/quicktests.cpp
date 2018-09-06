@@ -68,7 +68,7 @@ void QuickTests::test_forIn_arg1_QJSValue()
 
 }
 
-void QuickTests::test_assign_args_QJSValue_other()
+void QuickTests::test_assign_arg1_QJSValue_arg2_other()
 {
     {
         QQmlApplicationEngine engine;
@@ -99,7 +99,7 @@ void QuickTests::test_assign_args_QJSValue_other()
     }
 }
 
-void QuickTests::test_merge_QJSValue_other()
+void QuickTests::test_merge_arg1_QJSValue_arg2_other()
 {
     /* Remarks: merge(QJSValue, any_type_other_then_QJSValue) is not supported.
      */
@@ -201,4 +201,20 @@ void QuickTests::test_set_args_QVariantMap_key_QJSValue()
     QVariant actualValue = _::get(object, "value1.value2.value1");
 
     QCOMPARE(actualValue.toString(), QString("3"));
+}
+
+void QuickTests::test_omit_arg1_QJSValue()
+{
+    QQmlApplicationEngine engine;
+
+    QString content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
+    QJSValue object = engine.evaluate(content);
+
+    QVariantMap result = _::omit(object, QStringList{"value2", "value4.value1"});
+
+    QCOMPARE(result["value1"].toInt(), 10);
+    QCOMPARE(result.contains("value2"), false);
+    QCOMPARE(result.contains("value4"), true);
+
+    QCOMPARE(_::get(result, "value4.value1").isNull(), true);
 }
