@@ -130,9 +130,9 @@ _::assign(map, object, QVariantMap{{"objectName", "Test"}});
 clamp
 -----
 
-```
+```C++
 template <typename Number>
-Number _::clamp( number, Number lower, Number upper)
+Number _::clamp(Number number, Number lower, Number upper)
 ```
 
 Clamps number within the inclusive lower and upper bounds.
@@ -404,16 +404,25 @@ range
 ----
 
 ```C++
-    template <typename Array, typename V1>
-    Array range(V1 end) ;
+template <typename Array, typename V1>
+Array range(V1 end) ;
 
-    template <typename Array, typename V1, typename V2>
-    Array range(V1 start, V2 end);
+template <typename Array, typename V1, typename V2>
+Array range(V1 start, V2 end);
 
-    template <typename Array, typename V1, typename V2, typename V3>
-    Array range(V1 start, V2 end, V3 step);
+template <typename Array, typename V1, typename V2, typename V3>
+Array range(V1 start, V2 end, V3 step);
+
+template <typename ...Args>
+QList<int> rangeQ(Args ...args);
+
+template <typename ...Args>
+std::vector<int> rangeS(Args ...args);
 ```
-Create a Collection object of numbers and initialize the elements in the range from the start up to, but not including, the end value.
+
+Create a Collection object of numbers and fill the elements with the range from the start up to, but not including, the end value. _::range is a template function couldn't deduce the output type from the input value. Users have to specify the return type.
+
+rangeS / rangeQ are the non-template version of _::range where the return type is defined.
 
 Arguments:
 
@@ -435,6 +444,33 @@ _::range<std::vecto<int>>(0,20,5),  // std::vector<int>{0,5,10,15}
 reduce
 ------
 
+```C++
+template <typename Collection, typename Reducer, typename Accumulator>
+Accumulator reduce(const Collection& collection, Reducer reducer, Accumulator accumlator)
+```
+
+Calls the reducer function on each member of the collection and return the accumulator as the single output.  The reducer function could take from one to four parameters:
+
+ 1.  The accumulator
+ 1. Current Value from the collection
+ 1. Current Index
+ 1. The source collection
+
+The reducer function must return a value with type same as the accumulator.
+
+Arguments
+
+ 1. collection: The input. Check [_::isCollection](#iscollection) for supported types
+ 2. reducer: The reducer function
+ 3. accumulator
+
+Return:
+
+ * accumulator
+
+Example
+```C++
+```
 
 some
 ----

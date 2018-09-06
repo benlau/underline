@@ -2149,6 +2149,11 @@ namespace _ {
     }
 
 
+    template <typename ...Args>
+    std::vector<int> rangeS(Args ...args) {
+        return range<std::vector<int>>(args...);
+    }
+
 #ifdef QT_CORE_LIB
     template <typename ...Args>
     QList<int> rangeQ(Args ...args) {
