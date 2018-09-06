@@ -730,17 +730,17 @@ void C14TestCases::test_countBy()
     }
 }
 
-void C14TestCases::test_isArray()
+void C14TestCases::test_isCollection()
 {
-    QCOMPARE(_::isArray(std::vector<int>{}),    true);
-    QCOMPARE(_::isArray(QVector<int>{ }),       true);
-    QCOMPARE(_::isArray(QList<int>{ }),         true);
-    QCOMPARE(_::isArray(QVariantList{ }),       true);
-    QCOMPARE(_::isArray(QString{ }),            true);
+    QCOMPARE(_::isCollection(std::vector<int>{}),    true);
+    QCOMPARE(_::isCollection(QVector<int>{ }),       true);
+    QCOMPARE(_::isCollection(QList<int>{ }),         true);
+    QCOMPARE(_::isCollection(QVariantList{ }),       true);
+    QCOMPARE(_::isCollection(QString{ }),            true);
 
-    QCOMPARE(_::isArray(std::map<bool,int>{}),  false);
-    QCOMPARE(_::isArray(QMap<int,int>{}),       false);
-    QCOMPARE(_::isArray(10),                    false);
+    QCOMPARE(_::isCollection(std::map<bool,int>{}),  false);
+    QCOMPARE(_::isCollection(QMap<int,int>{}),       false);
+    QCOMPARE(_::isCollection(10),                    false);
 
 }
 

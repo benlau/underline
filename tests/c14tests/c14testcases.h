@@ -43,7 +43,7 @@ private slots:
 
     void test_countBy();
 
-    void test_isArray();
+    void test_isCollection();
 
     void test_assignWith();
 

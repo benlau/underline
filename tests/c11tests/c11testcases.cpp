@@ -93,27 +93,27 @@ void C11TestCases::test_private_has()
     QCOMPARE(static_cast<bool>(_::Private::has_key_type<C11TestCases>::value), false);
 }
 
-void C11TestCases::test_private_is_array()
+void C11TestCases::test_private_is_collection()
 {
-    QCOMPARE(static_cast<bool>(_::Private::is_array<std::vector<int>>::value), true);
-    QCOMPARE(static_cast<bool>(_::Private::is_array<QStringList>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_collection<std::vector<int>>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_collection<QStringList>::value), true);
 
-    QCOMPARE(static_cast<bool>(_::Private::is_array<QVariantList>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_collection<QVariantList>::value), true);
 
-    QCOMPARE(static_cast<bool>(_::Private::is_array<std::string>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_collection<std::string>::value), true);
 
-    QCOMPARE(static_cast<bool>(_::Private::is_array<std::list<std::string>>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_collection<std::list<std::string>>::value), false);
 
-    QCOMPARE(static_cast<bool>(_::Private::is_array<QVector<int>>::value), true);
-    QCOMPARE(static_cast<bool>(_::Private::is_array<QList<int>>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_collection<QVector<int>>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_collection<QList<int>>::value), true);
 
-    QCOMPARE(static_cast<bool>(_::Private::is_array<C11TestCases>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_collection<C11TestCases>::value), false);
 
-    QCOMPARE(static_cast<bool>(_::Private::is_array<std::map<int, bool>>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_collection<std::map<int, bool>>::value), false);
 
-    QCOMPARE(static_cast<bool>(_::Private::is_array<QMap<int, bool>>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_collection<QMap<int, bool>>::value), false);
 
-    QCOMPARE(static_cast<bool>(_::Private::is_array<int>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_collection<int>::value), false);
 }
 
 void C11TestCases::test_private_is_map()
@@ -354,7 +354,7 @@ void C11TestCases::test_private_read()
     QCOMPARE((_::Private::key_value_read(gadget, "value1")), QVariant());
 
     QVERIFY((_::Private::is_kyt_key_matched<decltype(gadget), decltype("value")>::value));
-    QVERIFY(!(_::Private::is_array_index_matched<decltype(gadget), decltype("value")>::value));
+    QVERIFY(!(_::Private::is_collection_index_matched<decltype(gadget), decltype("value")>::value));
 
     QCOMPARE((_::Private::read(&gadget, "value")), QVariant(10));
     QCOMPARE((_::Private::read(gadget, "value")), QVariant(10));

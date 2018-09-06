@@ -40,13 +40,13 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
 #define _underline_iteratee_mismatched_error "Mismatched argument types in the iteratee function. Please validate the number of argument and their type."
 #define _underline_predicate_mismatched_error "Mismatched argument types in the predicate function. Please validate the number of argument and their type."
 #define _underline_predicate_return_type_mismatch_error "The return type of predicate function must be bool"
-#define _underline_input_type_is_not_array "The expected input is an valid array class, where _::isArray() returns true (e.g std::vector , QList , QVector) "
+#define _underline_input_type_is_not_array "The expected input is an valid array class, where _::isCollection() returns true (e.g std::vector , QList , QVector) "
 #define _underline_iteratee_void_ret_error "The return type of iteratee function cannot be void"
 
 #define _underline_qjsvalue_set_error "It should only modify the value of a QJSValue object by another QJSValeu"
 
-#define _underline_static_assert_is_array(prefix, type) \
-    static_assert(_::Private::is_array<type>::value, prefix _underline_input_type_is_not_array)
+#define _underline_static_assert_is_collection(prefix, type) \
+    static_assert(_::Private::is_collection<type>::value, prefix _underline_input_type_is_not_array)
 
 #define _underline_static_assert_is_map(prefix, type) \
     static_assert(_::Private::is_map<type>::value, prefix "The expected input is an valid Map container class, where _::isMap() returns true.")
@@ -71,7 +71,7 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
     static_assert(Private::is_custom_convertible<source,object>::value, prefix "The value type of 'source' argument cannot convert to the value type of 'object' argument.")
 
 #define _underline_static_assert_is_object_a_qt_metable(prefix, object) \
-    static_assert(Private::is_qt_metable<object>::value, prefix "Invalid object type. It should be a QtMetable type. Check the document of _::isQtMetable for further information.")
+    static_assert(Private::is_qt_metable<object>::value, prefix "Invalid object type. It should be a QtMetable type. Check the document of _::isQtMetable for supported types.")
 
 #define _underline_private_ns_begin \
     namespace _ ::Private {
@@ -95,7 +95,7 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
             }; \
         }; \
 
-/// Register rebind_to_map and test_is_array
+/// Register rebind_to_map and test_is_collection
 #define _underline_register_rebind_to_map(CollectionType, MapType) \
     namespace _ { \
         namespace Private { \
@@ -264,7 +264,7 @@ namespace _ {
         /* BEGIN is_xxx */
 
         template <typename T>
-        struct is_array {
+        struct is_collection {
             enum {
                 value = std::is_class<T>::value &&
                         has_push_back<remove_cvref_t<T>>::value &&
@@ -730,7 +730,7 @@ namespace _ {
         using enable_if_is_kyt_key_matched = typename std::enable_if<is_kyt_key_matched<T,Key>::value, map_mapped_type_t<T>>;
 
         template <typename T>
-        using enable_if_is_array_ret_value_type = typename std::enable_if< is_array<typename std::remove_reference<T>::type>::value, typename std::remove_reference<T>::type::value_type>;
+        using enable_if_is_collection_ret_value_type = typename std::enable_if< is_collection<typename std::remove_reference<T>::type>::value, typename std::remove_reference<T>::type::value_type>;
 
         template <typename Meta>
         struct is_meta_object {
@@ -958,7 +958,7 @@ namespace _ {
         };
 
         template <typename T>
-        struct array_info<T, typename std::enable_if<is_array<remove_cvref_t<T>>::value, bool>::type> {
+        struct array_info<T, typename std::enable_if<is_collection<remove_cvref_t<T>>::value, bool>::type> {
             using size_type = typename remove_cvref_t<T>::size_type;
             using value_type = typename remove_cvref_t<T>::value_type;
         };
@@ -977,14 +977,14 @@ namespace _ {
         };
 
         template <typename Collection, typename Index>
-        struct is_array_index_matched {
+        struct is_collection_index_matched {
             enum {
-                value = is_array<Collection>::value && std::is_convertible<Index, int>::value
+                value = is_collection<Collection>::value && std::is_convertible<Index, int>::value
             };
         };
 
         template <typename Collection, typename Index>
-        using enable_if_collection_index_matched = std::enable_if<is_array_index_matched<Collection, Index>::value, typename array_value_type<Collection>::type>;
+        using enable_if_collection_index_matched = std::enable_if<is_collection_index_matched<Collection, Index>::value, typename array_value_type<Collection>::type>;
 
         /// Read a property from the target container object
         template <typename Map, typename Key>
@@ -1002,7 +1002,7 @@ namespace _ {
         struct is_readable {
             enum {
                 value = is_kyt_key_matched<Any, Key>::value ||
-                        is_array_index_matched<Any, Key>::value
+                        is_collection_index_matched<Any, Key>::value
             };
         };
 
@@ -2007,7 +2007,7 @@ namespace _ {
 
         using func_info = Private::via_func_info<Iteratee, Collection>;
 
-        _underline_static_assert_is_array("_::map(): ", Collection);
+        _underline_static_assert_is_collection("_::map(): ", Collection);
 
         _underline_static_assert_is_iteratee_invokable("_::map(): ", func_info::is_invokable);
 
@@ -2027,7 +2027,7 @@ namespace _ {
     template <typename Array,  typename Iteratee>
     inline auto countBy(const Array& collection, Iteratee iteratee) -> typename Private::rebind_to_map_collection_iteratee_t<Array, Iteratee, int>  {
 
-        _underline_static_assert_is_array("_::countBy: ", Array);
+        _underline_static_assert_is_collection("_::countBy: ", Array);
 
         _underline_static_assert_is_iteratee_invokable("_::countBy: ", (Private::is_invokable1<Iteratee, _::Private::array_value_type_t<Array>>::value));
 
@@ -2109,13 +2109,13 @@ namespace _ {
     }
 
     template <typename T>
-    inline bool isArray() {
-        return Private::is_array<T>::value;
+    inline bool isCollection() {
+        return Private::is_collection<T>::value;
     }
 
     template <typename T>
-    inline bool isArray(const T&) {
-        return Private::is_array<T>::value;
+    inline bool isCollection(const T&) {
+        return Private::is_collection<T>::value;
     }
 
     template <typename T>

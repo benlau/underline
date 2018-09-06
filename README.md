@@ -11,7 +11,7 @@ Features
 
  1. Designed for user-friendly error handling
  1. C++11 compliant coding. Support C++14 generic lambda function (using auto as a parameter) and return type detection
- 1. Support Qt types but it is still compilable even the Qt library is missing
+ 1. Support Qt types, but it is still compilable even the Qt library is missing
  1. Single Header Library
 
 **1) Designed for user-friendly error handling. Get rid of the horrific and misleading template compilation error messages.**
@@ -157,18 +157,18 @@ countBy
 -------
 
 ```C++
-template <typename Array, typename Iteratee>
-Map countBy(const Array& array, Iteratee iteratee)
+template <typename Collection, typename Iteratee>
+Map countBy(const Collection& collection, Iteratee iteratee)
 ```
 
-Iterates all the elements in the array container and pass to the iteratee function, then count the number of the occurrence of the result. The iteratee function takes only one argument. [value]
+Iterates all the elements in the collection container and pass to the iteratee function, then count the number of the occurrence of the result. The iteratee function takes only one argument. [value]
 
-The return is a Map object in a type either of std::map or QMap. The actual type chosen depends on the array container. If it is a Qt container class, it will be a QMap. Otherwise, it will be an std::map. The key type is the same as the return of the iteratee, and the value type is an integer storing the counting.
+The return is a Map object in a type either of std::map or QMap. The actual type chosen depends on the collection container. If it is a Qt container class, it will be a QMap. Otherwise, it will be an std::map. The key type is the same as the return of the iteratee, and the value type is an integer storing the counting.
 
 Arguments:
 
- * array: The input source. Check [_::isArray](#isarray) function for the supported types
- * iteratee:  The iteratee function to transform the element in the array to a key value.
+ * collection: The input source. Check [_::isCollection](#iscollection) function for the supported types
+ * iteratee:  The iteratee function to transform the element in the collection to a key value.
 
 Examples:
 
@@ -204,14 +204,14 @@ forEach
 -------
 
 ```C++
-template <typename Array, typename Iteratee>
-inline const Array& forEach(const Array& collection, Iteratee iteratee);
+template <typename Collection, typename Iteratee>
+inline const Collection& forEach(const Collection& collection, Iteratee iteratee);
 ```
 
-Iterates all the elements in the array container and calls the iteratee function.  The iteratee function can take from one to three arguments [value [index [array]]]. If the iteratee function returns a false value, the looping stop immediately.
+Iterates all the elements in the collection container and calls the iteratee function.  The iteratee function can take from one to three arguments [value [index [collection]]]. If the iteratee function returns a false value, the looping stop immediately.
 
 Arguments:
- * object: The source object. Check [_::isArray](#isarray) function for the supported types.
+ * object: The source object. Check [_::isCollection](#iscollection) function for the supported types.
  * iteratee: The function invoked per iteration.
 
 Return:
@@ -273,19 +273,19 @@ map
 ----
 
 ```C++
-template <typename Array, typename Iteratee>
-_::map(Array array, Iteratee iteratee)
+template <typename Collection, typename Iteratee>
+_::map(Collection collection, Iteratee iteratee)
 ```
 
-Iterate all the elements of the array container and call the iteratee function. It creates a new array obtaining the result. The iteratee is invoked with one to three arguments: [value, [index, [array]]].
+Iterate all the elements of the collection container and call the iteratee function. It creates a new collection obtaining the result. The iteratee is invoked with one to three arguments: [value, [index, [collection]]].
 
 Arguments:
 
- * array: The input array collection. Check [_::isArray](#isarray) for the supported types.
+ * collection: The input collection collection. Check [_::isCollection](#iscollection) for the supported types.
  * iteratee: The function invoked per iteration.
 
 Returns:
- * (Array) The new mapped array. The container type is the same as the input collection.
+ * (Collection) The new mapped collection. The container type is the same as the input collection.
 
 **Example:**
 
@@ -404,14 +404,14 @@ range
 ----
 
 ```C++
-template <typename Array, typename V1>
-Array range(V1 end) ;
+template <typename Collection, typename V1>
+Collection range(V1 end) ;
 
-template <typename Array, typename V1, typename V2>
-Array range(V1 start, V2 end);
+template <typename Collection, typename V1, typename V2>
+Collection range(V1 start, V2 end);
 
-template <typename Array, typename V1, typename V2, typename V3>
-Array range(V1 start, V2 end, V3 step);
+template <typename Collection, typename V1, typename V2, typename V3>
+Collection range(V1 start, V2 end, V3 step);
 
 template <typename ...Args>
 QList<int> rangeQ(Args ...args);
@@ -428,7 +428,7 @@ Arguments:
 
  * start: The starting value. If it is not specific, it will be 0.
  * end: The ending value.
- * step: The value to increment or decrement by. The default value is 1. It may set to a negative value.
+ * step: The value to increment or decrement. The default value is 1. It may set to a negative value.
 
 Return:
 * collection
@@ -493,28 +493,28 @@ Returns
 Type Checker
 ============
 
-isArray
+isCollection
 ------
 
 ```C++
-bool _::isArray(const T&)
-bool _::isArray<T>()
+bool _::isCollection(const T&)
+bool _::isCollection<T>()
 ```
 
-It is a static type checker to validate is the input type classified as a valid Array class supported by _.   You rarely need to use this function directly.
+It is a static type checker to validate is the input type classified as a valid collection class supported by _.   You rarely need to use this function directly.
 
 Example:
 
 ```C++
-QCOMPARE(_::isArray(std::vector<int>{}),    true);
-QCOMPARE(_::isArray(QVector<int>{ }),       true);
-QCOMPARE(_::isArray(QList<int>{ }),         true);
-QCOMPARE(_::isArray(QVariantList{ }),       true);
-QCOMPARE(_::isArray(QString{ }),            true);
+QCOMPARE(_::isCollection(std::vector<int>{}),    true);
+QCOMPARE(_::isCollection(QVector<int>{ }),       true);
+QCOMPARE(_::isCollection(QList<int>{ }),         true);
+QCOMPARE(_::isCollection(QVariantList{ }),       true);
+QCOMPARE(_::isCollection(QString{ }),            true);
 
-QCOMPARE(_::isArray(std::map<bool,int>{}),  false);
-QCOMPARE(_::isArray(QMap<int,int>{}),       false);
-QCOMPARE(_::isArray(10),                    false);
+QCOMPARE(_::isCollection(std::map<bool,int>{}),  false);
+QCOMPARE(_::isCollection(QMap<int,int>{}),       false);
+QCOMPARE(_::isCollection(10),                    false);
 ```
 
 isKeyValueType
