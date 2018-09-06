@@ -5,10 +5,12 @@
 #include <functional>
 #include <vector>
 #include "c14testcases.h"
-#include "underline.h"
 #include "dataobject.h"
 #include "gadgetobject.h"
 #include "complexqobject.h"
+
+#define _underline_debug(x) { qDebug() << x;}
+#include "underline.h"
 
 static bool isOdd(int value) {
     return value % 2 == 1;

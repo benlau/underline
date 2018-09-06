@@ -10,9 +10,10 @@
 #include <memory>
 #include "complexqobject.h"
 #include "c11testcases.h"
-#include "underline.h"
 #include "dataobject.h"
 #include "gadgetobject.h"
+#define _underline_debug(x) { qDebug() << x;}
+#include "underline.h"
 
 static bool isOdd(int value) {
     return value % 2 == 1;
@@ -434,17 +435,12 @@ void C11TestCases::test_private_cast_to_qobject()
 void C11TestCases::test_private_merge()
 {
     {
-        /* Any to Any */
-        QCOMPARE(_::Private::merge(3, 4.5), 4.5);
-    }
-
-    {
         /* QVariant, QObject */
         QVariant v1;
         DataObject* v2 = new DataObject(this);
         v2->setValue1(1);
 
-        auto res = _::Private::merge(v1, v2);
+        auto res = _::Private::p_merge_(v1, v2);
         auto map = res.toMap();
         QCOMPARE(map["value1"].toInt(), 1);
     }
@@ -457,7 +453,7 @@ void C11TestCases::test_private_merge()
 
         QVariant v2 = QVariant::fromValue<DataObject*>(object);
 
-        auto res = _::Private::merge(v1, v2);
+        auto res = _::Private::p_merge_(v1, v2);
         auto map = res.toMap();
         QCOMPARE(map["value1"].toInt(), 1);
     }
@@ -470,7 +466,7 @@ void C11TestCases::test_private_merge()
         QVariantMap v2;
         v2["value1"] = 10;
 
-        auto res = _::Private::merge(v1, v2);
+        auto res = _::Private::p_merge_(v1, v2);
 
         QVERIFY(v1 == res);
         QCOMPARE(v1->value1(), 10);

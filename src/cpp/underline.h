@@ -223,12 +223,27 @@ namespace _ {
         inline auto convertTo(const From& from, To& to) -> typename std::enable_if<std::is_convertible<From,To>::value, void>::type {
             to = from;
         }
-
+#ifdef QT_CORE_LIB
+        inline void convertTo(const QVariantMap& from, QVariant& to) {
+            to = static_cast<QVariant>(from);
+        }
+#endif
 #ifdef QT_QUICK_LIB
         inline void convertTo(const QJSValue& from, QVariant& to) {
             to = from.toVariant();
         }
 #endif
+
+        template <typename V1, typename V2>
+        inline void copy_or_convert(V1& v1, const V2& v2) {
+            if (std::is_same<V1,V2>::value) {
+                copy_if_same_type(v1, v2);
+            } else {
+                convertTo(v2, v1);
+            }
+        }
+
+
         template <typename From, typename To>
         struct is_custom_convertible {
             enum {
@@ -729,6 +744,13 @@ namespace _ {
             };
         };
 
+        template <typename T>
+        struct is_real_qt_metable {
+            enum {
+                value = is_real_key_value_type<T>::value && !is_std_map<T>::value
+            };
+        };
+
         template <typename T, typename F1, typename F2, typename F3>
         inline bool try_cast_to_real_qt_metable(T& value, F1 func1, F2 func2, F3 func3) {
             auto qobject = cast_to_qobject(value);
@@ -772,6 +794,15 @@ namespace _ {
                 return true;
             }
             return false;
+        }
+
+        template <typename T>
+        inline bool can_cast_to_qt_metable(T& value) {
+            return try_cast_to_qt_metable(value, [&](QObject*) {
+            }, [&](GadgetContainer& ){
+            }, [&](QVariantMap&) {
+            }, [&](QJSValue&) {
+            });
         }
 
         template <typename T, typename K>
@@ -1643,100 +1674,13 @@ namespace _ {
 #endif
 
         /* PRIVATE_MERGE begin */
-        // Unlike the public version of the merge, it doesn't guarantee to return the object itself
-
-        template <typename V1, typename V2>
-        inline void forIn_merge(V1 &v1 , const V2& v2);
-
-        template <typename V1, typename V2>
-        inline auto merge(const V1&, const V2& v2) ->
-        typename std::enable_if<
-            !(is_key_value_type<V1>::value && is_key_value_type<V2>::value)  &&
-            !(std::is_same<V1,QVariant>::value) &&
-            !(std::is_same<V1,QJSValue>::value) &&
-            !(std::is_same<V2,QJSValue>::value)
-            ,V2>::type { // The default merge function which is not doing anything
-            return v2;
-        }
-
-        template <typename V2>
-        inline QVariant merge(QVariant &v1, const V2 &v2);
-
-        template <typename V1, typename V2>
-        inline auto merge(V1& v1, const V2& v2) -> typename std::enable_if<is_real_key_value_type<V1>::value && is_real_key_value_type<V2>::value, pointer_or_reference_t<V1> >::type { // Generic merge function
-            forIn_merge(v1, v2);
-            return v1;
-        }
-
-        template <typename V1, typename V2>
-        inline auto merge(V1& v1, const V2& v2) ->
-            typename std::enable_if<is_real_key_value_type<V1>::value && !is_real_key_value_type<V2>::value, V1&>::type {
-
-            try_cast_to_qt_metable(v2, [&](QObject* kyt){
-                forIn_merge(v1, kyt);
-            },[&](GadgetContainer& kyt) {
-                forIn_merge(v1, kyt);
-            },[&](QVariantMap& kyt) {
-                merge(v1, kyt);
-            },[&](const QJSValue& kyt) {
-                forIn_merge(v1, kyt);
-            });
-
-            return v1;
-        }
 
 #ifdef QT_CORE_LIB
-        template <typename V2>
-        inline QVariant merge(QVariant &v1, const V2 &v2) {
-            auto handled = try_cast_to_real_qt_metable(v1, [&](QObject* qobject){
-                merge(qobject, v2);
-            },[&](GadgetContainer container) {
-                merge(container, v2);
-            },[&](QVariantMap map) {
-                merge(map, v2);
-                v1 = map;
-            });
-
-            if (handled) {
-                return v1;
-            }
-
-            auto map = v1.toMap();
-            QVariant res;
-
-            handled = try_cast_to_real_qt_metable(v2, [&](const QObject* qobject){
-                res = merge(map, qobject);
-            },[&](GadgetContainer container) {
-                res = merge(map, container);
-            },[&](QVariantMap container) {
-                res = merge(map, container);
-            });
-
-            if (handled) {
-                return res;
-            }
-            convertTo(v2, res);
-            return res;
-        }
-#endif
-
-#ifdef QT_QUICK_LIB
-        template <typename V2>
-        inline auto merge(QJSValue& v1, const V2 & v2) -> typename std::enable_if<std::is_same<V2, QJSValue>::value, QJSValue&>::type {
-            if (v1.isQObject()) {
-                auto ptr = v1.toQObject();
-                merge(ptr, v2);
-            } else if (v1.isObject()) {
-                forIn_merge(v1, v2);
-            } else {
-                v1 = v2;
-            }
-            return v1;
-        }
-#endif
+        template <typename V1, typename V2>
+        inline auto p_merge_(V1& v1, const V2& v2) -> pointer_or_reference_t<V1>;
 
         template <typename V1, typename V2>
-        inline void forIn_merge(V1& v1 , const V2& v2) {
+        inline auto p_forIn_merge_(V1& v1 , const V2& v2) -> typename std::enable_if<is_key_value_type<V1>::value && is_key_value_type<V2>::value, void>::type {
             using Key = typename key_value_info<V2>::key_type;
             using Value = typename key_value_info<V2>::value_type;
 
@@ -1745,14 +1689,87 @@ namespace _ {
 
                 QObject* v1_qobject_ptr = cast_to_qobject(srcValue);
                 if (v1_qobject_ptr != nullptr) {
-                    merge(v1_qobject_ptr, value);
+                    p_merge_(v1_qobject_ptr, value);
                     return;
                 }
 
-                write(v1, key, merge(srcValue, value));
+                write(v1, key, p_merge_(srcValue, value));
             });
         }
 
+        template <typename V1, typename V2>
+        inline auto p_forIn_merge_(V1& , const V2&) -> typename std::enable_if<!is_key_value_type<V1>::value || !is_key_value_type<V2>::value, void>::type {
+        }
+
+        template <typename V1, typename V2>
+        inline auto p_merge_(V1& v1, const V2& v2) -> pointer_or_reference_t<V1> {
+
+            if (is_qjsvalue<V1>::value && is_qjsvalue<V2>::value) {
+                if (can_cast_to_qvariantmap(v2)) {
+                    p_forIn_merge_(v1,v2);
+                } else {
+                    copy_if_same_type(v1, v2);
+                }
+                return v1;
+            }
+
+            if (is_real_qt_metable<V1>::value && is_key_value_type<V2>::value) {
+                p_forIn_merge_(v1 ,v2);
+                return v1;
+            }
+
+            if (is_real_qt_metable<V1>::value) {
+                try_cast_to_qt_metable(v2, [&](QObject* metable){
+                    p_forIn_merge_(v1, metable);
+                },[&](GadgetContainer metable) {
+                    p_forIn_merge_(v1, metable);
+                },[&](QVariantMap& metable) {
+                    p_forIn_merge_(v1, metable);
+                },[&](QJSValue& metable) {
+                    p_forIn_merge_(v1, metable);
+                });
+                return v1;
+            }
+
+            bool canV1CastToMetable = try_cast_to_qt_metable(v1, [&](QObject* metable){
+                p_merge_(metable, v2);
+            },[&](GadgetContainer metable) {
+                p_merge_(metable, v2);
+            },[&](QVariantMap& metable) {
+                if (can_cast_to_qt_metable(v2)) {
+                    p_merge_(metable, v2);
+                    copy_or_convert(v1, metable);
+                } else {
+                    copy_or_convert(v1, v2);
+                }
+            },[&](QJSValue& metable) {
+                if (can_cast_to_qt_metable(v2)) {
+                    p_merge_(metable, v2);
+                } else {
+                    copy_or_convert(v1, v2);
+                }
+            });
+
+            if (canV1CastToMetable) {
+                return v1;
+            }
+
+            if (is_qjsvalue<V1>::value) {
+                copy_if_same_type(v1, v2);
+                return v1;
+            }
+
+            if (can_cast_to_qt_metable(v2)) {
+                QVariantMap map;
+                p_merge_(map, v2);
+                convertTo(map, v1);
+            } else {
+                copy_or_convert(v1, v2);
+            }
+
+            return v1;
+        }
+#endif
         /* PRIVATE_MERGE end */
 
 #ifdef QT_CORE_LIB
@@ -1857,6 +1874,7 @@ namespace _ {
         return dest;
     }
 
+#ifdef QT_CORE_LIB
     template <typename Object, typename Source>
     inline auto merge(Object& object, const Source& source) -> typename std::conditional<std::is_pointer<Object>::value, Object, Object&>::type {
 
@@ -1874,12 +1892,10 @@ namespace _ {
         static_assert( !(Private::is_qjsvalue<Object>::value && !Private::is_qjsvalue<Source>::value),
                       "_::merge(QJSValue, source): " _underline_qjsvalue_set_error);
 
-        Private::merge(object, source);
+        Private::p_merge_(object, source);
 
         return object;
     }
-
-#ifdef QT_CORE_LIB
 
     template <typename QtMetable>
     inline QVariant get(const QtMetable &object, const QString &path, const QVariant& defaultValue = QVariant())
