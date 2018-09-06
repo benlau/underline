@@ -157,7 +157,11 @@ namespace _ {
         class QVariantMap: public QMap<QString,QVariant>{};
 #endif
 #ifndef QT_QUICK_LIB
-        class QJSValue{};
+        class QJSValue{
+        public:
+            QJSValue property(QString) const { return QJSValue();}
+            void setProperty(QString, QJSValue) {}
+        };
         class QJSValueIterator{
         public:
             template <typename ...Args> inline bool hasNext(Args...);
@@ -397,6 +401,14 @@ namespace _ {
         }
         inline auto can_cast_to_qvariantmap(const QJSValue& t) -> bool {
             return t.isObject();
+        }
+#else
+        inline auto can_cast_to_qvariantmap(const QJSValue&) -> bool {
+            return false;
+        }
+
+        inline auto cast_to_qvariantmap(const QJSValue&) -> QVariantMap {
+            return QVariantMap();
         }
 #endif
 
@@ -1671,6 +1683,13 @@ namespace _ {
 
             return object;
         }
+#else
+        template <typename Value, typename Iteratee>
+        inline auto p_forIn(const Value& object, Iteratee)
+        -> typename std::enable_if<std::is_same<Value,QJSValue>::value, const Value&>::type
+        {
+            return object;
+        }
 #endif
 
         /* PRIVATE_MERGE begin */
@@ -1813,6 +1832,34 @@ namespace _ {
         }
 #endif
 
+#ifdef QT_CORE_LIB
+        template <typename QMetaObject>
+        inline QVariantMap p_pick_(QMetaObject& object, const QStringList& paths) {
+            QVariantMap res;
+            QVariant defaultValue;
+
+            for (auto path: paths) {
+                QVariant value = _get(object, path, defaultValue);
+
+                QVariantMap map;
+                bool handled = Private::try_cast_to_qt_metable(value, [&](QObject* kyt){
+                    p_merge_(map, kyt);
+                },[&](Private::GadgetContainer& kyt) {
+                    p_merge_(map, kyt);
+                },[&](QVariantMap&) {
+                    map = value.toMap();
+                },[&](const QJSValue& kyt) {
+                    p_merge_(map, kyt);
+                });
+
+                if (handled) value = map;
+
+                _set(res, path, value);
+            }
+            return res;
+        }
+#endif
+
     } /* End of Private Session */
 
     template <typename Object, typename Functor>
@@ -1917,28 +1964,7 @@ namespace _ {
 
     template <typename QMetaObject>
     inline QVariantMap pick(QMetaObject& object, const QStringList& paths) {
-        QVariantMap res;
-
-        for (auto path: paths) {
-            QVariant value = get(object, path);
-
-            QVariantMap map;
-            bool handled = Private::try_cast_to_qt_metable(value, [&](QObject* kyt){
-                merge(map, kyt);
-            },[&](Private::GadgetContainer& kyt) {
-                _::merge(map, kyt);
-            },[&](QVariantMap&) {
-                map = value.toMap();
-            },[&](const QJSValue& kyt) {
-                merge(map, kyt);
-            });
-
-            if (handled) value = map;
-
-            set(res, path, value);
-        }
-
-        return res;
+        return Private::p_pick_(object, paths);
     }
 
     template <typename QMetaObject>

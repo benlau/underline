@@ -9,6 +9,8 @@ public:
 
 private slots:
 
+    void initTestCase();
+
     void test_private_has();
 
     void test_private_is_array();

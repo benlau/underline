@@ -1,7 +1,4 @@
-#include <QQmlApplicationEngine>
 #include <QTest>
-#include <Automator>
-#include <QtShell>
 #include <functional>
 #include <QMap>
 #include <vector>
@@ -34,6 +31,10 @@ C11TestCases::C11TestCases(QObject *parent) : QObject(parent)
         QTest::qExec(this, 0, nullptr); // Autotest detect available test cases of a QObject by looking for "QTest::qExec" in source code
     };
     Q_UNUSED(ref);
+}
+
+void C11TestCases::initTestCase()
+{
 }
 
 void C11TestCases::test_private_has()
@@ -863,7 +864,6 @@ void C11TestCases::test_isKeyValueType()
     QCOMPARE(_::isKeyValueType(QMap<int,int>{}),       true);
     QCOMPARE(_::isKeyValueType(QVariantMap{}),         true);
     QCOMPARE(_::isKeyValueType(new QObject(this)),     true);
-    QCOMPARE(_::isKeyValueType(QJSValue()),            true);
     QCOMPARE(_::isKeyValueType(std::map<int,int>{}),   true);
 
     QCOMPARE(_::isKeyValueType(GadgetObject()),        true);
@@ -881,7 +881,6 @@ void C11TestCases::test_isQtMetable()
     QCOMPARE(_::isQtMetable(QMap<int,int>{}),       true);
     QCOMPARE(_::isQtMetable(QVariantMap{}),         true);
     QCOMPARE(_::isQtMetable(new QObject(this)),     true);
-    QCOMPARE(_::isQtMetable(QJSValue()),            true);
     QCOMPARE(_::isQtMetable(GadgetObject()),        true);
 
     QCOMPARE(_::isQtMetable(std::vector<int>{}),    false);
