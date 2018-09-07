@@ -23,6 +23,10 @@ private slots:
 
     void test_private_is_key_value_type();
 
+    void test_private_is_std_type();
+
+    void test_private_is_qt_type();
+
     void test_private_traits();
 
     void test_private_invoke();
@@ -73,5 +77,6 @@ private slots:
 
     void test_get_should_support_path_in_qobject_dynamic_property();
 
-};
+    void test_keyBy();
 
+};

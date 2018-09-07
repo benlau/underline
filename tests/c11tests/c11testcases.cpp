@@ -171,6 +171,33 @@ void C11TestCases::test_private_is_key_value_type()
     QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<int>::value), false);
 }
 
+void C11TestCases::test_private_is_std_type()
+{
+    QCOMPARE(static_cast<bool>(_::Private::is_std_type<QObject>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_std_type<std::map<int,int>>::value), true);
+
+    QCOMPARE(static_cast<bool>(_::Private::is_std_type<std::vector<int>>::value), true);
+
+}
+
+void C11TestCases::test_private_is_qt_type()
+{
+
+    QCOMPARE(static_cast<bool>(_::Private::is_qt_type<QObject>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_qt_type<std::map<int,int>>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_qt_type<std::vector<int>>::value), false);
+
+    QCOMPARE(static_cast<bool>(_::Private::is_qt_type<QMap<int,int>>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_qt_type<QVariantMap>::value), true);
+
+    QCOMPARE(static_cast<bool>(_::Private::is_qt_type<QList<int>>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_qt_type<QList<QString>>::value), true);
+
+    QCOMPARE(static_cast<bool>(_::Private::is_qt_type<QStringList>::value), true);
+
+
+}
+
 template <typename F, typename T>
 auto wrapper(F functor, T t) -> typename _::Private::ret_func<F,T>::type {
     return functor(t);
@@ -913,6 +940,23 @@ void C11TestCases::test_get_should_support_path_in_qobject_dynamic_property()
     object->setProperty("value", 55);
 
     QCOMPARE(_::get(object, "value").toInt(), 55);
+}
+
+void C11TestCases::test_keyBy()
+{
+    QVariantList list = { QVariantMap{ {"id", 0}, {"value", 0}},
+                          QVariantMap{ {"id", 1}, {"value", 1}},
+                          QVariantMap{ {"id", 2}, {"value", 2}}};
+
+    QMap<int, QVariant> map = _::keyBy(list, [](QVariant item) {
+        return item.toMap()["id"].toInt();
+    });
+
+    QCOMPARE(map.size(), 3);
+    QCOMPARE(map.contains(1), true);
+
+    QCOMPARE(map[2].toMap()["value"].toInt(), 2);
+
 }
 
 

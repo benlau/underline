@@ -9,9 +9,11 @@ An online demonstration for STL library is available at https://repl.it/@benlau/
 Features
 ======
 
- 1. Designed for user-friendly error handling
- 1. C++11 compliant coding. Support C++14 generic lambda function (using auto as a parameter) and return type detection
- 1. Support Qt types, but it is still compilable even the Qt library is missing
+ 1. Designed for user-friendly error handling. Get rid of horrific and misleading template compilation error messages
+ 1. C++11 Compliant Coding.
+ 1. Support C++14 generic lambda function (using auto as a parameter)
+ 1. Support iteratee functions with one to more arguments.
+ 1. Support Qt types, but it still compilable for non-Qt applications.
  1. Single Header Library
 
 **1) Designed for user-friendly error handling. Get rid of the horrific and misleading template compilation error messages.**
@@ -384,6 +386,7 @@ Return
 
 Example:
 
+STL
 ```C++
     // Input: {"a":1,"b":2,"c":{"d":"3"}}
     QVariantMap object = {{"a", 1}, {"b", 2.0}, {"c", QVariantMap{{"d", "3"}}}};
@@ -398,6 +401,16 @@ Example:
     ASSERT_EQ(object["f"].toMap()["g"].toString() , QString("4.1"));
 
     // Result: {"a":1,"b":2.1,"c":{"d":"3","e":"3.1"},"f":{"g":"4.1"}}
+```
+Qt
+```C++
+QObject* object = new QObject();
+QObject* subObject = new QObject(object);
+object->setProperty("value", QVariant::fromValue<QObject*>(subObject));  // object: {"objectName":"","value":{"objectName":""}}
+
+_::set(object, "value.objectName", "subObject"); //object: {"objectName":"","value":{"objectName":"subObject"}}
+
+ASSERT_EQ(subObject->objectName(), QString("subObject"));
 ```
 
 range

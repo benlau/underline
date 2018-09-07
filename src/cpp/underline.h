@@ -73,12 +73,6 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
 #define _underline_static_assert_is_object_a_qt_metable(prefix, object) \
     static_assert(Private::is_qt_metable<object>::value, prefix "Invalid object type. It should be a QtMetable type. Check the document of _::isQtMetable for supported types.")
 
-#define _underline_private_ns_begin \
-    namespace _ ::Private {
-
-#define _underline_private_ns_end \
-    }
-
 #ifndef _underline_debug
 #define _underline_debug(msg)
 #endif
@@ -105,6 +99,21 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
             }; \
         } \
     }
+
+#define _underline_register_std_type(T) \
+    namespace _ { namespace Private { \
+        template <typename ...Args> struct is_std_type<T<Args...> > : std::true_type {}; \
+    } }
+
+#define _underline_register_qt_container_type(T) \
+    namespace _ { namespace Private { \
+        template <typename ...Args> struct is_qt_type<T<Args...> > : std::true_type {}; \
+    } }
+
+#define _underline_register_qt_non_container_type(T) \
+    namespace _ { namespace Private { \
+        template <> struct is_qt_type<T> : std::true_type {}; \
+    } }
 
 namespace _ {
 
@@ -302,14 +311,15 @@ namespace _ {
         };
 
         template <typename ...Args>
+        struct is_std_type : std::false_type {};
+
+        template <typename T>
         struct is_std_map {
-            enum { value = 0 };
+            enum { value = is_std_type<T>::value && is_map<T>::value };
         };
 
-        template <typename K, typename V>
-        struct is_std_map<std::map<K, V>> {
-            enum { value = 1 };
-        };
+        template <typename ...Args>
+        struct is_qt_type: std::false_type {};
 
         /* END is_xxx */
 
@@ -1346,7 +1356,7 @@ namespace _ {
         using ret_invoke_collection_value_type_t = typename ret_invoke<Iteratee, typename array_value_type<Collection>::type>::type;
 
         template <class Collection, typename Iteratee, typename ValueType>
-        using rebind_to_map_collection_iteratee_t = typename array_to_map_rebinder<remove_cvref_t<Collection>,   _::Private::ret_invoke_collection_value_type_t<Iteratee,remove_cvref_t<Collection>>, ValueType>::type;
+        using RebindedMap_keyIterateeRet = typename array_to_map_rebinder<remove_cvref_t<Collection>,   _::Private::ret_invoke_collection_value_type_t<Iteratee,remove_cvref_t<Collection>>, ValueType>::type;
 
         ///Value is a wrapper of any data structure include <void>.
         template <typename T>
@@ -2032,7 +2042,7 @@ namespace _ {
     }
 
     template <typename Array,  typename Iteratee>
-    inline auto countBy(const Array& collection, Iteratee iteratee) -> typename Private::rebind_to_map_collection_iteratee_t<Array, Iteratee, int>  {
+    inline auto countBy(const Array& collection, Iteratee iteratee) -> typename Private::RebindedMap_keyIterateeRet<Array, Iteratee, int>  {
 
         _underline_static_assert_is_collection("_::countBy: ", Array);
 
@@ -2040,7 +2050,7 @@ namespace _ {
 
         _underline_static_assert_is_iteratee_not_void("_::countBy: ", (Private::ret_invoke_is_not_void<Iteratee, _::Private::array_value_type_t<Array>>::value));
 
-        typename Private::rebind_to_map_collection_iteratee_t<Array, Iteratee, int>  res;
+        typename Private::RebindedMap_keyIterateeRet<Array, Iteratee, int>  res;
 
         Private::Value<typename Private::ret_invoke<Iteratee, _::Private::array_value_type_t<Array>>::type> wrapper;
 
@@ -2049,6 +2059,27 @@ namespace _ {
             auto key = wrapper.get();
             auto c = res[key] + 1;
             res[key] = c;
+        }
+
+        return res;
+    }
+
+    template <typename Collection,  typename Iteratee>
+    inline auto keyBy(const Collection& collection, Iteratee iteratee) -> typename Private::RebindedMap_keyIterateeRet<Collection, Iteratee, typename Private::array_value_type<Collection>::type>  {
+
+        _underline_static_assert_is_collection("_::countBy: ", Collection);
+
+        _underline_static_assert_is_iteratee_invokable("_::countBy: ", (Private::is_invokable1<Iteratee, _::Private::array_value_type_t<Collection>>::value));
+
+        _underline_static_assert_is_iteratee_not_void("_::countBy: ", (Private::ret_invoke_is_not_void<Iteratee, _::Private::array_value_type_t<Collection>>::value));
+
+        typename Private::RebindedMap_keyIterateeRet<Collection, Iteratee, typename Private::array_value_type<Collection>::type>  res;
+
+        Private::Value<typename Private::ret_invoke<Iteratee, _::Private::array_value_type_t<Collection>>::type> wrapper;
+
+        for (unsigned int i = 0 ; i < static_cast<unsigned int>(collection.size()) ; i++) {
+            wrapper.invoke(iteratee, collection[i]);
+            res[wrapper.get()] = collection[i];
         }
 
         return res;
@@ -2205,10 +2236,18 @@ namespace _ {
 
 /* Type Registration */
 
+_underline_register_std_type(std::vector)
+_underline_register_std_type(std::list)
+_underline_register_std_type(std::map)
+
 _underline_register_rebind_to_map(std::list, std::map)
 _underline_register_rebind_to_map(std::vector, std::map)
 
 #ifdef QT_CORE_LIB
+_underline_register_qt_container_type(QVector);
+_underline_register_qt_container_type(QList);
+_underline_register_qt_container_type(QMap);
+_underline_register_qt_non_container_type(QStringList);
 _underline_register_rebind_to_map(QVector, QMap)
 _underline_register_rebind_to_map(QList, QMap)
 #endif
