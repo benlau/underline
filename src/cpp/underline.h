@@ -534,14 +534,14 @@ namespace _ {
         };
 
         template <typename T>
-        struct key_value_info : _key_value_info<T, std::true_type>{};
-
-        template <typename T>
         struct _key_value_info<T, typename std::enable_if<is_map<T>::value,  std::true_type>::type> {
             enum { is_key_value_type = true};
             typedef typename T::key_type key_type;
             typedef typename T::mapped_type value_type;
         };
+
+        template <typename T>
+        struct key_value_info : _key_value_info<T, std::true_type>{};
 
         template <typename Meta, typename Key>
         inline auto key_value_read(const Meta& meta, const Key& key) -> typename std::enable_if<is_gadget<Meta>::value, QVariant>::type {
@@ -954,28 +954,33 @@ namespace _ {
         };
 
         template <typename ...Args>
-        struct array_info {
+        struct _collection_info {
+            enum { is_collection_type = false };
             typedef Undefined size_type;
             typedef Undefined value_type;
         };
 
         template <typename T>
-        struct array_info<T, typename std::enable_if<is_collection<remove_cvref_t<T>>::value, bool>::type> {
+        struct _collection_info<T, typename std::enable_if<is_collection<remove_cvref_t<T>>::value, std::true_type>::type> {
+            enum { is_collection_type = true };
             using size_type = typename remove_cvref_t<T>::size_type;
             using value_type = typename remove_cvref_t<T>::value_type;
         };
 
+        template <typename T>
+        struct collection_info: _collection_info<T, std::true_type> {};
+
         template <typename Array>
-        struct array_value_type {
-            using type = typename array_info<Array, bool>::value_type;
+        struct collection_value_type {
+            using type = typename collection_info<Array>::value_type;
         };
 
         template <typename Array>
-        using array_value_type_t = typename array_info<Array, bool>::value_type;
+        using collection_value_type_t = typename collection_info<Array>::value_type;
 
         template <typename Array>
-        struct array_size_type {
-            using type = typename array_info<Array, bool>::size_type;
+        struct collection_size_type {
+            using type = typename collection_info<Array>::size_type;
         };
 
         template <typename Collection, typename Index>
@@ -986,7 +991,7 @@ namespace _ {
         };
 
         template <typename Collection, typename Index>
-        using enable_if_collection_index_matched = std::enable_if<is_collection_index_matched<Collection, Index>::value, typename array_value_type<Collection>::type>;
+        using enable_if_collection_index_matched = std::enable_if<is_collection_index_matched<Collection, Index>::value, typename collection_value_type<Collection>::type>;
 
         /// Read a property from the target container object
         template <typename Map, typename Key>
@@ -1353,7 +1358,7 @@ namespace _ {
         };
 
         template <typename Iteratee, typename Collection>
-        using ret_invoke_collection_value_type_t = typename ret_invoke<Iteratee, typename array_value_type<Collection>::type>::type;
+        using ret_invoke_collection_value_type_t = typename ret_invoke<Iteratee, typename collection_value_type<Collection>::type>::type;
 
         template <class Collection, typename Iteratee, typename ValueType>
         using RebindedMap_keyIterateeRet = typename array_to_map_rebinder<remove_cvref_t<Collection>,   _::Private::ret_invoke_collection_value_type_t<Iteratee,remove_cvref_t<Collection>>, ValueType>::type;
@@ -1418,8 +1423,8 @@ namespace _ {
         template <typename Functor, typename Array>
         struct via_func_info {
 
-            using value_type = typename array_value_type<Array>::type;
-            using size_type = typename array_size_type<Array>::type;
+            using value_type = typename collection_value_type<Array>::type;
+            using size_type = typename collection_size_type<Array>::type;
 
             using ret_type = typename ret_invoke<Functor, value_type, size_type, Array>::type;
 
@@ -1889,7 +1894,7 @@ namespace _ {
     inline const Array& forEach(const Array& collection, Iteratee iteratee) {
         static_assert(Private::via_func_info<Iteratee, Array>::is_invokable, "_::forEach(): " _underline_iteratee_mismatched_error);
 
-        Private::Value<typename Private::ret_invoke<Iteratee, typename Private::array_value_type<Array>::type, int, Array >::type> value;
+        Private::Value<typename Private::ret_invoke<Iteratee, typename Private::collection_value_type<Array>::type, int, Array >::type> value;
 
         for (unsigned int i = 0 ; i < static_cast<unsigned int>(collection.size()) ; i++) {
             value.invoke(iteratee, collection[i], i, collection);
@@ -2005,7 +2010,7 @@ namespace _ {
         bool res = false;
 
         static_assert(Private::via_func_info<Predicate, Collection>::is_invokable, "_::some(): " _underline_predicate_mismatched_error);
-        static_assert(std::is_same<typename Private::ret_invoke<Predicate, typename Private::array_value_type<Collection>::type,int, Collection>::type,bool>::value,
+        static_assert(std::is_same<typename Private::ret_invoke<Predicate, typename Private::collection_value_type<Collection>::type,int, Collection>::type,bool>::value,
                       "_::some(): " _underline_predicate_return_type_mismatch_error);
 
         for (unsigned int i = 0 ; i < static_cast<unsigned int>(collection.size()) ; i++) {
@@ -2046,13 +2051,13 @@ namespace _ {
 
         _underline_static_assert_is_collection("_::countBy: ", Array);
 
-        _underline_static_assert_is_iteratee_invokable("_::countBy: ", (Private::is_invokable1<Iteratee, _::Private::array_value_type_t<Array>>::value));
+        _underline_static_assert_is_iteratee_invokable("_::countBy: ", (Private::is_invokable1<Iteratee, _::Private::collection_value_type_t<Array>>::value));
 
-        _underline_static_assert_is_iteratee_not_void("_::countBy: ", (Private::ret_invoke_is_not_void<Iteratee, _::Private::array_value_type_t<Array>>::value));
+        _underline_static_assert_is_iteratee_not_void("_::countBy: ", (Private::ret_invoke_is_not_void<Iteratee, _::Private::collection_value_type_t<Array>>::value));
 
         typename Private::RebindedMap_keyIterateeRet<Array, Iteratee, int>  res;
 
-        Private::Value<typename Private::ret_invoke<Iteratee, _::Private::array_value_type_t<Array>>::type> wrapper;
+        Private::Value<typename Private::ret_invoke<Iteratee, _::Private::collection_value_type_t<Array>>::type> wrapper;
 
         for (unsigned int i = 0 ; i < static_cast<unsigned int>(collection.size()) ; i++) {
             wrapper.invoke(iteratee, collection[i]);
@@ -2065,17 +2070,17 @@ namespace _ {
     }
 
     template <typename Collection,  typename Iteratee>
-    inline auto keyBy(const Collection& collection, Iteratee iteratee) -> typename Private::RebindedMap_keyIterateeRet<Collection, Iteratee, typename Private::array_value_type<Collection>::type>  {
+    inline auto keyBy(const Collection& collection, Iteratee iteratee) -> typename Private::RebindedMap_keyIterateeRet<Collection, Iteratee, typename Private::collection_value_type<Collection>::type>  {
 
-        _underline_static_assert_is_collection("_::countBy: ", Collection);
+        _underline_static_assert_is_collection("_::keyBy: ", Collection);
 
-        _underline_static_assert_is_iteratee_invokable("_::countBy: ", (Private::is_invokable1<Iteratee, _::Private::array_value_type_t<Collection>>::value));
+        _underline_static_assert_is_iteratee_invokable("_::keyBy: ", (Private::is_invokable1<Iteratee, _::Private::collection_value_type_t<Collection>>::value));
 
-        _underline_static_assert_is_iteratee_not_void("_::countBy: ", (Private::ret_invoke_is_not_void<Iteratee, _::Private::array_value_type_t<Collection>>::value));
+        _underline_static_assert_is_iteratee_not_void("_::keyBy: ", (Private::ret_invoke_is_not_void<Iteratee, _::Private::collection_value_type_t<Collection>>::value));
 
-        typename Private::RebindedMap_keyIterateeRet<Collection, Iteratee, typename Private::array_value_type<Collection>::type>  res;
+        typename Private::RebindedMap_keyIterateeRet<Collection, Iteratee, typename Private::collection_value_type<Collection>::type>  res;
 
-        Private::Value<typename Private::ret_invoke<Iteratee, _::Private::array_value_type_t<Collection>>::type> wrapper;
+        Private::Value<typename Private::ret_invoke<Iteratee, _::Private::collection_value_type_t<Collection>>::type> wrapper;
 
         for (unsigned int i = 0 ; i < static_cast<unsigned int>(collection.size()) ; i++) {
             wrapper.invoke(iteratee, collection[i]);
@@ -2099,13 +2104,13 @@ namespace _ {
     template <typename Collection, typename Iteratee, typename Accumulator>
     inline auto reduce(const Collection& collection, Iteratee iteratee, Accumulator accumulator) -> Accumulator {
 
-        typedef typename Private::ret_invoke<Iteratee,Accumulator, typename Private::array_value_type<Collection>::type, int, Collection>::type RET;
+        typedef typename Private::ret_invoke<Iteratee,Accumulator, typename Private::collection_value_type<Collection>::type, int, Collection>::type RET;
 
         static_assert(std::is_same<Accumulator, RET>::value, "_::reduce():  Mismatched accumulator type in reduce() and iteratee().");
 
         static_assert(Private::is_invokable4<Iteratee,
                                              Accumulator,
-                                             typename Private::array_value_type<Collection>::type,
+                                             typename Private::collection_value_type<Collection>::type,
                                              int, Collection>::value, "_::reduce(): " _underline_iteratee_mismatched_error);
 
         Accumulator ret = accumulator;

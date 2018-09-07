@@ -217,7 +217,7 @@ void C11TestCases::test_private_traits()
 
         // container_value_type
 
-        const std::type_info& ti1 = typeid(_::Private::array_value_type<QList<int>>::type);
+        const std::type_info& ti1 = typeid(_::Private::collection_value_type<QList<int>>::type);
         const std::type_info& ti2 = typeid(int);
 
         QVERIFY(ti1 == ti2);
@@ -957,6 +957,20 @@ void C11TestCases::test_keyBy()
 
     QCOMPARE(map[2].toMap()["value"].toInt(), 2);
 
+}
+
+void C11TestCases::test_keyBy_should_support_key_iteratee()
+{
+    QList<QVariantMap> list = { QVariantMap{ {"id", 0}, {"value", 0}},
+                                QVariantMap{ {"id", 1}, {"value", 1}},
+                                QVariantMap{ {"id", 2}, {"value", 2}}};
+
+    QMap<QVariant, QVariantMap> map = _::keyBy(list, "id");
+
+    QCOMPARE(map.size(), 3);
+    QCOMPARE(map.contains(1), true);
+
+    QCOMPARE(map[2]["value"].toInt(), 2);
 }
 
 

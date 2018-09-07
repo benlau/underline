@@ -79,4 +79,6 @@ private slots:
 
     void test_keyBy();
 
+    void test_keyBy_should_support_key_iteratee();
+
 };
