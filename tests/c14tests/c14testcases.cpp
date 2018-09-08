@@ -1,7 +1,4 @@
-#include <QQmlApplicationEngine>
 #include <QTest>
-#include <Automator>
-#include <QtShell>
 #include <functional>
 #include <vector>
 #include "c14testcases.h"

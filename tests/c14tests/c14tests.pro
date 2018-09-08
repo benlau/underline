@@ -17,7 +17,6 @@ DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000
 ROOT_DIR = $$absolute_path($$PWD/../..)
 INCLUDEPATH += $$ROOT_DIR/src/cpp
 
-include(../qpm.pri)
 include(../common/common.pri)
 
 DISTFILES +=    \

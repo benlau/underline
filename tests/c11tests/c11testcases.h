@@ -51,6 +51,8 @@ private slots:
 
     void test_private_contains();
 
+    void test_private_cast_to_collection();
+
     void test_merge();
 
     void test_merge_qobject();

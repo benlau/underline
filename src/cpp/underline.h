@@ -953,6 +953,8 @@ namespace _ {
             using type = decltype(decl_func0<Functor, Args&&...>());
         };
 
+        /* BEGIN Collection */
+
         template <typename ...Args>
         struct _collection_info {
             enum { is_collection_type = false };
@@ -992,6 +994,24 @@ namespace _ {
 
         template <typename Collection, typename Index>
         using enable_if_collection_index_matched = std::enable_if<is_collection_index_matched<Collection, Index>::value, typename collection_value_type<Collection>::type>;
+
+        template <typename T>
+        inline bool can_cast_to_collection(const T&) { return false;}
+        template <typename T>
+        inline auto cast_to_collection(const T&) -> std::vector<Undefined> { return std::vector<Undefined>{}; }
+
+#ifdef QT_CORE_LIB
+        inline bool can_cast_to_collection(const QVariant &t) { return t.type() == QVariant::List;}
+
+        inline QVariantList cast_to_collection(const QVariant& t) { return t.toList();}
+#endif
+
+#ifdef QT_QUICK_LIB
+        inline bool can_cast_to_collection(const QJSValue &t) { return t.isArray();}
+
+        inline QJSValue cast_to_collection(const QJSValue& t) { return t;}
+#endif
+        /* END Collection */
 
         /// Read a property from the target container object
         template <typename Map, typename Key>
@@ -1039,6 +1059,9 @@ namespace _ {
             key_value_write(map, k, v);
             return true;
         }
+
+        template <typename T, typename Key, typename Value>
+        inline auto write(T&, Key&, Value&) -> typename std::enable_if<!is_kyt_key_value_matched<T,Key,Value>::value && !is_kyt_key_value_custom_matched<T,Key,Value>::value, bool>::type { return false;};
 
 #ifdef QT_QUICK_LIB
         template <typename Key>

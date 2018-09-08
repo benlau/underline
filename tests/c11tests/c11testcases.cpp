@@ -619,6 +619,18 @@ void C11TestCases::test_private_contains()
 
 }
 
+void C11TestCases::test_private_cast_to_collection()
+{
+    QVariantList list = QVariantList{0,1,2};
+    QVariant v1, v2;
+    v1 = QVariant::fromValue(list);
+
+    QCOMPARE(_::Private::can_cast_to_collection(v1), true);
+    QCOMPARE(_::Private::can_cast_to_collection(v2), false);
+
+    QCOMPARE(_::Private::cast_to_collection(v1), list);
+}
+
 void C11TestCases::test_merge()
 {
 

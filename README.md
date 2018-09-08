@@ -100,6 +100,13 @@ QPM
 qpm install com.github.benlau.underline
 ```
 
+Programming Guide
+=============
+
+1) Use "auto" type
+
+
+
 API
 ===
 
@@ -269,6 +276,29 @@ Example (Qt):
 ```C++
 // Obtain the objectName property from object's parent
 QVariant property = _::get(/* QObject* */ object, "parent.objectName");
+```
+
+keyBy
+-----
+
+```C++
+template <typename Collection,  typename Iteratee>
+Map keyBy(const Collection& collection, Iteratee iteratee)
+```
+
+Create a Map container class where the keys are the result of running iteratee function over the all the elements in the collection. The corresponding value of each key is the last element responsible for generating the key. The iteratee function can take at most one argument which is the element in the collection.
+
+The actual type of the Map container is determined by the Collection class. If it is a STL class, then a std::map is chosen. Qt container types return QMap.
+
+Arguments:
+ * collection: The input source. Check [_::isCollection](#iscollection) function for the supported types
+ * iteratee:  The iteratee function to transform the element in the collection to a key value.
+
+Return
+ * Map
+
+Example
+```C++
 ```
 
 map
