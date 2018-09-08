@@ -32,7 +32,7 @@ win32 {
     QMAKE_CXXFLAGS += -std:c++17 -Zc:__cplusplus
 }
 
-include(qpm.pri)
+include(../qpm.pri)
 
 SOURCES += \
     main.cpp

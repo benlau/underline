@@ -25,10 +25,6 @@ DISTFILES +=    \
     SampleData1.json \
     SampleData2.json
 
-!win32 {
-    QMAKE_CXXFLAGS += -Werror
-}
-
 HEADERS += \
     quicktests.h
 

@@ -1,4 +1,5 @@
 QT       += testlib
+QT -= quick qml gui
 
 TARGET = c14tests
 CONFIG   += console
