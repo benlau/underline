@@ -85,4 +85,6 @@ private slots:
 
     void test_keyBy_should_support_key_iteratee();
 
+    void spec_filter_args1_collection();
+
 };

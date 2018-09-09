@@ -25,7 +25,7 @@ public:
 private slots:
     void initTestCase();
     void cleanupTestCase();
-    void spec_map_static_assert_cap_arg1_collection();
+    void spec_map_static_assert_arg1_is_not_a_collection();
 };
 
 using namespace QtShell;
@@ -101,26 +101,19 @@ Builder::Result Builder::build(const QString& name, const QString &code)
 
     run("qmake");
 
-    QString make;
+    QString make, error;
 #ifdef Q_OS_WIN32
     make = "nmake";
+    error = " error ";
 #else
     make = "make";
+    error = "error:";
 #endif
 
     auto messages = run(make, QStringList(), &ret.exitCode).split("\n");
-    auto errors = [=]() {
-        QStringList output;
-        for (int i = 0 ; i < messages.size() ; i++) {
-            auto line = messages[i];
-            if (line.indexOf("error:") >= 0) {
-                output << line;
-                log.write(line.toUtf8());
-                log.write("\n");
-            }
-        }
-        return output;
-    }();
+    auto errors = _::filter(messages, [=](auto line) {
+        return line.indexOf(error) >= 0;
+    });
 
     ret.messages = messages;
     ret.errors = errors;
@@ -141,10 +134,12 @@ void Builder::cleanupTestCase()
 
 }
 
-void Builder::spec_map_static_assert_cap_arg1_collection()
+void Builder::spec_map_static_assert_arg1_is_not_a_collection()
 {
     Result ret = build(__FUNCTION__, CODE([]() {
-        _::map(std::vector<int>{1,2,3}, [](int) {});
+        class A {};
+        A a;
+        _::map(a, [](int) { return 0;});
     }));
 
 
@@ -152,7 +147,7 @@ void Builder::spec_map_static_assert_cap_arg1_collection()
     QVERIFY(ret.errors.size() <= 5);
     QVERIFY(ret.errors.size() > 0);
 
-    QVERIFY(ret.errors[0].indexOf("static_assert") >= 0);
+    QVERIFY(ret.errors[0].indexOf(_underline_input_type_is_not_array) >= 0);
 }
 
 QTEST_APPLESS_MAIN(Builder)

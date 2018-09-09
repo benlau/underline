@@ -995,5 +995,14 @@ void C11TestCases::test_keyBy_should_support_key_iteratee()
     QCOMPARE(map[2]["value"].toInt(), 2);
 }
 
+void C11TestCases::spec_filter_args1_collection()
+{
+    auto actual = _::filter(QList<int>{1,2,3,4,5}, [](int value) {
+        return value % 2 == 1;
+    });
+
+    QCOMPARE(actual, (QList<int>{1,3,5}));
+}
+
 
 

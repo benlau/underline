@@ -2084,6 +2084,26 @@ namespace _ {
         return res;
     }
 
+    template <typename Collection, typename Predicate>
+    inline auto filter(const Collection& collection, Predicate predicate) -> Collection {
+
+        Collection res;
+
+        static_assert(Private::via_func_info<Predicate, Collection>::is_invokable, "_::filter(): " _underline_predicate_mismatched_error);
+
+        static_assert(std::is_same<typename Private::ret_invoke<Predicate, typename Private::collection_value_type<Collection>::type,int, Collection>::type,bool>::value,
+                      "_::filter(): " _underline_predicate_return_type_mismatch_error);
+
+        for (unsigned int i = 0 ; i < static_cast<unsigned int>(collection.size()) ; i++) {
+            auto v = collection[i];
+            if (Private::invoke(predicate, v, i, collection)) {
+                res.push_back(v);
+            }
+        }
+
+        return res;
+    }
+
     template <typename Collection, typename Iteratee>
     inline auto map(const Collection& collection, Iteratee iteratee) -> typename Private::array_rebinder<Collection,
         typename Private::via_func_info<Iteratee, Collection>::non_void_ret_type

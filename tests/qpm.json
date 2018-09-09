@@ -1,6 +1,6 @@
 {
   "dependencies": [
-    "com.github.benlau.qtshell@0.4.2",
+    "com.github.benlau.qtshell@0.4.5",
     "net.efever.xbacktrace@0.0.1",
     "com.remarkable.googletest@1.0.5"
   ]

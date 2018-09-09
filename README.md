@@ -209,6 +209,26 @@ Qt
     ASSERT_EQ(stats[17], 1);
 ```
 
+filter
+----
+
+```C++
+template <typename Collection, typename Predicate>
+Collection filter(const Collection& collection, Predicate predicate);
+```
+Creates a new collection object obtaining the elements from the input collection which was passed to the predicate function returning true. The predicate may take one to three arguments [value [index [collection]]]
+
+Arguments
+ * collection: The input collection.  [_::isCollection](#iscollection) function for the supported types
+ * predicate: The predicate function returns true or false
+
+Return
+ * A newly created collection object
+
+Example
+```C++
+```
+
 forEach
 -------
 
@@ -288,7 +308,7 @@ Map keyBy(const Collection& collection, Iteratee iteratee)
 
 Create a Map container class where the keys are the result of running iteratee function over the all the elements in the collection. The corresponding value of each key is the last element responsible for generating the key. The iteratee function can take at most one argument which is the element in the collection.
 
-The actual type of the Map container is determined by the Collection class. If it is a STL class, then a std::map is chosen. Qt container types return QMap.
+The actual type of the Map container is determined by the Collection class. If it is an STL class, then an std::map is chosen. Qt container types return QMap.
 
 Arguments:
  * collection: The input source. Check [_::isCollection](#iscollection) function for the supported types
