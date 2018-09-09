@@ -1,4 +1,4 @@
-QT       += testlib qml quick
+QT       += testlib qml quick gui
 
 TARGET = quicktests
 CONFIG   += console

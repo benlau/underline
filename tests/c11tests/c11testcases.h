@@ -11,6 +11,8 @@ private slots:
 
     void initTestCase();
 
+    void spec_QVariantMap();
+
     void test_private_has();
 
     void test_private_is_collection();

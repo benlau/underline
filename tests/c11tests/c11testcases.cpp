@@ -37,6 +37,16 @@ void C11TestCases::initTestCase()
 {
 }
 
+void C11TestCases::spec_QVariantMap()
+{
+    QVariantMap type;
+
+    QCOMPARE(QString(typeid(_::Private::key_value_create_empty(type)).name()), QString(typeid(type).name()));
+
+    QCOMPARE(static_cast<bool>(_::Private::key_value_can_create_empty<QVariantMap>::value), true);
+
+}
+
 void C11TestCases::test_private_has()
 {
     class A{

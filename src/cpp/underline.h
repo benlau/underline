@@ -567,22 +567,6 @@ namespace _ {
             return meta.property(cast_to_qstring(key));
         }
 
-#ifdef QT_CORE_LIB
-        template <typename Meta, typename Key>
-        inline auto key_value_read(const Meta& gadget, const Key& key) -> typename std::enable_if<std::is_same<GadgetContainer, Meta>::value, QVariant>::type {
-            if (gadget.constData == nullptr) {
-                return QVariant();
-            }
-            auto k = cast_to_const_char_container(key);
-            int index = gadget.metaObject->indexOfProperty(k.data);
-            if (index < 0) return QVariant();
-
-            QMetaProperty prop = gadget.metaObject->property(index);
-
-            return prop.readOnGadget(gadget.constData);
-        }
-#endif
-
         template <typename Meta, typename Key, typename Value>
         inline auto key_value_write(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_gadget<Meta>::value, bool>::type {
             auto ptr = cast_to_pointer<Meta>(meta);
@@ -609,8 +593,33 @@ namespace _ {
             return true;
         }
 
+        template  <typename Ref> // Create a KV object with empty properties for using with set/merge.
+        inline auto key_value_create_empty(const Ref&) -> Undefined {
+        }
+
+        template <typename Ret>
+        struct key_value_can_create_empty {
+            enum {
+                value = std::is_same<decltype(key_value_create_empty(std::declval<Ret>())), Undefined>::value
+            };
+        };
+
 
 #ifdef QT_CORE_LIB
+        template <typename Meta, typename Key>
+        inline auto key_value_read(const Meta& gadget, const Key& key) -> typename std::enable_if<std::is_same<GadgetContainer, Meta>::value, QVariant>::type {
+            if (gadget.constData == nullptr) {
+                return QVariant();
+            }
+            auto k = cast_to_const_char_container(key);
+            int index = gadget.metaObject->indexOfProperty(k.data);
+            if (index < 0) return QVariant();
+
+            QMetaProperty prop = gadget.metaObject->property(index);
+
+            return prop.readOnGadget(gadget.constData);
+        }
+
         template <typename Meta, typename Key, typename Value>
         inline auto key_value_write(Meta& gadget, const Key& key, const Value& value) -> typename std::enable_if<std::is_same<GadgetContainer, Meta>::value, bool>::type {
             if (gadget.data == nullptr) {
@@ -623,6 +632,10 @@ namespace _ {
             QMetaProperty prop = gadget.metaObject->property(index);
             prop.writeOnGadget(gadget.data, value);
             return true;
+        }
+
+        inline auto key_value_create_empty(const QVariantMap&) -> QVariantMap {
+            return QVariantMap();
         }
 
 #endif
@@ -1778,7 +1791,7 @@ namespace _ {
             if (bothAreQJSValueThen()) return v1;
 
             auto bothAreForInAbleThen = [&]() {
-                bool res = is_real_qt_metable<V1>::value && is_key_value_type<V2>::value;
+                bool res = isForInAble(v1) && isForInAble(v2);
                 if (res) p_forIn_merge_(v1 ,v2);
                 return res;
             };
@@ -1786,7 +1799,7 @@ namespace _ {
             if (bothAreForInAbleThen()) return v1;
 
             auto forInAbleByCastingV2 = [&]() {
-                return is_real_qt_metable<V1>::value &&
+                return isForInAble(v1) &&
                     try_cast_to_qt_metable(v2, [&](QObject* metable){
                         p_forIn_merge_(v1, metable);
                     },[&](GadgetContainer metable) {
