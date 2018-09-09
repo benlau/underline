@@ -33,6 +33,7 @@ script:
     - tests/quicktests/quicktests
     - tests/noqttests/noqttests
     - tests/builder/builder
+    - cat build_log.txt
     - npm install
     - npm run collect_compiler_error
     

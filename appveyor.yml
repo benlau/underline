@@ -42,6 +42,7 @@ build_script:
   - tests\quicktests\release\quicktests
   - tests\noqttests\release\noqttests
   - tests\builder\release\builder
+  - type build_log.txt
   - npm install
   - npm run collect_compiler_error
 

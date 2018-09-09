@@ -23,7 +23,8 @@ DISTFILES +=    \
     ../../README.md \
     ../../appveyor.yml \
     SampleData1.json \
-    SampleData2.json
+    SampleData2.json \
+    test_QJSValue.js
 
 HEADERS += \
     quicktests.h

@@ -15,7 +15,62 @@ QuickTests::QuickTests(QObject *parent) : QObject(parent)
     Q_UNUSED(ref);
 }
 
-void QuickTests::test_spec_QJSValue()
+void QuickTests::validate_QJSValue_expected_behaviour()
+{
+    {   // Ccreate non-Object value without using QQmlEngine
+        QJSValue intValue(1);
+        QCOMPARE(intValue.toInt(), 1);
+    }
+
+    {
+        // Create object by prototype
+        QQmlEngine engine;
+
+        QJSValue object = engine.newObject();
+        QCOMPARE(object.isObject(), true);
+
+        QJSValue prototype = object.prototype();
+
+        QJSValue newObject = prototype.property("constructor").callAsConstructor();
+
+        QCOMPARE(newObject.isObject(), true);
+    }
+
+    {
+        // Prove it is able to obtain Object.prototype from QJSValue
+        QQmlEngine engine;
+
+        QJSValue objectPrototype = engine.newObject().prototype();
+
+        QString content = QtShell::cat(QtShell::realpath_strip(SRCDIR, "test_QJSValue.js"));
+        QJSValue program = engine.evaluate(content);
+
+        QVERIFY(!program.isError());
+
+        QJSValue testObjectCreator = program.property("TestObject");
+        QVERIFY(testObjectCreator.isCallable());
+
+        QJSValue testObject = testObjectCreator.callAsConstructor();
+        QCOMPARE(testObject.isObject(), true);
+        QCOMPARE(testObject.property("value").toInt(), 50);
+
+        QJSValue prototype = testObject.prototype();
+
+        QJSValue object1 = prototype.property("constructor").callAsConstructor();
+        QCOMPARE(object1.property("value").toInt(), 50);
+
+        prototype = prototype.prototype();
+        QJSValue object2 = prototype.property("constructor").callAsConstructor();
+        QVERIFY(object2.property("value").toInt() != 50);
+        QVERIFY(object2.isObject());
+
+        QVERIFY(objectPrototype.equals(prototype));
+
+        QVERIFY(prototype.prototype().isNull());
+    }
+}
+
+void QuickTests::spec_QJSValue()
 {
     QCOMPARE(static_cast<bool>(_::Private::is_meta_object<QJSValue>::value),         true);
     QCOMPARE(static_cast<bool>(_::Private::is_qt_any_type<QJSValue>::value),         true);
@@ -29,6 +84,19 @@ void QuickTests::test_spec_QJSValue()
 
     QCOMPARE(value.property("value1").toInt(), 1);
     QCOMPARE(_::Private::read(value, "value1").toInt(), 1);
+}
+
+void QuickTests::spec_QJSValue_object()
+{
+    QJSEngine engine;
+
+    QJSValue object = engine.newObject();
+
+    _::Private::write(object, "value1", 1);
+
+    QCOMPARE(_::Private::isForInAble(object), true);
+    QCOMPARE(object.property("value1").toInt(), 1);
+    QCOMPARE(_::Private::read(object, "value1").toInt(), 1);
 }
 
 void QuickTests::test_private_is_convertible_args_QJSValue_QVariant()

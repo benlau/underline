@@ -13,17 +13,19 @@ public:
 
     class Result {
     public:
-        int retCode;
         QStringList messages;
+        QStringList errors;
+        int exitCode;
     };
 
-    Result build(const QString& code);
+    Builder::Result build(const QString& name, const QString &code);
+
+    QFile log;
 
 private slots:
     void initTestCase();
     void cleanupTestCase();
-    void spec_run();
-
+    void spec_map_static_assert_cap_arg1_collection();
 };
 
 using namespace QtShell;
@@ -32,11 +34,13 @@ using namespace QtShell;
 
 Builder::Builder()
 {
-
+    log.setFileName("build_log.txt");
+    log.open(QIODevice::WriteOnly);
 }
 
 Builder::~Builder()
 {
+    log.close();
 }
 
 static QString run(const QString& program, const QStringList& args = QStringList(), int* code = nullptr) {
@@ -63,12 +67,19 @@ static void writeTo(QString& path, QString& content) {
 
 }
 
-Builder::Result Builder::build(const QString &code)
+Builder::Result Builder::build(const QString& name, const QString &code)
 {
-    Result res;
+    Builder::Result ret;
+
+    QString normalizedCode = code;
+    normalizedCode.remove(QRegExp("  +"));
+    normalizedCode.remove(QRegExp("\n"));
+
+    log.write(normalizedCode.toUtf8());
+    log.write("\n");
 
     QString templatePath = realpath_strip(SRCDIR, "templates");
-    QString buildPath = realpath_strip(pwd(), "build-code");
+    QString buildPath = realpath_strip(pwd(), name, "build-code");
 
     rm("-rf", buildPath);
     mkdir("-p", buildPath);
@@ -97,21 +108,28 @@ Builder::Result Builder::build(const QString &code)
     make = "make";
 #endif
 
-    auto messages = run(make, QStringList(), &res.retCode).split("\n");
-    messages = [=]() {
+    auto messages = run(make, QStringList(), &ret.exitCode).split("\n");
+    auto errors = [=]() {
         QStringList output;
         for (int i = 0 ; i < messages.size() ; i++) {
             auto line = messages[i];
             if (line.indexOf("error:") >= 0) {
                 output << line;
+                log.write(line.toUtf8());
+                log.write("\n");
             }
         }
         return output;
     }();
 
-    res.messages = messages;
+    ret.messages = messages;
+    ret.errors = errors;
 
-    return res;
+    if (ret.exitCode == 0 || ret.errors.size() > 5 || ret.errors.size() < 1) {
+        qDebug() << ret.messages.join("\n");
+    }
+
+    return ret;
 }
 
 void Builder::initTestCase()
@@ -123,18 +141,18 @@ void Builder::cleanupTestCase()
 
 }
 
-void Builder::spec_run()
+void Builder::spec_map_static_assert_cap_arg1_collection()
 {
-    Result ret = build(CODE([]() {
+    Result ret = build(__FUNCTION__, CODE([]() {
         _::map(std::vector<int>{1,2,3}, [](int) {});
     }));
 
-    qDebug() << ret.messages;
-    QVERIFY(ret.retCode != 0);
-    QVERIFY(ret.messages.size() <= 5);
-    QVERIFY(ret.messages.size() > 0);
 
-    QVERIFY(ret.messages[0].indexOf("static_assert") >= 0);
+    QVERIFY(ret.exitCode != 0);
+    QVERIFY(ret.errors.size() <= 5);
+    QVERIFY(ret.errors.size() > 0);
+
+    QVERIFY(ret.errors[0].indexOf("static_assert") >= 0);
 }
 
 QTEST_APPLESS_MAIN(Builder)

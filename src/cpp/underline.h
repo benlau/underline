@@ -629,6 +629,16 @@ namespace _ {
 
         /* END key_value_xxx */
 
+        template <typename T>
+        inline bool isForInAble(const T&) {
+            return key_value_info<T>::is_key_value_type;
+        }
+
+#ifdef QT_QUICK_LIB
+        inline bool isForInAble(const QJSValue& v) {
+            return v.isObject();
+        }
+#endif
 
         template <typename T, typename Key>
         struct is_kyt_key_matched {

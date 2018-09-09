@@ -14,7 +14,11 @@ signals:
 public slots:
 
 private slots:
-    void test_spec_QJSValue();
+    void validate_QJSValue_expected_behaviour();
+
+    void spec_QJSValue();
+
+    void spec_QJSValue_object();
 
     void test_private_is_convertible_args_QJSValue_QVariant();
 

@@ -1,5 +1,6 @@
 #include <QString>
 #include <QtTest>
+#include <QApplication>
 #include "quicktests.h"
 #include "underline.h"
 
