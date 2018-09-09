@@ -43,7 +43,7 @@ void C11TestCases::spec_QVariantMap()
 
     QCOMPARE(QString(typeid(_::Private::key_value_create_empty(type)).name()), QString(typeid(type).name()));
 
-    QCOMPARE(static_cast<bool>(_::Private::key_value_can_create_empty<QVariantMap>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::key_value_is_creatable_type<QVariantMap>::value), true);
 
 }
 

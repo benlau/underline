@@ -595,15 +595,15 @@ namespace _ {
 
         template  <typename Ref> // Create a KV object with empty properties for using with set/merge.
         inline auto key_value_create_empty(const Ref&) -> Undefined {
+            return Undefined();
         }
 
         template <typename Ret>
-        struct key_value_can_create_empty {
+        struct key_value_is_creatable_type {
             enum {
-                value = std::is_same<decltype(key_value_create_empty(std::declval<Ret>())), Undefined>::value
+                value = is_map<Ret>::value || is_qjsvalue<Ret>::value
             };
         };
-
 
 #ifdef QT_CORE_LIB
         template <typename Meta, typename Key>
@@ -637,7 +637,23 @@ namespace _ {
         inline auto key_value_create_empty(const QVariantMap&) -> QVariantMap {
             return QVariantMap();
         }
+#endif
 
+#ifdef QT_QUICK_LIB
+        inline auto key_value_create_empty(const QJSValue& value) -> QJSValue {
+            auto prototype = value.prototype();
+            auto p = prototype;
+            while (!p.isNull()) {
+                prototype = p;
+                p = p.prototype();
+            }
+
+            if (prototype.isNull()) {
+                return QJSValue();
+            }
+
+            return prototype.property("constructor").callAsConstructor();
+        }
 #endif
 
         /* END key_value_xxx */

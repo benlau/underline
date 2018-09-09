@@ -86,7 +86,7 @@ void QuickTests::spec_QJSValue()
     QCOMPARE(_::Private::read(value, "value1").toInt(), 1);
 }
 
-void QuickTests::spec_QJSValue_object()
+void QuickTests::spec_QJSValue_is_a_object()
 {
     QJSEngine engine;
 
@@ -94,9 +94,14 @@ void QuickTests::spec_QJSValue_object()
 
     _::Private::write(object, "value1", 1);
 
+    QCOMPARE(static_cast<bool>(_::Private::key_value_is_creatable_type<QJSValue>::value), true);
+    QCOMPARE(_::Private::key_value_create_empty(object).isObject(), true);
+
     QCOMPARE(_::Private::isForInAble(object), true);
     QCOMPARE(object.property("value1").toInt(), 1);
     QCOMPARE(_::Private::read(object, "value1").toInt(), 1);
+
+
 }
 
 void QuickTests::test_private_is_convertible_args_QJSValue_QVariant()

@@ -18,7 +18,7 @@ private slots:
 
     void spec_QJSValue();
 
-    void spec_QJSValue_object();
+    void spec_QJSValue_is_a_object();
 
     void test_private_is_convertible_args_QJSValue_QVariant();
 
