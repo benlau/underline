@@ -41,6 +41,7 @@ build_script:
   - tests\c17tests\release\c17tests
   - tests\quicktests\release\quicktests
   - tests\noqttests\release\noqttests
+  - tests\builder\release\builder
   - npm install
   - npm run collect_compiler_error
 

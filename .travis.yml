@@ -1,7 +1,7 @@
 language : cpp
 dist: trusty
 env:
-  - CC=gcc-6 CXX=g++-6
+  - CC=gcc-6 CXX=g++-6 DISPLAY=:99.0
 addons:
   apt:
     packages:
@@ -32,6 +32,7 @@ script:
     - tests/c17tests/c17tests
     - tests/quicktests/quicktests
     - tests/noqttests/noqttests
+    - tests/builder/builder
     - npm install
     - npm run collect_compiler_error
     
