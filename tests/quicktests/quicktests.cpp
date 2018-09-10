@@ -94,8 +94,8 @@ void QuickTests::spec_QJSValue_is_a_object()
 
     _::Private::write(object, "value1", 1);
 
-    QCOMPARE(static_cast<bool>(_::Private::key_value_is_creatable_type<QJSValue>::value), true);
-    QCOMPARE(_::Private::key_value_create_empty(object).isObject(), true);
+    QCOMPARE(static_cast<bool>(_::Private::key_value_support_missing_path_creation<QJSValue>::value), true);
+    QCOMPARE(_::Private::key_value_create_missing_path(object).isObject(), true);
 
     QCOMPARE(_::Private::p_isForInAble_(object), true);
     QCOMPARE(object.property("value1").toInt(), 1);

@@ -41,10 +41,19 @@ void C11TestCases::spec_QVariantMap()
 {
     QVariantMap type;
 
-    QCOMPARE(QString(typeid(_::Private::key_value_create_empty(type)).name()), QString(typeid(type).name()));
+    QCOMPARE(QString(typeid(_::Private::key_value_create_missing_path(type)).name()), QString(typeid(type).name()));
 
-    QCOMPARE(static_cast<bool>(_::Private::key_value_is_creatable_type<QVariantMap>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::key_value_support_missing_path_creation<QVariantMap>::value), true);
 
+}
+
+void C11TestCases::spec_QObject()
+{
+    QObject* object = new QObject(this);
+
+    QCOMPARE(static_cast<bool>(_::Private::key_value_support_missing_path_creation<QObject*>::value), true);
+
+    QCOMPARE(QString(typeid(_::Private::key_value_create_missing_path(object)).name()), QString(typeid(QVariantMap{}).name()));
 }
 
 void C11TestCases::test_private_has()
@@ -473,30 +482,6 @@ void C11TestCases::test_private_cast_to_qobject()
 void C11TestCases::test_private_merge()
 {
     {
-        /* QVariant, QObject */
-        QVariant v1;
-        DataObject* v2 = new DataObject(this);
-        v2->setValue1(1);
-
-        auto res = _::Private::p_merge_(v1, v2);
-        auto map = res.toMap();
-        QCOMPARE(map["value1"].toInt(), 1);
-    }
-
-    {
-        /* QVariant , QVariant(QObject) */
-        QVariant v1;
-        DataObject* object = new DataObject(this);
-        object->setValue1(1);
-
-        QVariant v2 = QVariant::fromValue<DataObject*>(object);
-
-        auto res = _::Private::p_merge_(v1, v2);
-        auto map = res.toMap();
-        QCOMPARE(map["value1"].toInt(), 1);
-    }
-
-    {
         /* QObject, QVariant */
         DataObject* v1 = new DataObject(this);
         v1->setValue1(1);
@@ -650,6 +635,8 @@ void C11TestCases::test_merge()
         QObject* source = createMockObject(this);
         QVariantMap object;
         _::merge(object, source);
+
+        qDebug() << object;
 
         QVERIFY(object["objectName"] == "Root");
         QVERIFY(object["value1"].toInt() == 1);
@@ -826,6 +813,23 @@ void C11TestCases::test_merge_arg1_QVariantMap_containing_Gadget()
 
     auto res = object["value"].value<GadgetObject>();
     QCOMPARE(res.value, 33);
+}
+
+void C11TestCases::spec_merge_arg1_QObject_should_direct_copy_to_missing_path()
+{
+    QObject* object = new QObject(this);
+
+    QVariantMap source;
+    _::set(source, "value1.value1", 1);
+    _::set(source, "value1.value2", 2.0);
+
+    _::merge(object, source);
+
+    QVariantMap value1 = object->property("value1").toMap();
+
+    QCOMPARE(value1["value1"].toInt(), 1);
+
+    QCOMPARE(value1["value2"].toDouble(), 2.0);
 }
 
 void C11TestCases::test_some()

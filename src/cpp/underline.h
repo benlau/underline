@@ -594,15 +594,15 @@ namespace _ {
             return true;
         }
 
-        template  <typename Ref> // Create a KV object with empty properties for using with set/merge.
-        inline auto key_value_create_empty(const Ref&) -> Undefined {
+        template  <typename Ref> // Create a KV object to fill-in the missing path.
+        inline auto key_value_create_missing_path(const Ref&) -> Undefined {
             return Undefined();
         }
 
-        template <typename Ret>
-        struct key_value_is_creatable_type {
+        template <typename Ref>
+        struct key_value_support_missing_path_creation {
             enum {
-                value = is_map<Ret>::value || is_qjsvalue<Ret>::value
+                value = is_map<Ref>::value || is_qjsvalue<Ref>::value || is_qobject<Ref>::value
             };
         };
 
@@ -635,13 +635,17 @@ namespace _ {
             return true;
         }
 
-        inline auto key_value_create_empty(const QVariantMap&) -> QVariantMap {
+        inline auto key_value_create_missing_path(const QVariantMap&) -> QVariantMap {
+            return QVariantMap();
+        }
+
+        inline auto key_value_create_missing_path(QObject*) -> QVariantMap {
             return QVariantMap();
         }
 #endif
 
 #ifdef QT_QUICK_LIB
-        inline auto key_value_create_empty(const QJSValue& value) -> QJSValue {
+        inline auto key_value_create_missing_path(const QJSValue& value) -> QJSValue {
             auto prototype = value.prototype();
             auto p = prototype;
             while (!p.isNull()) {
@@ -1588,7 +1592,7 @@ namespace _ {
                 },[&](QJSValue &kyt) {
                     auto v = read(kyt, k.data);
                     if (v.isUndefined()) {
-                        copy_if_same_type(v, key_value_create_empty(kyt));
+                        copy_if_same_type(v, key_value_create_missing_path(kyt));
                     }
                     p_recursive_set_(v , tokens, index + 1, value);
                     write_if_same_type(object, k.data, v);
@@ -1785,10 +1789,10 @@ namespace _ {
                     return;
                 }
 
-                bool missingPathToMerge = !can_cast_to_qt_metable(srcValue) && p_isForInAble_(value);
+                bool missingPathToMerge = !can_cast_to_qt_metable(srcValue) && can_cast_to_qt_metable(value);
                 if (missingPathToMerge) {
-                    auto tmp = key_value_create_empty(v1);
-                    write(v1, key, p_merge_(tmp, value));
+                    auto path = key_value_create_missing_path(v1);
+                    write(v1, key, p_merge_(path, value));
                 } else {
                     write(v1, key, p_merge_(srcValue, value));
                 }
@@ -1802,20 +1806,6 @@ namespace _ {
         template <typename V1, typename V2>
         inline auto p_merge_(V1& v1, const V2& v2) -> pointer_or_reference_t<V1> {
 
-            auto bothAreQJSValueThen = [&]() {
-                bool res = is_qjsvalue<V1>::value && is_qjsvalue<V2>::value;
-                if (res) {
-                    if (can_cast_to_qvariantmap(v2)) {
-                        p_forIn_merge_(v1,v2);
-                    } else {
-                        copy_if_same_type(v1, v2);
-                    }
-                }
-                return res;
-            };
-
-            if (bothAreQJSValueThen()) return v1;
-
             auto bothAreForInAbleThen = [&]() {
                 bool res = p_isForInAble_(v1) && p_isForInAble_(v2);
                 if (res) p_forIn_merge_(v1 ,v2);
@@ -1824,7 +1814,7 @@ namespace _ {
 
             if (bothAreForInAbleThen()) return v1;
 
-            auto forInAbleByCastingV2 = [&]() {
+            auto BothAreForInAbleByCastingV2 = [&]() {
                 return p_isForInAble_(v1) &&
                     try_cast_to_qt_metable(v2, [&](QObject* metable){
                         p_forIn_merge_(v1, metable);
@@ -1837,7 +1827,7 @@ namespace _ {
                     });
             };
 
-            if (forInAbleByCastingV2()) return v1;
+            if (BothAreForInAbleByCastingV2()) return v1;
 
             bool forInAbleByCastingV1 = try_cast_to_qt_metable(v1, [&](QObject* metable){
                 p_merge_(metable, v2);
@@ -1860,25 +1850,7 @@ namespace _ {
 
             if (forInAbleByCastingV1) return v1;
 
-            auto v1IsNotForinAble_checkIsQJSvalueThen = [&]() {
-                auto res = is_qjsvalue<V1>::value;
-                if (res) copy_if_same_type(v1, v2);
-                return res;
-            };
-
-            if (v1IsNotForinAble_checkIsQJSvalueThen()) return v1;
-
-            auto v1IsNotForinAbleVariant_convertToQVariantMapIfNeeded = [&]() {
-                if (can_cast_to_qt_metable(v2)) {
-                    QVariantMap map;
-                    p_merge_(map, v2);
-                    convertTo(map, v1);
-                } else {
-                    copy_or_convert(v1, v2);
-                }
-            };
-
-            v1IsNotForinAbleVariant_convertToQVariantMapIfNeeded();
+            copy_or_convert(v1, v2);
 
             return v1;
         }

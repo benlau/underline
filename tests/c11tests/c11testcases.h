@@ -13,6 +13,8 @@ private slots:
 
     void spec_QVariantMap();
 
+    void spec_QObject();
+
     void test_private_has();
 
     void test_private_is_collection();
@@ -64,6 +66,8 @@ private slots:
     void test_merge_complex();
 
     void test_merge_arg1_QVariantMap_containing_Gadget();
+
+    void spec_merge_arg1_QObject_should_direct_copy_to_missing_path();
 
     void test_some();
 

@@ -31,6 +31,7 @@ private slots:
 using namespace QtShell;
 
 static QString logFileName;
+static int buildErrorCountThreshold = 10;
 
 #define CODE(x) #x
 
@@ -157,7 +158,7 @@ void Builder::spec_map_static_assert_arg1_is_not_a_collection()
 
 
 //    QVERIFY(ret.exitCode != 0);
-    QVERIFY(ret.errors.size() <= 5);
+    QVERIFY(ret.errors.size() <= buildErrorCountThreshold);
     QVERIFY(ret.errors.size() > 0);
 
     QVERIFY(ret.errors[0].indexOf(_underline_input_type_is_not_array) >= 0);
