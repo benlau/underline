@@ -168,8 +168,9 @@ namespace _ {
 #ifndef QT_QUICK_LIB
         class QJSValue{
         public:
-            QJSValue property(QString) const { return QJSValue();}
-            void setProperty(QString, QJSValue) {}
+            inline QJSValue property(QString) const { return QJSValue();}
+            inline void setProperty(QString, QJSValue) {}
+            inline bool isUndefined() const {return true;}
         };
         class QJSValueIterator{
         public:
@@ -1586,6 +1587,9 @@ namespace _ {
                     write_if_same_type(object, k.data, v);
                 },[&](QJSValue &kyt) {
                     auto v = read(kyt, k.data);
+                    if (v.isUndefined()) {
+                        copy_if_same_type(v, key_value_create_empty(kyt));
+                    }
                     p_recursive_set_(v , tokens, index + 1, value);
                     write_if_same_type(object, k.data, v);
                 });

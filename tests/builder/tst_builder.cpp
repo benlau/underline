@@ -36,16 +36,10 @@ static QString logFileName;
 
 Builder::Builder()
 {
-    logFileName = realpath_strip(pwd(), "build_log.txt");
-    log.setFileName(logFileName);
-    log.open(QIODevice::WriteOnly);
 }
 
 Builder::~Builder()
 {
-    log.close();
-
-    qDebug().noquote() << cat(logFileName);
 }
 
 static QString run(const QString& program, const QStringList& args = QStringList(), int* code = nullptr) {
@@ -84,7 +78,10 @@ Builder::Result Builder::build(const QString& name, const QString &code)
     log.write("\n");
 
     QString templatePath = realpath_strip(SRCDIR, "templates");
-    QString buildPath = realpath_strip(pwd(), name, "build-code");
+
+    QString normalizedName = name;
+    normalizedName.replace(":", "");
+    QString buildPath = realpath_strip(pwd(), normalizedName, "build-code");
 
     rm("-rf", buildPath);
     mkdir("-p", buildPath);
@@ -137,11 +134,17 @@ Builder::Result Builder::build(const QString& name, const QString &code)
 
 void Builder::initTestCase()
 {
+    logFileName = realpath_strip(pwd(), "build_log.txt");
+    log.setFileName(logFileName);
+    log.open(QIODevice::WriteOnly);
+
 }
 
 void Builder::cleanupTestCase()
 {
+    log.close();
 
+    qDebug().noquote() << cat(logFileName);
 }
 
 void Builder::spec_map_static_assert_arg1_is_not_a_collection()

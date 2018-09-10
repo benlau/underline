@@ -32,7 +32,7 @@ private slots:
 
     void test_set_args_QJSValue_key_QJSValue();
 
-    void test_set_args_QJSValue_key_QJSValue_shouldnt_create_non_exist_path();
+    void spec_set_args_QJSValue_key_QJSValue_should_support_missing_path_creation();
 
     void test_set_args_QVariantMap_key_QJSValue();
 

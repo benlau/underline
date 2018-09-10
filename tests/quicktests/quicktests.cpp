@@ -263,7 +263,7 @@ void QuickTests::test_set_args_QJSValue_key_QJSValue()
     QCOMPARE(object.property("value1").property("value2").property("value1").toString(), QString("3"));
 }
 
-void QuickTests::test_set_args_QJSValue_key_QJSValue_shouldnt_create_non_exist_path()
+void QuickTests::spec_set_args_QJSValue_key_QJSValue_should_support_missing_path_creation()
 {
     QVariantMap templ;
     _::set(templ, "value1.value1", 1);
@@ -275,8 +275,7 @@ void QuickTests::test_set_args_QJSValue_key_QJSValue_shouldnt_create_non_exist_p
 
     _::set(object, "value1.value3.value1", value);
 
-    QCOMPARE(object.property("value1").property("value3").property("value1").isUndefined(), true);
-
+    QCOMPARE(object.property("value1").property("value3").property("value1").toString(), QString("3"));
 }
 
 void QuickTests::test_set_args_QVariantMap_key_QJSValue()
