@@ -97,7 +97,7 @@ void QuickTests::spec_QJSValue_is_a_object()
     QCOMPARE(static_cast<bool>(_::Private::key_value_is_creatable_type<QJSValue>::value), true);
     QCOMPARE(_::Private::key_value_create_empty(object).isObject(), true);
 
-    QCOMPARE(_::Private::isForInAble(object), true);
+    QCOMPARE(_::Private::p_isForInAble_(object), true);
     QCOMPARE(object.property("value1").toInt(), 1);
     QCOMPARE(_::Private::read(object, "value1").toInt(), 1);
 
@@ -183,13 +183,17 @@ void QuickTests::test_merge_arg1_QJSValue_arg2_other()
 
         QString content;
         content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
-        qDebug() << content;
+        qDebug().noquote() << content;
         QJSValue source = engine.evaluate(content);
 
         QVariantMap object;
         object["value4"] = QVariantMap{{"value2", 2.0}};
 
+        qDebug().noquote() << object;
+
         _::merge(object, source);
+
+        qDebug().noquote() << object;
 
         QCOMPARE(object["value4"].toMap()["value1"].toInt(), 21);
         QCOMPARE(object["value4"].toMap()["value2"].toDouble(), 2.0);
@@ -228,6 +232,20 @@ void QuickTests::test_merge_arg1_QJSValue_arg2_other()
         QCOMPARE(map["value4"].toMap()["value1"].toInt(), 21);
         QCOMPARE(map["value4"].toMap()["value2"].toDouble(), 2.0);
     }
+
+}
+
+void QuickTests::spec_merge_args_QJSValue_QJSValue_should_support_missing_path_creation()
+{
+    QQmlEngine engine;
+    QJSValue object = engine.newObject();
+
+    QJSValue source = engine.toScriptValue(QVariantMap{{ "a", QVariantMap {{"b", 2.0}}}});
+
+    _::merge(object, source);
+
+    QCOMPARE(object.property("a").isUndefined(), false);
+    QCOMPARE(object.property("a").property("b").toNumber(), 2.0);
 }
 
 void QuickTests::test_set_args_QJSValue_key_QJSValue()

@@ -28,6 +28,8 @@ private slots:
 
     void test_merge_arg1_QJSValue_arg2_other();
 
+    void spec_merge_args_QJSValue_QJSValue_should_support_missing_path_creation();
+
     void test_set_args_QJSValue_key_QJSValue();
 
     void test_set_args_QJSValue_key_QJSValue_shouldnt_create_non_exist_path();

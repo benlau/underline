@@ -40,7 +40,7 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
 #define _underline_iteratee_mismatched_error "Mismatched argument types in the iteratee function. Please validate the number of argument and their type."
 #define _underline_predicate_mismatched_error "Mismatched argument types in the predicate function. Please validate the number of argument and their type."
 #define _underline_predicate_return_type_mismatch_error "The return type of predicate function must be bool"
-#define _underline_input_type_is_not_array "The expected input is an valid array class, where _::isCollection() returns true (e.g std::vector , QList , QVector) "
+#define _underline_input_type_is_not_array "Invalid Argument Type. The input should be an valid Collection class where _::isCollection() returns true. "
 #define _underline_iteratee_void_ret_error "The return type of iteratee function cannot be void"
 
 #define _underline_qjsvalue_set_error "It should only modify the value of a QJSValue object by another QJSValeu"
@@ -659,12 +659,12 @@ namespace _ {
         /* END key_value_xxx */
 
         template <typename T>
-        inline bool isForInAble(const T&) {
+        inline bool p_isForInAble_(const T&) {
             return key_value_info<T>::is_key_value_type;
         }
 
 #ifdef QT_QUICK_LIB
-        inline bool isForInAble(const QJSValue& v) {
+        inline bool p_isForInAble_(const QJSValue& v) {
             return v.isObject();
         }
 #endif
@@ -1781,7 +1781,13 @@ namespace _ {
                     return;
                 }
 
-                write(v1, key, p_merge_(srcValue, value));
+                bool missingPathToMerge = !can_cast_to_qt_metable(srcValue) && p_isForInAble_(value);
+                if (missingPathToMerge) {
+                    auto tmp = key_value_create_empty(v1);
+                    write(v1, key, p_merge_(tmp, value));
+                } else {
+                    write(v1, key, p_merge_(srcValue, value));
+                }
             });
         }
 
@@ -1807,7 +1813,7 @@ namespace _ {
             if (bothAreQJSValueThen()) return v1;
 
             auto bothAreForInAbleThen = [&]() {
-                bool res = isForInAble(v1) && isForInAble(v2);
+                bool res = p_isForInAble_(v1) && p_isForInAble_(v2);
                 if (res) p_forIn_merge_(v1 ,v2);
                 return res;
             };
@@ -1815,7 +1821,7 @@ namespace _ {
             if (bothAreForInAbleThen()) return v1;
 
             auto forInAbleByCastingV2 = [&]() {
-                return isForInAble(v1) &&
+                return p_isForInAble_(v1) &&
                     try_cast_to_qt_metable(v2, [&](QObject* metable){
                         p_forIn_merge_(v1, metable);
                     },[&](GadgetContainer metable) {
@@ -2012,6 +2018,9 @@ namespace _ {
         using OBJECT_TYPE = typename Private::key_value_info<Object>;
         using SOURCE_TYPE = typename Private::key_value_info<Source>;
 
+        static_assert( !(Private::is_qjsvalue<Object>::value && !Private::is_qjsvalue<Source>::value),
+                      "_::merge(QJSValue, source): " _underline_qjsvalue_set_error);
+
         _underline_static_assert_is_object_source_key_matched("_::merge: ", typename OBJECT_TYPE::key_type, typename SOURCE_TYPE::key_type);
 
         _underline_static_assert_is_object_source_value_matched("_::merge: ", typename OBJECT_TYPE::value_type, typename SOURCE_TYPE::value_type);
@@ -2019,9 +2028,6 @@ namespace _ {
         _underline_static_assert_is_qt_metable("_::merge: ", Object);
 
         _underline_static_assert_is_key_value_type("_::merge: ", Source);
-
-        static_assert( !(Private::is_qjsvalue<Object>::value && !Private::is_qjsvalue<Source>::value),
-                      "_::merge(QJSValue, source): " _underline_qjsvalue_set_error);
 
         Private::p_merge_(object, source);
 
