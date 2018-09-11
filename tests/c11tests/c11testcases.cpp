@@ -53,7 +53,20 @@ void C11TestCases::spec_QObject()
 
     QCOMPARE(static_cast<bool>(_::Private::key_value_support_missing_path_creation<QObject*>::value), true);
 
-    QCOMPARE(QString(typeid(_::Private::key_value_create_missing_path(object)).name()), QString(typeid(QVariantMap{}).name()));
+    QCOMPARE(QString(typeid(_::Private::key_value_create_missing_path(object)).name()),
+             QString(typeid(QVariantMap{}).name()));
+}
+
+void C11TestCases::spec_QVariant()
+{
+    QVariant v;
+
+    QCOMPARE(static_cast<bool>(_::Private::is_static_qt_metable<QVariant>::value),                     false);
+
+    QCOMPARE(static_cast<bool>(_::Private::is_static_qt_metable_castable<QVariant>::value),            true);
+
+    QCOMPARE(static_cast<bool>(_::Private::key_value_support_missing_path_creation<QVariant>::value),  false);
+
 }
 
 void C11TestCases::test_private_has()
@@ -1008,5 +1021,28 @@ void C11TestCases::spec_filter_args1_collection()
     QCOMPARE(actual, (QList<int>{1,3,5}));
 }
 
+void C11TestCases::test_toCollectiion()
+{
+    {
+        std::map<int, int> map{{0,1}, {2,3}, {4,5}};
 
+        std::vector<int> collection = _::toCollection(map);
+
+        QCOMPARE(static_cast<int>(collection.size()), 3);
+        QCOMPARE(collection, (std::vector<int>{1,3,5}));
+        QCOMPARE(collection[0], 1);
+        QCOMPARE(collection[1], 3);
+        QCOMPARE(collection[2], 5);
+    }
+
+    {
+        QMap<int, int> map{{0,1}, {2,3}, {4,5}};
+
+        QList<int> collection = _::toCollection(map);
+
+        QCOMPARE(collection.size(), 3);
+        QCOMPARE(collection, (QList<int>{1,3,5}));
+    }
+
+}
 

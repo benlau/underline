@@ -138,14 +138,13 @@ void Builder::initTestCase()
     logFileName = realpath_strip(pwd(), "build_log.txt");
     log.setFileName(logFileName);
     log.open(QIODevice::WriteOnly);
-
 }
 
 void Builder::cleanupTestCase()
 {
     log.close();
 
-    qDebug().noquote() << cat(logFileName);
+//    qDebug().noquote() << cat(logFileName);
 }
 
 void Builder::spec_map_static_assert_arg1_is_not_a_collection()

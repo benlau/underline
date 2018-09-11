@@ -54,8 +54,8 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
 #define _underline_static_assert_is_key_value_type(prefix, type) \
     static_assert(_::Private::is_key_value_type<type>::value, prefix "Invalid argument type. It should be a valie Key-Value-Type. Check the document of _::isKeyValueType for the list of supported types")
 
-#define _underline_static_assert_is_qt_metable(func, type) \
-    static_assert(_::Private::is_qt_metable<type>::value, "_::" func ": Invalid argument type. It should be a QtMetable type. Check the document of _::isQtMetable for the list of supported types.")
+#define _underline_static_assert_is_static_qt_metable(func, type) \
+    static_assert(_::Private::is_static_qt_metable<type>::value, "_::" func ": Invalid argument type. It should be a QtMetable type. Check the document of _::isQtMetable for the list of supported types.")
 
 
 #define _underline_static_assert_is_iteratee_invokable(prefix, value) \
@@ -71,7 +71,7 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
     static_assert(Private::is_custom_convertible<source,object>::value, prefix "The value type of 'source' argument cannot convert to the value type of 'object' argument.")
 
 #define _underline_static_assert_is_object_a_qt_metable(prefix, object) \
-    static_assert(Private::is_qt_metable<object>::value, prefix "Invalid object type. It should be a QtMetable type. Check the document of _::isQtMetable for supported types.")
+    static_assert(Private::is_static_qt_metable<object>::value, prefix "Invalid object type. It should be a QtMetable type. Check the document of _::isQtMetable for supported types.")
 
 #ifndef _underline_debug
 #define _underline_debug(msg)
@@ -164,6 +164,8 @@ namespace _ {
         };
         class QByteArray{};
         class QVariantMap: public QMap<QString,QVariant>{};
+        template <typename V>
+        class QList {};
 #endif
 #ifndef QT_QUICK_LIB
         class QJSValue{
@@ -323,6 +325,11 @@ namespace _ {
         struct is_qt_type: std::false_type {};
 
         /* END is_xxx */
+
+        template <typename T, typename V>
+        using map_to_collection_rebinder_t = typename std::conditional<
+            is_qt_type<T>::value, QList<V>, std::vector<V>
+        >::type;
 
         template <typename T>
         auto inline cast_to_pointer(const T& value) -> typename std::enable_if<std::is_pointer<T>::value, const T&>::type {
@@ -804,14 +811,21 @@ namespace _ {
         };
 
         template <typename T>
-        struct is_qt_metable {
+        struct is_static_qt_metable {
             enum {
                 value = key_value_info<T>::is_key_value_type && !is_std_map<T>::value
             };
         };
 
         template <typename T>
-        struct is_real_qt_metable {
+        struct is_static_qt_metable_castable {
+            enum {
+                value = is_static_qt_metable<T>::value || std::is_same<T,QVariant>::value
+            };
+        };
+
+        template <typename T>
+        struct is_static_real_qt_metable {
             enum {
                 value = is_real_key_value_type<T>::value && !is_std_map<T>::value
             };
@@ -2001,7 +2015,7 @@ namespace _ {
 
         _underline_static_assert_is_object_source_value_matched("_::merge: ", typename OBJECT_TYPE::value_type, typename SOURCE_TYPE::value_type);
 
-        _underline_static_assert_is_qt_metable("_::merge: ", Object);
+        _underline_static_assert_is_static_qt_metable("_::merge: ", Object);
 
         _underline_static_assert_is_key_value_type("_::merge: ", Source);
 
@@ -2247,12 +2261,12 @@ namespace _ {
 
     template <typename T>
     inline bool isQtMetable() {
-        return Private::is_qt_metable<T>::value;
+        return Private::is_static_qt_metable<T>::value;
     }
 
     template <typename T>
     inline bool isQtMetable(const T&) {
-        return Private::is_qt_metable<T>::value;
+        return Private::is_static_qt_metable<T>::value;
     }
 
 
@@ -2300,6 +2314,22 @@ namespace _ {
         return object;
     }
 
+    template <typename Object>
+    inline auto toCollection(const Object& object) -> Private::map_to_collection_rebinder_t<Object, typename Private::key_value_info<Object>::value_type> {
+        Private::map_to_collection_rebinder_t<Object, typename Private::key_value_info<Object>::value_type> ret;
+
+        using K = typename Private::key_value_info<Object>::key_type;
+        using V = typename Private::key_value_info<Object>::value_type;
+
+        ret.reserve(object.size());
+        auto iter = object.begin();
+        while (iter != object.end()) {
+            ret.push_back(Private::map_iterator_value<K,V>(iter));
+            iter++;
+        }
+
+        return ret;
+    }
 
 } // End of _ namespace
 

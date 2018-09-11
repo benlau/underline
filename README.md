@@ -423,7 +423,7 @@ template <typename QtMetable>
 void _::set(QtMetable &object, const QString &path, const QVariant &value)
 ```
 
-Set the property from the destination object on the given path. If the object is a QVariantMap and portion of path doesn't exist, it is created.
+Set the property in the destination object on the given path. If the object is a QVariantMap / QJSValue and a portion of path doesn't exist, it is created.
 
 Arguments
 
@@ -461,6 +461,44 @@ object->setProperty("value", QVariant::fromValue<QObject*>(subObject));  // obje
 _::set(object, "value.objectName", "subObject"); //object: {"objectName":"","value":{"objectName":"subObject"}}
 
 ASSERT_EQ(subObject->objectName(), QString("subObject"));
+```
+
+toCollection
+--------
+
+```C++
+template <typename Map>
+Collection toCollection(const Map& map)
+```
+
+Convert the Map object into a Collection object discarding the key type. The actual type is chosen by the input type. If it is a Qt container class, it will be a QList, otherwise, it is a std::vector.
+
+Arguments
+
+ * map: A map container type
+
+Return
+ * collection: A collection object containing the value type from the Map object
+
+Examples:
+
+STL
+```C++
+        std::map<int, int> map{{0,1}, {2,3}, {4,5}};
+
+        std::vector<int> collection = _::toCollection(map);
+
+        QCOMPARE(static_cast<int>(collection.size()), 3);
+        QCOMPARE(collection, (std::vector<int>{1,3,5}));
+```
+QT
+```C++
+        QMap<int, int> map{{0,1}, {2,3}, {4,5}};
+
+        QList<int> collection = _::toCollection(map);
+
+        QCOMPARE(collection.size(), 3);
+        QCOMPARE(collection, (QList<int>{1,3,5}));
 ```
 
 range
@@ -608,11 +646,11 @@ isQtMetable
 ------------
 
 ```C++
-    template <typename T>
-    bool isQtMetable();
+template <typename T>
+bool isQtMetable();
 
-    template <typename T>
-    bool isQtMetable(const T&);
+template <typename T>
+bool isQtMetable(const T&);
 ```
 
 It is a static type checker to validate is the input type classified as Qt type with a metable interface supported by _. This kind of object supports a string-keyed properties system. A typical example is QObject* or arbitrary classes with Q_GADGET macro.  QVariantMap and QJSValue are also classified as this kind of type.  You may use them as an input to functions like [forIn](#forIn), [assign](#assign), and [merge](#merge) etc.

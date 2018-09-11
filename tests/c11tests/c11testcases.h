@@ -11,6 +11,8 @@ private slots:
 
     void initTestCase();
 
+    void spec_QVariant();
+
     void spec_QVariantMap();
 
     void spec_QObject();
@@ -90,5 +92,7 @@ private slots:
     void test_keyBy_should_support_key_iteratee();
 
     void spec_filter_args1_collection();
+
+    void test_toCollectiion();
 
 };
