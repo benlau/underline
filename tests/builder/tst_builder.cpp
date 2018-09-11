@@ -20,12 +20,12 @@ public:
 
     Builder::Result build(const QString& name, const QString &code);
 
-    QFile log;
-
 private slots:
     void initTestCase();
     void cleanupTestCase();
+
     void spec_map_static_assert_arg1_is_not_a_collection();
+    void spec_toCollection_static_assert_arg1_is_not_a_map();
 };
 
 using namespace QtShell;
@@ -59,12 +59,21 @@ static QString run(const QString& program, const QStringList& args = QStringList
 }
 
 static void writeTo(QString& path, QString& content) {
-
     QFile file(path);
     file.open(QIODevice::WriteOnly);
     file.write(content.toUtf8());
     file.close();
+}
 
+static void appendTo(QString& path, QStringList& content) {
+    QFile file(path);
+    file.open(QIODevice::ReadWrite);
+    file.seek(file.size());
+    _::forEach(content, [&](auto line) {
+        file.write(line.toUtf8());
+        file.write("\n");
+    });
+    file.close();
 }
 
 Builder::Result Builder::build(const QString& name, const QString &code)
@@ -75,8 +84,9 @@ Builder::Result Builder::build(const QString& name, const QString &code)
     normalizedCode.remove(QRegExp("  +"));
     normalizedCode.remove(QRegExp("\n"));
 
-    log.write(normalizedCode.toUtf8());
-    log.write("\n");
+    QStringList log;
+
+    log << normalizedCode;
 
     QString templatePath = realpath_strip(SRCDIR, "templates");
 
@@ -121,14 +131,16 @@ Builder::Result Builder::build(const QString& name, const QString &code)
     ret.messages = messages;
     ret.errors = errors;
 
-    _::forEach(errors, [=](auto line) {
-        log.write(line.toUtf8());
-        log.write("\n");
+    _::forEach(errors, [&](auto line) {
+        log << line;
     });
+    log << "";
 
     if (ret.exitCode == 0 || ret.errors.size() > 5 || ret.errors.size() < 1) {
         qDebug() << ret.messages.join("\n");
     }
+
+    appendTo(logFileName, log);
 
     return ret;
 }
@@ -136,14 +148,11 @@ Builder::Result Builder::build(const QString& name, const QString &code)
 void Builder::initTestCase()
 {
     logFileName = realpath_strip(pwd(), "build_log.txt");
-    log.setFileName(logFileName);
-    log.open(QIODevice::WriteOnly);
 }
 
 void Builder::cleanupTestCase()
 {
-    log.close();
-
+//    log.close();
 //    qDebug().noquote() << cat(logFileName);
 }
 
@@ -155,12 +164,24 @@ void Builder::spec_map_static_assert_arg1_is_not_a_collection()
         _::map(a, [](int) { return 0;});
     }));
 
-
-//    QVERIFY(ret.exitCode != 0);
+    QVERIFY(ret.exitCode != 0);
     QVERIFY(ret.errors.size() <= buildErrorCountThreshold);
     QVERIFY(ret.errors.size() > 0);
 
     QVERIFY(ret.errors[0].indexOf(_underline_input_type_is_not_array) >= 0);
+}
+
+void Builder::spec_toCollection_static_assert_arg1_is_not_a_map()
+{
+    Result ret = build(__FUNCTION__, CODE([]() {
+        _::toCollection(std::vector<int>{0});
+    }));
+
+    QVERIFY(ret.exitCode != 0);
+    QVERIFY(ret.errors.size() <= buildErrorCountThreshold);
+    QVERIFY(ret.errors.size() > 0);
+
+    QVERIFY(ret.errors[0].indexOf("The expected input is an valid Map container class") >= 0);
 }
 
 QTEST_APPLESS_MAIN(Builder)

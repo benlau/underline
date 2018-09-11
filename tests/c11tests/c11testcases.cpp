@@ -59,14 +59,17 @@ void C11TestCases::spec_QObject()
 
 void C11TestCases::spec_QVariant()
 {
-    QVariant v;
+    QVariant null;
+    QVariant list = QVariant::fromValue(QVariantList{});
+
+    QCOMPARE(_::isCollection(list),         true);
+    QCOMPARE(_::isCollection(null),         false);
 
     QCOMPARE(static_cast<bool>(_::Private::is_static_qt_metable<QVariant>::value),                     false);
 
     QCOMPARE(static_cast<bool>(_::Private::is_static_qt_metable_castable<QVariant>::value),            true);
 
     QCOMPARE(static_cast<bool>(_::Private::key_value_support_missing_path_creation<QVariant>::value),  false);
-
 }
 
 void C11TestCases::test_private_has()
@@ -125,27 +128,27 @@ void C11TestCases::test_private_has()
     QCOMPARE(static_cast<bool>(_::Private::has_key_type<C11TestCases>::value), false);
 }
 
-void C11TestCases::test_private_is_collection()
+void C11TestCases::test_private_is_static_collection()
 {
-    QCOMPARE(static_cast<bool>(_::Private::is_collection<std::vector<int>>::value), true);
-    QCOMPARE(static_cast<bool>(_::Private::is_collection<QStringList>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_static_collection<std::vector<int>>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_static_collection<QStringList>::value), true);
 
-    QCOMPARE(static_cast<bool>(_::Private::is_collection<QVariantList>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_static_collection<QVariantList>::value), true);
 
-    QCOMPARE(static_cast<bool>(_::Private::is_collection<std::string>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_static_collection<std::string>::value), true);
 
-    QCOMPARE(static_cast<bool>(_::Private::is_collection<std::list<std::string>>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_static_collection<std::list<std::string>>::value), false);
 
-    QCOMPARE(static_cast<bool>(_::Private::is_collection<QVector<int>>::value), true);
-    QCOMPARE(static_cast<bool>(_::Private::is_collection<QList<int>>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_static_collection<QVector<int>>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_static_collection<QList<int>>::value), true);
 
-    QCOMPARE(static_cast<bool>(_::Private::is_collection<C11TestCases>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_static_collection<C11TestCases>::value), false);
 
-    QCOMPARE(static_cast<bool>(_::Private::is_collection<std::map<int, bool>>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_static_collection<std::map<int, bool>>::value), false);
 
-    QCOMPARE(static_cast<bool>(_::Private::is_collection<QMap<int, bool>>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_static_collection<QMap<int, bool>>::value), false);
 
-    QCOMPARE(static_cast<bool>(_::Private::is_collection<int>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_static_collection<int>::value), false);
 }
 
 void C11TestCases::test_private_is_map()

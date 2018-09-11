@@ -46,7 +46,7 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
 #define _underline_qjsvalue_set_error "It should only modify the value of a QJSValue object by another QJSValeu"
 
 #define _underline_static_assert_is_collection(prefix, type) \
-    static_assert(_::Private::is_collection<type>::value, prefix _underline_input_type_is_not_array)
+    static_assert(_::Private::is_static_collection<type>::value, prefix _underline_input_type_is_not_array)
 
 #define _underline_static_assert_is_map(prefix, type) \
     static_assert(_::Private::is_map<type>::value, prefix "The expected input is an valid Map container class, where _::isMap() returns true.")
@@ -276,7 +276,7 @@ namespace _ {
         /* BEGIN is_xxx */
 
         template <typename T>
-        struct is_collection {
+        struct is_static_collection {
             enum {
                 value = std::is_class<T>::value &&
                         has_push_back<remove_cvref_t<T>>::value &&
@@ -671,6 +671,18 @@ namespace _ {
         /* END key_value_xxx */
 
         template <typename T>
+        inline auto p_isCollection_(const T&) -> typename std::enable_if<!std::is_same<T,QVariant>::value, bool>::type {
+            return is_static_collection<T>::value;
+        }
+
+#ifdef QT_CORE_LIB
+        template <typename T>
+        inline auto p_isCollection_(const T& v) -> typename std::enable_if<std::is_same<T,QVariant>::value, bool>::type {
+            return v.type() == QVariant::List;
+        }
+#endif
+
+        template <typename T>
         inline bool p_isForInAble_(const T&) {
             return key_value_info<T>::is_key_value_type;
         }
@@ -791,7 +803,7 @@ namespace _ {
         using enable_if_is_kyt_key_matched = typename std::enable_if<is_kyt_key_matched<T,Key>::value, map_mapped_type_t<T>>;
 
         template <typename T>
-        using enable_if_is_collection_ret_value_type = typename std::enable_if< is_collection<typename std::remove_reference<T>::type>::value, typename std::remove_reference<T>::type::value_type>;
+        using enable_if_is_collection_ret_value_type = typename std::enable_if< is_static_collection<typename std::remove_reference<T>::type>::value, typename std::remove_reference<T>::type::value_type>;
 
         template <typename Meta>
         struct is_meta_object {
@@ -1021,7 +1033,7 @@ namespace _ {
         };
 
         template <typename T>
-        struct _collection_info<T, typename std::enable_if<is_collection<remove_cvref_t<T>>::value, std::true_type>::type> {
+        struct _collection_info<T, typename std::enable_if<is_static_collection<remove_cvref_t<T>>::value, std::true_type>::type> {
             enum { is_collection_type = true };
             using size_type = typename remove_cvref_t<T>::size_type;
             using value_type = typename remove_cvref_t<T>::value_type;
@@ -1046,7 +1058,7 @@ namespace _ {
         template <typename Collection, typename Index>
         struct is_collection_index_matched {
             enum {
-                value = is_collection<Collection>::value && std::is_convertible<Index, int>::value
+                value = is_static_collection<Collection>::value && std::is_convertible<Index, int>::value
             };
         };
 
@@ -2230,28 +2242,13 @@ namespace _ {
     }
 
     template <typename T>
-    inline bool isCollection() {
-        return Private::is_collection<T>::value;
-    }
-
-    template <typename T>
-    inline bool isCollection(const T&) {
-        return Private::is_collection<T>::value;
-    }
-
-    template <typename T>
-    inline bool isMap() {
-        return Private::is_map<T>::value;
+    inline bool isCollection(const T& t) {
+        return Private::p_isCollection_(t);
     }
 
     template <typename T>
     inline bool isMap(const T&) {
         return Private::is_map<T>::value;
-    }
-
-    template <typename T>
-    inline bool isKeyValueType() {
-        return Private::is_key_value_type<T>::value;
     }
 
     template <typename T>
@@ -2316,6 +2313,8 @@ namespace _ {
 
     template <typename Object>
     inline auto toCollection(const Object& object) -> Private::map_to_collection_rebinder_t<Object, typename Private::key_value_info<Object>::value_type> {
+        _underline_static_assert_is_map("_::toCollection: ", Object);
+
         Private::map_to_collection_rebinder_t<Object, typename Private::key_value_info<Object>::value_type> ret;
 
         using K = typename Private::key_value_info<Object>::key_type;
