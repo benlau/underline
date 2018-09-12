@@ -11,6 +11,8 @@ private slots:
 
     void initTestCase();
 
+    void validate_template_static_variable();
+
     void spec_QVariant();
 
     void spec_QVariantMap();

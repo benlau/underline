@@ -9,7 +9,8 @@ CONFIG += c++11
 TEMPLATE = app
 
 SOURCES +=     main.cpp \     
-    c11testcases.cpp
+    c11testcases.cpp \
+    utils.cpp
 
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
 DEFINES += QUICK_TEST_SOURCE_DIR=\\\"$$PWD/qmltests\\\"
@@ -30,5 +31,7 @@ DISTFILES +=    \
 }
 
 HEADERS += \
-    c11testcases.h
+    c11testcases.h \
+    storage.h \
+    utils.h
 

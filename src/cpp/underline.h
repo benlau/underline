@@ -602,12 +602,17 @@ namespace _ {
         }
 
         template  <typename Ref> // Create a KV object to fill-in the missing path.
-        inline auto key_value_create_missing_path(const Ref&) -> Undefined {
+        inline auto key_value_create_path_object(const Ref&) -> Undefined {
             return Undefined();
         }
 
+        template  <typename Ref> // Create a KV object to fill-in the missing path.
+        inline auto key_value_create_path_collection(const Ref&) -> std::vector<Undefined> {
+            return std::vector<Undefined>();
+        }
+
         template <typename Ref>
-        struct key_value_support_missing_path_creation {
+        struct key_value_support_path_object_creation {
             enum {
                 value = is_map<Ref>::value || is_qjsvalue<Ref>::value || is_qobject<Ref>::value
             };
@@ -642,17 +647,26 @@ namespace _ {
             return true;
         }
 
-        inline auto key_value_create_missing_path(const QVariantMap&) -> QVariantMap {
+        inline auto key_value_create_path_object(const QVariantMap&) -> QVariantMap {
             return QVariantMap();
         }
 
-        inline auto key_value_create_missing_path(QObject*) -> QVariantMap {
+        inline auto key_value_create_path_object(QObject*) -> QVariantMap {
             return QVariantMap();
         }
+
+        inline auto key_value_create_path_collection(const QVariantMap&) -> QVariantList {
+            return QVariantList();
+        }
+
+        inline auto key_value_create_path_collection(QObject*) -> QVariantList {
+            return QVariantList();
+        }
+
 #endif
 
 #ifdef QT_QUICK_LIB
-        inline auto key_value_create_missing_path(const QJSValue& value) -> QJSValue {
+        inline auto key_value_create_path_object(const QJSValue& value) -> QJSValue {
             auto prototype = value.prototype();
             auto p = prototype;
             while (!p.isNull()) {
@@ -666,12 +680,17 @@ namespace _ {
 
             return prototype.property("constructor").callAsConstructor();
         }
+
+        inline auto key_value_create_path_collection(const QJSValue& value) -> QJSValue {
+            auto prototype = value.prototype();
+            return prototype.property("constructor").callAsConstructor();
+        }
 #endif
 
         /* END key_value_xxx */
 
         template <typename T>
-        inline auto p_isCollection_(const T&) -> typename std::enable_if<!std::is_same<T,QVariant>::value, bool>::type {
+        inline auto p_isCollection_(const T&) -> typename std::enable_if<!std::is_same<T,QVariant>::value && !is_qjsvalue<T>::value, bool>::type {
             return is_static_collection<T>::value;
         }
 
@@ -690,6 +709,11 @@ namespace _ {
 #ifdef QT_QUICK_LIB
         inline bool p_isForInAble_(const QJSValue& v) {
             return v.isObject();
+        }
+
+        template <typename T>
+        inline auto p_isCollection_(const T& v) -> typename std::enable_if<is_qjsvalue<T>::value, bool>::type {
+            return v.isArray();
         }
 #endif
 
@@ -1618,7 +1642,7 @@ namespace _ {
                 },[&](QJSValue &kyt) {
                     auto v = read(kyt, k.data);
                     if (v.isUndefined()) {
-                        copy_if_same_type(v, key_value_create_missing_path(kyt));
+                        copy_if_same_type(v, key_value_create_path_object(kyt));
                     }
                     p_recursive_set_(v , tokens, index + 1, value);
                     write_if_same_type(object, k.data, v);
@@ -1817,7 +1841,7 @@ namespace _ {
 
                 bool missingPathToMerge = !can_cast_to_qt_metable(srcValue) && can_cast_to_qt_metable(value);
                 if (missingPathToMerge) {
-                    auto path = key_value_create_missing_path(v1);
+                    auto path = key_value_create_path_object(v1);
                     write(v1, key, p_merge_(path, value));
                 } else {
                     write(v1, key, p_merge_(srcValue, value));

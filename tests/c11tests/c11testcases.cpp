@@ -11,6 +11,8 @@
 #include "gadgetobject.h"
 #define _underline_debug(x) { qDebug() << x;}
 #include "underline.h"
+#include "utils.h"
+#include "storage.h"
 
 static bool isOdd(int value) {
     return value % 2 == 1;
@@ -37,13 +39,31 @@ void C11TestCases::initTestCase()
 {
 }
 
+void C11TestCases::validate_template_static_variable()
+{
+    auto& directAccess = Storage<int>::getContent();
+
+    auto& directAccess2 = Storage<int>::getContent();
+
+    QVERIFY(directAccess.isSharedWith(directAccess2));
+
+    auto& indirectAccess = Utils::getContentFromStorage();
+
+    directAccess = QMap<int,int>{{1,2},{2,3}};
+    QVERIFY(directAccess.isSharedWith(directAccess2));
+
+    QCOMPARE(directAccess.size(), 2);
+    QCOMPARE(directAccess2.size(), 2);
+    QCOMPARE(indirectAccess.size(), 2);
+}
+
 void C11TestCases::spec_QVariantMap()
 {
     QVariantMap type;
 
-    QCOMPARE(QString(typeid(_::Private::key_value_create_missing_path(type)).name()), QString(typeid(type).name()));
+    QCOMPARE(QString(typeid(_::Private::key_value_create_path_object(type)).name()), QString(typeid(type).name()));
 
-    QCOMPARE(static_cast<bool>(_::Private::key_value_support_missing_path_creation<QVariantMap>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::key_value_support_path_object_creation<QVariantMap>::value), true);
 
 }
 
@@ -51,9 +71,9 @@ void C11TestCases::spec_QObject()
 {
     QObject* object = new QObject(this);
 
-    QCOMPARE(static_cast<bool>(_::Private::key_value_support_missing_path_creation<QObject*>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::key_value_support_path_object_creation<QObject*>::value), true);
 
-    QCOMPARE(QString(typeid(_::Private::key_value_create_missing_path(object)).name()),
+    QCOMPARE(QString(typeid(_::Private::key_value_create_path_object(object)).name()),
              QString(typeid(QVariantMap{}).name()));
 }
 
@@ -69,7 +89,7 @@ void C11TestCases::spec_QVariant()
 
     QCOMPARE(static_cast<bool>(_::Private::is_static_qt_metable_castable<QVariant>::value),            true);
 
-    QCOMPARE(static_cast<bool>(_::Private::key_value_support_missing_path_creation<QVariant>::value),  false);
+    QCOMPARE(static_cast<bool>(_::Private::key_value_support_path_object_creation<QVariant>::value),  false);
 }
 
 void C11TestCases::test_private_has()
