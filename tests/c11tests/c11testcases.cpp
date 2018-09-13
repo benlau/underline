@@ -656,8 +656,8 @@ void C11TestCases::test_private_cast_to_collection()
     QVariant v1, v2;
     v1 = QVariant::fromValue(list);
 
-    QCOMPARE(_::Private::can_cast_to_collection(v1), true);
-    QCOMPARE(_::Private::can_cast_to_collection(v2), false);
+    QCOMPARE(_::isCollection(v1), true);
+    QCOMPARE(_::isCollection(v2), false);
 
     QCOMPARE(_::Private::cast_to_collection(v1), list);
 }

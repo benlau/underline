@@ -26,6 +26,8 @@ private slots:
 
     void test_forIn_arg1_QJSValue();
 
+    void test_forEach_arg1_QJSValue();
+
     void test_assign_arg1_QJSValue_arg2_other();
 
     void test_merge_arg1_QJSValue_arg2_other();

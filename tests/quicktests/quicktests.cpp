@@ -147,6 +147,31 @@ void QuickTests::test_forIn_arg1_QJSValue()
 
 }
 
+void QuickTests::test_forEach_arg1_QJSValue()
+{
+    QQmlApplicationEngine engine;
+
+    QJSValue object = engine.newArray();
+    object.setProperty("0", 1);
+    object.setProperty("2", 2);
+
+    QList<int> values;
+    QList<int> indexes;
+
+    _::forEach(object, [&](const QJSValue& value, int index) {
+        qDebug() << "index" << index << value.toInt();
+        values << value.toInt();
+        indexes << index;
+    });
+
+    QCOMPARE(object.property("length").toInt(), 3);
+    qDebug() << indexes;
+    qDebug() << values;
+    QCOMPARE(indexes, (QList<int>{0,2}));
+    QCOMPARE(values, (QList<int>{1,2}));
+
+}
+
 void QuickTests::test_assign_arg1_QJSValue_arg2_other()
 {
     {
