@@ -159,14 +159,11 @@ void QuickTests::test_forEach_arg1_QJSValue()
     QList<int> indexes;
 
     _::forEach(object, [&](const QJSValue& value, int index) {
-        qDebug() << "index" << index << value.toInt();
         values << value.toInt();
         indexes << index;
     });
 
     QCOMPARE(object.property("length").toInt(), 3);
-    qDebug() << indexes;
-    qDebug() << values;
     QCOMPARE(indexes, (QList<int>{0,2}));
     QCOMPARE(values, (QList<int>{1,2}));
 

@@ -5,6 +5,7 @@
 #include <QtCore>
 #include <QVector>
 #include <memory>
+#include <QJsonDocument>
 #include "complexqobject.h"
 #include "c11testcases.h"
 #include "dataobject.h"
@@ -16,6 +17,30 @@
 
 static bool isOdd(int value) {
     return value % 2 == 1;
+}
+
+static QVariantMap parse(const QString &text)
+{
+    QJsonParseError error;
+    QJsonDocument doc = QJsonDocument::fromJson(text.toUtf8(),&error);
+
+    if (error.error != QJsonParseError::NoError) {
+        qWarning() << "JSON::parse() error: "<< error.errorString();
+    }
+
+    return doc.object().toVariantMap();
+}
+
+
+static QString stringify(const QVariantMap &data)
+{
+    QJsonObject object = QJsonObject::fromVariantMap(data);
+
+    QJsonDocument doc;
+    doc.setObject(object);
+    QByteArray bytes = doc.toJson(QJsonDocument::Compact);
+
+    return bytes;
 }
 
 static DataObject* createMockObject(QObject* parent) {
@@ -851,7 +876,7 @@ void C11TestCases::test_merge_arg1_QVariantMap_containing_Gadget()
     QCOMPARE(res.value, 33);
 }
 
-void C11TestCases::spec_merge_arg1_QObject_should_direct_copy_to_missing_path()
+void C11TestCases::spec_merge_arg1_QObject_should_direct_copy_in_missing_path()
 {
     QObject* object = new QObject(this);
 
@@ -866,6 +891,24 @@ void C11TestCases::spec_merge_arg1_QObject_should_direct_copy_to_missing_path()
     QCOMPARE(value1["value1"].toInt(), 1);
 
     QCOMPARE(value1["value2"].toDouble(), 2.0);
+}
+
+void C11TestCases::spec_merge_arg1_QVariantMap_should_support_list_merging()
+{
+    QVariantMap object = parse("{\"list\":[{\"a\":1},{\"b\":2}]}");
+
+    QVariantMap source = parse("{\"list\":[{\"c\":3},{\"d\":4},{\"e\":\"5\"}]}");
+
+    qDebug() << source;
+
+    QVariantMap expected = parse("{\"list\":[{\"c\":3,\"a\":1},{\"d\":4,\"b\":2},{\"e\":\"5\"}]}");
+
+    _::merge(object, source);
+
+
+    QCOMPARE(stringify(object), stringify(expected));
+    QCOMPARE(object, expected);
+
 }
 
 void C11TestCases::test_some()

@@ -71,7 +71,9 @@ private slots:
 
     void test_merge_arg1_QVariantMap_containing_Gadget();
 
-    void spec_merge_arg1_QObject_should_direct_copy_to_missing_path();
+    void spec_merge_arg1_QObject_should_direct_copy_in_missing_path();
+
+    void spec_merge_arg1_QVariantMap_should_support_list_merging();
 
     void test_some();
 

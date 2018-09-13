@@ -307,6 +307,14 @@ namespace _ {
             enum { value = std::is_same<remove_cvref_t<T>, QJSValue>::value};
         };
 
+        template <typename T> struct is_real_qjsvalue {
+#ifdef QT_QUICK_LIB
+            enum { value = is_qjsvalue<T>::value};
+#else
+            enum { value = is_qjsvalue<T>::value && ! std::is_same<remove_cvref_t<T>, _::Private::QJSValue>::value};
+#endif
+        };
+
         template <typename T> struct is_qt_any_type {
             enum {
                 value = std::is_same<T,QJSValue>::value || std::is_same<T,QVariant>::value
@@ -1088,9 +1096,7 @@ namespace _ {
         inline auto cast_to_collection(const T&) -> std::vector<Undefined> { return std::vector<Undefined>{}; }
 
         template <typename T>
-        inline auto collection_size(const T&) -> typename std::enable_if<!is_static_collection<T>::value, unsigned int>::type {
-            return 0;
-        }
+        inline auto collection_size(const T&) -> typename std::enable_if<!is_static_collection<T>::value, unsigned int>::type { return 0; }
 
         template <typename T>
         inline auto collection_size(const T& t) -> typename std::enable_if<is_static_collection<T>::value, unsigned int>::type {
@@ -1098,7 +1104,31 @@ namespace _ {
         }
 
         template <typename T>
-        inline auto p_isCollection_(const T&) -> typename std::enable_if<!std::is_same<T,QVariant>::value && !is_qjsvalue<T>::value, bool>::type {
+        inline auto collection_get_value(const T&, unsigned int ) -> typename std::enable_if<!is_static_collection<T>::value, Undefined>::type { return Undefined(); }
+
+        template <typename T>
+        inline auto collection_get_value(const T& t, unsigned int index) -> typename std::enable_if<is_static_collection<T>::value, typename collection_info<T>::value_type>::type {
+            return t[index];
+        }
+
+        template <typename T, typename V>
+        inline auto collection_set_value(const T&, unsigned int, V) -> typename std::enable_if<!is_static_collection<T>::value, void>::type {}
+
+        template <typename T>
+        inline auto collection_set_value(T& t, unsigned int index, typename collection_info<T>::value_type &value ) -> typename std::enable_if<is_static_collection<T>::value, void>::type {
+            t[index] = value;
+        }
+
+        template <typename T>
+        inline auto collection_push(T&) -> typename std::enable_if<!is_static_collection<T>::value, void>::type { }
+
+        template <typename T>
+        inline auto collection_push(T& list) -> typename std::enable_if<is_static_collection<T>::value, void>::type {
+            list.push_back(typename collection_value_type<T>::type());
+        }
+
+        template <typename T>
+        inline auto p_isCollection_(const T&) -> typename std::enable_if<!std::is_same<T,QVariant>::value && !is_real_qjsvalue<T>::value, bool>::type {
             return is_static_collection<T>::value;
         }
 
@@ -1106,7 +1136,7 @@ namespace _ {
         inline QVariantList cast_to_collection(const QVariant& t) { return t.toList();}
 
         inline unsigned int collection_size(const QVariant &v) {
-            return v.type() == QVariant::List ? v.toList().size() : 0;
+            return static_cast<unsigned int>(v.type() == QVariant::List ? v.toList().size() : 0);
         }
 
         template <typename T>
@@ -1121,6 +1151,8 @@ namespace _ {
 
         inline unsigned int collection_size(const QJSValue& t) { return t.isArray() ? t.property("length").toInt() : 0;}
 
+        inline QJSValue collection_get_value(const QJSValue& t, int index) { return t.property(index); }
+        inline void collection_set_value(QJSValue& t, int index,const QJSValue& value) { t.setProperty(index, value); }
 #endif
 
         /* END Collection */
@@ -1678,31 +1710,6 @@ namespace _ {
 #endif
 
         template <typename Map, typename Functor>
-        inline auto p_forIn_(Map& object, Functor iteratee) -> typename std::enable_if<Private::is_map<Map>::value, Map&>::type {
-
-            using K = typename Private::key_value_info<Map>::key_type;
-            using V = typename Private::key_value_info<Map>::value_type;
-
-            static_assert(Private::is_invokable3<Functor, V, K, Map>::value, "_::forIn: " _underline_iteratee_mismatched_error);
-
-            Private::Value<typename Private::ret_invoke<Functor, V, K, Map>::type> value;
-
-            auto iter = object.begin();
-            while (iter != object.end()) {
-                value.invoke(iteratee, Private::map_iterator_value<K,V>(iter),
-                                       Private::map_iterator_key<K,V>(iter),
-                                       object);
-
-                if (value.template canConvert<bool>() && value.equals(false)) {
-                    break;
-                }
-                iter++;
-            }
-
-            return object;
-        }
-
-        template <typename Map, typename Functor>
         inline auto p_forIn_(const Map& object, Functor iteratee) -> typename std::enable_if<Private::is_map<Map>::value, const Map&>::type {
             using K = typename Private::key_value_info<Map>::key_type;
             using V = typename Private::key_value_info<Map>::value_type;
@@ -1836,6 +1843,9 @@ namespace _ {
 #endif
 
         template <typename Array, typename Iteratee>
+        inline auto p_forEach_(Array, Iteratee) -> typename std::enable_if<!is_static_collection<Array>::value && !std::is_same<Array, QVariant>::value && !is_real_qjsvalue<Array>::value, void>::type {}
+
+        template <typename Array, typename Iteratee>
         inline auto p_forEach_(Array& collection, Iteratee iteratee) -> typename std::enable_if<is_static_collection<Array>::value, Array&>::type {
             Private::Value<typename Private::ret_invoke<Iteratee, typename Private::collection_value_type<Array>::type, int, Array >::type> value;
 
@@ -1847,6 +1857,14 @@ namespace _ {
             }
             return collection;
         }
+
+#ifdef QT_CORE_LIB
+        template <typename Array, typename Iteratee>
+        inline auto p_forEach_(Array& object, Iteratee iteratee) -> typename std::enable_if<std::is_same<Array, QVariant>::value, Array&>::type {
+            p_forEach_(object.toList(), iteratee);
+            return object;
+        }
+#endif
 
 #ifdef QT_QUICK_LIB
         template <typename Array, typename Iteratee>
@@ -1862,7 +1880,7 @@ namespace _ {
                     continue;
                 }
 
-                value.invoke(iteratee, iter.value(), iter.name().toInt(), object);
+                value.invoke(iteratee, iter.value(), index, object);
 
                 if (value.template canConvert<bool>() && value.equals(false)) {
                     break;
@@ -1880,11 +1898,30 @@ namespace _ {
         inline auto p_merge_(V1& v1, const V2& v2) -> pointer_or_reference_t<V1>;
 
         template <typename V1, typename V2>
+        inline void p_merge_forEach(V1& v1, const V2&v2) {
+            using Value = typename collection_info<V2>::value_type;
+
+            p_forEach_(v2, [&](const Value & value, unsigned int index) {
+                while (collection_size(v1) <= index ) {
+                    collection_push(v1);
+                }
+                auto v1Size = collection_size(v1);
+
+                if (index < v1Size) {
+                    auto obj = collection_get_value(v1, index);
+                    p_merge_(obj, value); //@TODO optimization
+                    collection_set_value(v1, index, obj);
+                }
+            });
+        }
+
+        template <typename V1, typename V2>
         inline auto p_merge_forIn_(V1& v1 , const V2& v2) -> typename std::enable_if<is_key_value_type<V1>::value && is_key_value_type<V2>::value, void>::type {
             using Key = typename key_value_info<V2>::key_type;
             using Value = typename key_value_info<V2>::value_type;
 
             p_forIn_(v2, [&](const Value& value, const Key& key) {
+
                 auto srcValue = read(v1, key);
 
                 QObject* v1_qobject_ptr = cast_to_qobject(srcValue);
@@ -1893,8 +1930,23 @@ namespace _ {
                     return;
                 }
 
-                bool missingPathToMerge = !can_cast_to_qt_metable(srcValue) && can_cast_to_qt_metable(value);
-                if (missingPathToMerge) {
+                if (p_isCollection_(value)) {
+                    if (p_isCollection_(srcValue)) {
+                        auto l1 = cast_to_collection(srcValue);
+                        auto l2 = cast_to_collection(value);
+                        p_merge_forEach(l1, l2);
+                        write(v1, key, l1);
+                    } else {
+                        auto l1 = key_value_create_path_collection(v1); // @TODO - Handle QJSValue
+                        auto l2 = cast_to_collection(value);
+                        p_merge_forEach(l1, l2);
+                        write(v1, key, l1);
+                    }
+                    return;
+                }
+
+                bool missingObjectAtPath = !can_cast_to_qt_metable(srcValue) && can_cast_to_qt_metable(value);
+                if (missingObjectAtPath) {
                     auto path = key_value_create_path_object(v1);
                     write(v1, key, p_merge_(path, value));
                 } else {
@@ -2034,6 +2086,12 @@ namespace _ {
 
     template <typename Object, typename Functor>
     inline const Object& forIn(const Object& object, Functor iteratee) {
+        Private::p_forIn_(object, iteratee);
+        return object;
+    }
+
+    template <typename Object, typename Functor>
+    inline Object& forIn(Object& object, Functor iteratee) {
         Private::p_forIn_(object, iteratee);
         return object;
     }
