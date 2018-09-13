@@ -1104,7 +1104,7 @@ namespace _ {
         }
 
         template <typename T>
-        inline auto collection_get_value(const T&, unsigned int ) -> typename std::enable_if<!is_static_collection<T>::value, Undefined>::type { return Undefined(); }
+        inline auto collection_get_value(const T&, unsigned int ) -> typename std::enable_if<!is_static_collection<T>::value && !is_real_qjsvalue<T>::value, Undefined>::type { return Undefined(); }
 
         template <typename T>
         inline auto collection_get_value(const T& t, unsigned int index) -> typename std::enable_if<is_static_collection<T>::value, typename collection_info<T>::value_type>::type {
@@ -1112,7 +1112,7 @@ namespace _ {
         }
 
         template <typename T, typename V>
-        inline auto collection_set_value(const T&, unsigned int, V) -> typename std::enable_if<!is_static_collection<T>::value, void>::type {}
+        inline auto collection_set_value(const T&, unsigned int, V) -> typename std::enable_if<!is_static_collection<T>::value && !is_real_qjsvalue<T>::value, void>::type {}
 
         template <typename T>
         inline auto collection_set_value(T& t, unsigned int index, typename collection_info<T>::value_type &value ) -> typename std::enable_if<is_static_collection<T>::value, void>::type {
@@ -1120,7 +1120,7 @@ namespace _ {
         }
 
         template <typename T>
-        inline auto collection_push(T&) -> typename std::enable_if<!is_static_collection<T>::value, void>::type { }
+        inline auto collection_push(T&) -> typename std::enable_if<!is_static_collection<T>::value && !is_real_qjsvalue<T>::value, void>::type { }
 
         template <typename T>
         inline auto collection_push(T& list) -> typename std::enable_if<is_static_collection<T>::value, void>::type {
@@ -1151,8 +1151,22 @@ namespace _ {
 
         inline unsigned int collection_size(const QJSValue& t) { return t.isArray() ? t.property("length").toInt() : 0;}
 
-        inline QJSValue collection_get_value(const QJSValue& t, int index) { return t.property(index); }
-        inline void collection_set_value(QJSValue& t, int index,const QJSValue& value) { t.setProperty(index, value); }
+        template <typename T>
+        inline auto collection_get_value(const T& t, int index)  ->typename std::enable_if<is_real_qjsvalue<T>::value, QJSValue>::type
+        { return t.property(index); }
+
+        template <typename T>
+        inline auto collection_set_value(T& t, int index,const T& value) ->typename std::enable_if<is_real_qjsvalue<T>::value, void>::type{
+            t.setProperty(index, value);
+        }
+
+        template <typename T>
+        inline auto collection_push(T& list) -> typename std::enable_if<is_qjsvalue<T>::value, void>::type {
+            auto obj = key_value_create_path_object(list);
+            QJSValueList args{obj};
+            list.property("push").callWithInstance(list, args);
+        }
+
 #endif
 
         /* END Collection */
@@ -1903,7 +1917,11 @@ namespace _ {
 
             p_forEach_(v2, [&](const Value & value, unsigned int index) {
                 while (collection_size(v1) <= index ) {
+                    auto old = collection_size(v1);
                     collection_push(v1);
+                    if (collection_size(v1) == old) {
+                        break;
+                    }
                 }
                 auto v1Size = collection_size(v1);
 

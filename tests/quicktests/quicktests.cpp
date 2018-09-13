@@ -7,6 +7,35 @@
 #define _underline_debug(x) { qDebug() << x;}
 #include <underline.h>
 
+static QVariantMap parse(const QString &text)
+{
+    QJsonParseError error;
+    QJsonDocument doc = QJsonDocument::fromJson(text.toUtf8(),&error);
+
+    if (error.error != QJsonParseError::NoError) {
+        qWarning() << "JSON::parse() error: "<< error.errorString();
+    }
+
+    return doc.object().toVariantMap();
+}
+
+
+static QString stringify(const QVariantMap &data)
+{
+    QJsonObject object = QJsonObject::fromVariantMap(data);
+
+    QJsonDocument doc;
+    doc.setObject(object);
+    QByteArray bytes = doc.toJson(QJsonDocument::Compact);
+
+    return bytes;
+}
+
+static QString stringify(const QJSValue &data)
+{
+    return stringify(data.toVariant().toMap());
+}
+
 QuickTests::QuickTests(QObject *parent) : QObject(parent)
 {
     auto ref = [=]() {
@@ -274,6 +303,21 @@ void QuickTests::spec_merge_args_QJSValue_QJSValue_should_support_missing_path_c
 
     QCOMPARE(object.property("a").isUndefined(), false);
     QCOMPARE(object.property("a").property("b").toNumber(), 2.0);
+}
+
+void QuickTests::spec_merge_args_QJSValue_QJSValue_should_support_list_merging()
+{
+    QQmlEngine engine;
+    QJSValue object = engine.toScriptValue(parse("{\"list1\":[{\"a\":1},{\"b\":2}],\"list2\":[]}"));
+
+    QJSValue source = engine.toScriptValue(parse("{\"list1\":[{\"c\":3},{\"d\":4},{\"e\":\"5\"}],\"list2\":[{\"f\":6},7]}"));
+
+    QJSValue expected = engine.toScriptValue(parse("{\"list1\":[{\"c\":3,\"a\":1},{\"d\":4,\"b\":2},{\"e\":\"5\"}],\"list2\":[{\"f\":6},7]}"));
+
+    _::merge(object, source);
+
+    QCOMPARE(stringify(object), stringify(expected));
+    QCOMPARE(object.toVariant().toMap(), expected.toVariant().toMap());
 }
 
 void QuickTests::test_set_args_QJSValue_key_QJSValue()

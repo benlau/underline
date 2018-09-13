@@ -893,18 +893,15 @@ void C11TestCases::spec_merge_arg1_QObject_should_direct_copy_in_missing_path()
     QCOMPARE(value1["value2"].toDouble(), 2.0);
 }
 
-void C11TestCases::spec_merge_arg1_QVariantMap_should_support_list_merging()
+void C11TestCases::spec_merge_args_QVariantMap_QVariantMap_should_support_list_merging()
 {
-    QVariantMap object = parse("{\"list\":[{\"a\":1},{\"b\":2}]}");
+    QVariantMap object = parse("{\"list1\":[{\"a\":1},{\"b\":2}],\"list2\":[]}");
 
-    QVariantMap source = parse("{\"list\":[{\"c\":3},{\"d\":4},{\"e\":\"5\"}]}");
+    QVariantMap source = parse("{\"list1\":[{\"c\":3},{\"d\":4},{\"e\":\"5\"}],\"list2\":[{\"f\":6},7]}");
 
-    qDebug() << source;
-
-    QVariantMap expected = parse("{\"list\":[{\"c\":3,\"a\":1},{\"d\":4,\"b\":2},{\"e\":\"5\"}]}");
+    QVariantMap expected = parse("{\"list1\":[{\"c\":3,\"a\":1},{\"d\":4,\"b\":2},{\"e\":\"5\"}],\"list2\":[{\"f\":6},7]}");
 
     _::merge(object, source);
-
 
     QCOMPARE(stringify(object), stringify(expected));
     QCOMPARE(object, expected);
