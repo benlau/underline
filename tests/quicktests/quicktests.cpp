@@ -310,9 +310,9 @@ void QuickTests::spec_merge_args_QJSValue_QJSValue_should_support_list_merging()
     QQmlEngine engine;
     QJSValue object = engine.toScriptValue(parse("{\"list1\":[{\"a\":1},{\"b\":2}],\"list2\":[]}"));
 
-    QJSValue source = engine.toScriptValue(parse("{\"list1\":[{\"c\":3},{\"d\":4},{\"e\":\"5\"}],\"list2\":[{\"f\":6},7]}"));
+    QJSValue source = engine.toScriptValue(parse("{\"list1\":[{\"c\":3},{\"d\":4},{\"e\":\"5\"}],\"list2\":[{\"f\":6},7],\"list3\":[{\"g\":8}]}"));
 
-    QJSValue expected = engine.toScriptValue(parse("{\"list1\":[{\"c\":3,\"a\":1},{\"d\":4,\"b\":2},{\"e\":\"5\"}],\"list2\":[{\"f\":6},7]}"));
+    QJSValue expected = engine.toScriptValue(parse("{\"list1\":[{\"c\":3,\"a\":1},{\"d\":4,\"b\":2},{\"e\":\"5\"}],\"list2\":[{\"f\":6},7],\"list3\":[{\"g\":8}]}"));
 
     _::merge(object, source);
 

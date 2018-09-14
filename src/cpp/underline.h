@@ -307,6 +307,10 @@ namespace _ {
             enum { value = std::is_same<remove_cvref_t<T>, QJSValue>::value};
         };
 
+        template <typename T> struct is_qvariant {
+            enum { value = std::is_same<remove_cvref_t<T>, QVariant>::value};
+        };
+
         template <typename T> struct is_real_qjsvalue {
 #ifdef QT_QUICK_LIB
             enum { value = is_qjsvalue<T>::value};
@@ -661,6 +665,10 @@ namespace _ {
 
         inline auto key_value_create_path_object(QObject*) -> QVariantMap {
             return QVariantMap();
+        }
+
+        inline auto key_value_create_path_collection(const QVariant&) -> QVariantList {
+            return QVariantList();
         }
 
         inline auto key_value_create_path_collection(const QVariantMap&) -> QVariantList {
@@ -1933,42 +1941,71 @@ namespace _ {
             });
         }
 
+        template <typename V1, typename DV,  typename SV, typename F1, typename F2>
+        inline auto p_merge_cast_to_collection(V1, DV& , SV&, F1, F2) -> typename std::enable_if<!is_qvariant<DV>::value && !is_real_qjsvalue<DV>::value, void>::type {
+        }
+
+        template <typename V1, typename DV,  typename SV, typename F1, typename F2>
+        inline auto p_merge_cast_to_collection(V1, DV& dest, SV&, F1 f1, F2) -> typename std::enable_if<is_qvariant<DV>::value, void>::type {
+            if (p_isCollection_(dest)) {
+                auto l1 = cast_to_collection(dest);
+                f1(l1);
+            } else {
+                auto l1 = key_value_create_path_collection(dest); // @TODO - Handle QJSValue
+                f1(l1);
+            }
+        }
+
+        template <typename V1,typename DV, typename SV, typename F1, typename F2>
+        inline auto p_merge_cast_to_collection(V1 v1, DV& value, SV& sValue, F1, F2 f2) -> typename std::enable_if<is_real_qjsvalue<DV>::value, void>::type {
+            if (p_isCollection_(value)) {
+                f2(value);
+            } else {
+                auto list = key_value_create_path_collection(v1);
+                if (p_isCollection_(list)) {
+                    f2(list);
+                } else {
+                    auto l2 = key_value_create_path_collection(sValue);
+                    QJSValue tmp;
+                    copy_if_same_type(tmp, l2);
+                    f2(tmp);
+                }
+            }
+        }
+
         template <typename V1, typename V2>
         inline auto p_merge_forIn_(V1& v1 , const V2& v2) -> typename std::enable_if<is_key_value_type<V1>::value && is_key_value_type<V2>::value, void>::type {
             using Key = typename key_value_info<V2>::key_type;
             using Value = typename key_value_info<V2>::value_type;
 
             p_forIn_(v2, [&](const Value& value, const Key& key) {
+                auto dstValue = read(v1, key);
 
-                auto srcValue = read(v1, key);
-
-                QObject* v1_qobject_ptr = cast_to_qobject(srcValue);
+                QObject* v1_qobject_ptr = cast_to_qobject(dstValue);
                 if (v1_qobject_ptr != nullptr) {
                     p_merge_(v1_qobject_ptr, value);
                     return;
                 }
 
                 if (p_isCollection_(value)) {
-                    if (p_isCollection_(srcValue)) {
-                        auto l1 = cast_to_collection(srcValue);
+                    p_merge_cast_to_collection(v1, dstValue, value, [&](QVariantList & l1){
                         auto l2 = cast_to_collection(value);
                         p_merge_forEach(l1, l2);
                         write(v1, key, l1);
-                    } else {
-                        auto l1 = key_value_create_path_collection(v1); // @TODO - Handle QJSValue
+                    }, [&](QJSValue& l1) {
                         auto l2 = cast_to_collection(value);
                         p_merge_forEach(l1, l2);
                         write(v1, key, l1);
-                    }
+                    });
                     return;
                 }
 
-                bool missingObjectAtPath = !can_cast_to_qt_metable(srcValue) && can_cast_to_qt_metable(value);
+                bool missingObjectAtPath = !can_cast_to_qt_metable(dstValue) && can_cast_to_qt_metable(value);
                 if (missingObjectAtPath) {
                     auto path = key_value_create_path_object(v1);
                     write(v1, key, p_merge_(path, value));
                 } else {
-                    write(v1, key, p_merge_(srcValue, value));
+                    write(v1, key, p_merge_(dstValue, value));
                 }
             });
         }
