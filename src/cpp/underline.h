@@ -14,6 +14,7 @@
 
 #ifdef QT_CORE_LIB
 #include <QtCore>
+#include <QtGlobal>
 #include <QList>
 #include <QStringList>
 #include <QVariantList>
@@ -258,7 +259,6 @@ namespace _ {
                 convertTo(v2, v1);
             }
         }
-
 
         template <typename From, typename To>
         struct is_custom_convertible {
@@ -1053,29 +1053,95 @@ namespace _ {
 
         /* BEGIN Collection */
 
-        template <typename ...Args>
-        struct _collection_info {
+        template <typename T, typename ...Args>
+        class _collection_info {
+        public:
             enum { is_collection_type = false };
             typedef Undefined size_type;
             typedef Undefined value_type;
+
+            template <typename Any>
+            static unsigned int size(const Any&) {return 0;}
+            static Undefined get_value(const T&, unsigned int) { return Undefined(); }
+            static void set_value(T&, unsigned int, const value_type&) {}
+
+            template <typename Any>
+            static void append(Any&){}
         };
 
         template <typename T>
-        struct _collection_info<T, typename std::enable_if<is_static_collection<remove_cvref_t<T>>::value, std::true_type>::type> {
+        class _collection_info<T, typename std::enable_if<is_static_collection<remove_cvref_t<T>>::value, std::true_type>::type> {
+        public:
             enum { is_collection_type = true };
             using size_type = typename remove_cvref_t<T>::size_type;
             using value_type = typename remove_cvref_t<T>::value_type;
+
+            static unsigned int size(const T& t) {return t.size();}
+            static value_type get_value(const T& t, unsigned int index) { return t[index]; }
+            static void set_value(T& t, unsigned int index, const value_type& value) { t[index] = value;}
+            static void append(T& t) { t.push_back(value_type()); }
         };
 
         template <typename T>
-        struct _collection_info<T, typename std::enable_if<is_qjsvalue<T>::value, std::true_type>::type> {
+        class _collection_info<T, typename std::enable_if<is_qvariant<T>::value, std::true_type>::type> : public _collection_info<Undefined,Undefined> {
+        public:
+            enum { is_collection_type = true };
+            using size_type = int;
+            using value_type = QVariant;
+#ifdef QT_CORE_LIB
+            static unsigned int size(const T& t) {
+                return t.type() == QVariant::List ? t.toList().size() : 0;
+            }
+            static value_type get_value(const T& t, unsigned int index) { return t.toList()[index]; }
+            static void set_value(T& t, unsigned int index, const value_type& value) {
+                if (t.type() != QVariant::List) {
+                    return;
+                }
+                auto list = t.toList();
+                list[index] = value;
+                t = list;
+            }
+            static void append(T& t){
+                if (t.type() != QVariant::List) {
+                    return;
+                }
+                auto list = t.toList();
+                list.push_back(value_type());
+                t = list;
+            }
+#endif
+        };
+
+        template <typename T>
+        class _collection_info<T, typename std::enable_if<is_qjsvalue<T>::value, std::true_type>::type> : public _collection_info<Undefined,Undefined> {
+        public:
             enum { is_collection_type = true };
             using size_type = int;
             using value_type = QJSValue;
+#ifdef QT_QUICK_LIB
+            static unsigned int size(const T& t) {
+                return t.isArray() ? t.property("length").toInt() : 0;
+            }
+            static value_type get_value(const T& t, unsigned int index) {
+                return t.property(index);
+            }
+            static void set_value(T& t, unsigned int index, const value_type& value) {
+                t.setProperty(index, value);
+            }
+            static void append(T& t) {
+                auto value = key_value_create_path_object(t);
+                QJSValueList args{value};
+                t.property("push").callWithInstance(t, args);
+            }
+#else
+            static QJSValue get_value(const T&, unsigned int) { return QJSValue(); }
+            template <typename Any1, typename Any2>
+            static void set_value(Any1&, unsigned int, const Any2&){}
+#endif
         };
 
         template <typename T>
-        struct collection_info: _collection_info<T, std::true_type> {};
+        class collection_info: public _collection_info<T, std::true_type> {};
 
         template <typename Array>
         struct collection_value_type {
@@ -1104,48 +1170,12 @@ namespace _ {
         inline auto cast_to_collection(const T&) -> std::vector<Undefined> { return std::vector<Undefined>{}; }
 
         template <typename T>
-        inline auto collection_size(const T&) -> typename std::enable_if<!is_static_collection<T>::value, unsigned int>::type { return 0; }
-
-        template <typename T>
-        inline auto collection_size(const T& t) -> typename std::enable_if<is_static_collection<T>::value, unsigned int>::type {
-            return static_cast<unsigned int>(t.size());
-        }
-
-        template <typename T>
-        inline auto collection_get_value(const T&, unsigned int ) -> typename std::enable_if<!is_static_collection<T>::value && !is_real_qjsvalue<T>::value, Undefined>::type { return Undefined(); }
-
-        template <typename T>
-        inline auto collection_get_value(const T& t, unsigned int index) -> typename std::enable_if<is_static_collection<T>::value, typename collection_info<T>::value_type>::type {
-            return t[index];
-        }
-
-        template <typename T, typename V>
-        inline auto collection_set_value(const T&, unsigned int, V) -> typename std::enable_if<!is_static_collection<T>::value && !is_real_qjsvalue<T>::value, void>::type {}
-
-        template <typename T>
-        inline auto collection_set_value(T& t, unsigned int index, typename collection_info<T>::value_type &value ) -> typename std::enable_if<is_static_collection<T>::value, void>::type {
-            t[index] = value;
-        }
-
-        template <typename T>
-        inline auto collection_push(T&) -> typename std::enable_if<!is_static_collection<T>::value && !is_real_qjsvalue<T>::value, void>::type { }
-
-        template <typename T>
-        inline auto collection_push(T& list) -> typename std::enable_if<is_static_collection<T>::value, void>::type {
-            list.push_back(typename collection_value_type<T>::type());
-        }
-
-        template <typename T>
         inline auto p_isCollection_(const T&) -> typename std::enable_if<!std::is_same<T,QVariant>::value && !is_real_qjsvalue<T>::value, bool>::type {
             return is_static_collection<T>::value;
         }
 
 #ifdef QT_CORE_LIB
         inline QVariantList cast_to_collection(const QVariant& t) { return t.toList();}
-
-        inline unsigned int collection_size(const QVariant &v) {
-            return static_cast<unsigned int>(v.type() == QVariant::List ? v.toList().size() : 0);
-        }
 
         template <typename T>
         inline auto p_isCollection_(const T& v) -> typename std::enable_if<std::is_same<T,QVariant>::value, bool>::type {
@@ -1156,26 +1186,8 @@ namespace _ {
 
 #ifdef QT_QUICK_LIB
         inline QJSValue cast_to_collection(const QJSValue& t) { return t;}
-
-        inline unsigned int collection_size(const QJSValue& t) { return t.isArray() ? t.property("length").toInt() : 0;}
-
-        template <typename T>
-        inline auto collection_get_value(const T& t, int index)  ->typename std::enable_if<is_real_qjsvalue<T>::value, QJSValue>::type
-        { return t.property(index); }
-
-        template <typename T>
-        inline auto collection_set_value(T& t, int index,const T& value) ->typename std::enable_if<is_real_qjsvalue<T>::value, void>::type{
-            t.setProperty(index, value);
-        }
-
-        template <typename T>
-        inline auto collection_push(T& list) -> typename std::enable_if<is_qjsvalue<T>::value, void>::type {
-            auto obj = key_value_create_path_object(list);
-            QJSValueList args{obj};
-            list.property("push").callWithInstance(list, args);
-        }
-
 #endif
+
 
         /* END Collection */
 
@@ -1871,7 +1883,7 @@ namespace _ {
         inline auto p_forEach_(Array& collection, Iteratee iteratee) -> typename std::enable_if<is_static_collection<Array>::value, Array&>::type {
             Private::Value<typename Private::ret_invoke<Iteratee, typename Private::collection_value_type<Array>::type, int, Array >::type> value;
 
-            for (unsigned int i = 0 ; i < collection_size(collection) ; i++) {
+            for (unsigned int i = 0 ; i < collection_info<Array>::size(collection) ; i++) {
                 value.invoke(iteratee, collection[i], i, collection);
                 if (value.template canConvert<bool>() && value.equals(false)) {
                     break;
@@ -1924,19 +1936,15 @@ namespace _ {
             using Value = typename collection_info<V2>::value_type;
 
             p_forEach_(v2, [&](const Value & value, unsigned int index) {
-                while (collection_size(v1) <= index ) {
-                    auto old = collection_size(v1);
-                    collection_push(v1);
-                    if (collection_size(v1) == old) {
-                        break;
-                    }
+                for (unsigned int i = collection_info<V1>::size(v1) ; i <= index;i++ ) {
+                    collection_info<V1>::append(v1);
                 }
-                auto v1Size = collection_size(v1);
+                auto v1Size = collection_info<V1>::size(v1);
 
                 if (index < v1Size) {
-                    auto obj = collection_get_value(v1, index);
+                    auto obj = collection_info<V1>::get_value(v1, index);
                     p_merge_(obj, value); //@TODO optimization
-                    collection_set_value(v1, index, obj);
+                    collection_info<V1>::set_value(v1, index, obj);
                 }
             });
         }
