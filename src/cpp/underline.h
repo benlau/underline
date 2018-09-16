@@ -618,8 +618,8 @@ namespace _ {
             return Undefined();
         }
 
-        template  <typename Ref> // Create a KV object to fill-in the missing path.
-        inline auto key_value_create_path_collection(const Ref&) -> std::vector<Undefined> {
+        template  <typename Ref, typename ...Args> // Create a KV object to fill-in the missing path.
+        inline auto key_value_create_path_collection(const Ref&, Args ...) -> std::vector<Undefined> {
             return std::vector<Undefined>();
         }
 
@@ -667,15 +667,15 @@ namespace _ {
             return QVariantMap();
         }
 
-        inline auto key_value_create_path_collection(const QVariant&) -> QVariantList {
+        template <typename ...Args> inline auto key_value_create_path_collection(const QVariant&, Args ...) -> QVariantList {
             return QVariantList();
         }
 
-        inline auto key_value_create_path_collection(const QVariantMap&) -> QVariantList {
+        template <typename ...Args> inline auto key_value_create_path_collection(const QVariantMap&, Args ...) -> QVariantList {
             return QVariantList();
         }
 
-        inline auto key_value_create_path_collection(QObject*) -> QVariantList {
+        template <typename ...Args> inline auto key_value_create_path_collection(QObject*, Args...) -> QVariantList {
             return QVariantList();
         }
 
@@ -685,6 +685,7 @@ namespace _ {
         inline auto key_value_create_path_object(const QJSValue& value) -> QJSValue {
             auto prototype = value.prototype();
             auto p = prototype;
+
             while (!p.isNull()) {
                 prototype = p;
                 p = p.prototype();
@@ -700,6 +701,16 @@ namespace _ {
         inline auto key_value_create_path_collection(const QJSValue& value) -> QJSValue {
             auto prototype = value.prototype();
             return prototype.property("constructor").callAsConstructor();
+        }
+
+        template <typename ...Args>
+        inline auto key_value_create_path_collection(const QJSValue& value, Args ... args) -> QJSValue {
+            auto ret = key_value_create_path_collection(value);
+            if (!ret.isArray()) {
+                auto ret2 = key_value_create_path_collection(args...);
+                copy_or_convert(ret, ret2);
+            }
+            return ret;
         }
 #endif
 
@@ -1949,38 +1960,6 @@ namespace _ {
             });
         }
 
-        template <typename V1, typename DV,  typename SV, typename F1, typename F2>
-        inline auto p_merge_cast_to_collection(V1, DV& , SV&, F1, F2) -> typename std::enable_if<!is_qvariant<DV>::value && !is_real_qjsvalue<DV>::value, void>::type {
-        }
-
-        template <typename V1, typename DV,  typename SV, typename F1, typename F2>
-        inline auto p_merge_cast_to_collection(V1, DV& dest, SV&, F1 f1, F2) -> typename std::enable_if<is_qvariant<DV>::value, void>::type {
-            if (p_isCollection_(dest)) {
-                auto l1 = cast_to_collection(dest);
-                f1(l1);
-            } else {
-                auto l1 = key_value_create_path_collection(dest); // @TODO - Handle QJSValue
-                f1(l1);
-            }
-        }
-
-        template <typename V1,typename DV, typename SV, typename F1, typename F2>
-        inline auto p_merge_cast_to_collection(V1 v1, DV& value, SV& sValue, F1, F2 f2) -> typename std::enable_if<is_real_qjsvalue<DV>::value, void>::type {
-            if (p_isCollection_(value)) {
-                f2(value);
-            } else {
-                auto list = key_value_create_path_collection(v1);
-                if (p_isCollection_(list)) {
-                    f2(list);
-                } else {
-                    auto l2 = key_value_create_path_collection(sValue);
-                    QJSValue tmp;
-                    copy_if_same_type(tmp, l2);
-                    f2(tmp);
-                }
-            }
-        }
-
         template <typename V1, typename V2>
         inline auto p_merge_forIn_(V1& v1 , const V2& v2) -> typename std::enable_if<is_key_value_type<V1>::value && is_key_value_type<V2>::value, void>::type {
             using Key = typename key_value_info<V2>::key_type;
@@ -1996,15 +1975,16 @@ namespace _ {
                 }
 
                 if (p_isCollection_(value)) {
-                    p_merge_cast_to_collection(v1, dstValue, value, [&](QVariantList & l1){
-                        auto l2 = cast_to_collection(value);
+                    auto l2 = cast_to_collection(value);
+                    if (p_isCollection_(dstValue)) {
+                        auto l1 = cast_to_collection(dstValue);
                         p_merge_forEach(l1, l2);
                         write(v1, key, l1);
-                    }, [&](QJSValue& l1) {
-                        auto l2 = cast_to_collection(value);
+                    } else {
+                        auto l1 = key_value_create_path_collection(dstValue, value);
                         p_merge_forEach(l1, l2);
                         write(v1, key, l1);
-                    });
+                    }
                     return;
                 }
 
