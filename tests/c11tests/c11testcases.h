@@ -75,6 +75,8 @@ private slots:
 
     void spec_merge_args_QVariantMap_QVariantMap_should_support_list_merging();
 
+    void spec_merge_arg1_QVariantMap_containing_list_of_QVariantMap();
+
     void test_some();
 
     void test_map();

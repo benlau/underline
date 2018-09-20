@@ -674,6 +674,19 @@ void C14TestCases::test_forEach()
     }
 }
 
+void C14TestCases::spec_forEach_should_support_QVariant()
+{
+    QVariant object = QVariantList{1,2,3};
+
+    QVariantList result;
+
+    _::forEach(object, [&](auto value) {
+        result << value;
+    });
+
+    QCOMPARE(object.toList(), result);
+}
+
 void C14TestCases::test_reduce()
 {
     {

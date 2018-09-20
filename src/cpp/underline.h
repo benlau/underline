@@ -21,6 +21,7 @@
 #include <QVariantMap>
 #include <QObject>
 #include <QMetaObject>
+#include <QJsonDocument>
 #endif
 
 #ifdef QT_QUICK_LIB
@@ -1906,7 +1907,8 @@ namespace _ {
 #ifdef QT_CORE_LIB
         template <typename Array, typename Iteratee>
         inline auto p_forEach_(Array& object, Iteratee iteratee) -> typename std::enable_if<std::is_same<Array, QVariant>::value, Array&>::type {
-            p_forEach_(object.toList(), iteratee);
+            auto list = object.toList();
+            p_forEach_(list, iteratee);
             return object;
         }
 #endif
@@ -2454,6 +2456,18 @@ namespace _ {
     template <typename ...Args>
     QList<int> rangeQ(Args ...args) {
         return range<QList<int>>(args...);
+    }
+
+    inline QVariantMap parse(const QString &text)
+    {
+        QJsonParseError jsonError;
+        QJsonDocument doc = QJsonDocument::fromJson(text.toUtf8(),&jsonError);
+
+        if (jsonError.error != QJsonParseError::NoError) {
+                qWarning() << "JSON::parse() error: "<< jsonError.errorString();
+        }
+
+        return doc.object().toVariantMap();
     }
 #endif
 

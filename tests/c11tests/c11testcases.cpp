@@ -19,19 +19,6 @@ static bool isOdd(int value) {
     return value % 2 == 1;
 }
 
-static QVariantMap parse(const QString &text)
-{
-    QJsonParseError error;
-    QJsonDocument doc = QJsonDocument::fromJson(text.toUtf8(),&error);
-
-    if (error.error != QJsonParseError::NoError) {
-        qWarning() << "JSON::parse() error: "<< error.errorString();
-    }
-
-    return doc.object().toVariantMap();
-}
-
-
 static QString stringify(const QVariantMap &data)
 {
     QJsonObject object = QJsonObject::fromVariantMap(data);
@@ -895,17 +882,39 @@ void C11TestCases::spec_merge_arg1_QObject_should_direct_copy_in_missing_path()
 
 void C11TestCases::spec_merge_args_QVariantMap_QVariantMap_should_support_list_merging()
 {
-    QVariantMap object = parse("{\"list1\":[{\"a\":1},{\"b\":2}],\"list2\":[]}");
+    QVariantMap object = _::parse("{\"list1\":[{\"a\":1},{\"b\":2}],\"list2\":[]}");
 
-    QVariantMap source = parse("{\"list1\":[{\"c\":3},{\"d\":4},{\"e\":\"5\"}],\"list2\":[{\"f\":6},7],\"list3\":[{\"g\":8}]}");
+    QVariantMap source = _::parse("{\"list1\":[{\"c\":3},{\"d\":4},{\"e\":\"5\"}],\"list2\":[{\"f\":6},7],\"list3\":[{\"g\":8}]}");
 
-    QVariantMap expected = parse("{\"list1\":[{\"c\":3,\"a\":1},{\"d\":4,\"b\":2},{\"e\":\"5\"}],\"list2\":[{\"f\":6},7],\"list3\":[{\"g\":8}]}");
+    QVariantMap expected = _::parse("{\"list1\":[{\"c\":3,\"a\":1},{\"d\":4,\"b\":2},{\"e\":\"5\"}],\"list2\":[{\"f\":6},7],\"list3\":[{\"g\":8}]}");
 
     _::merge(object, source);
 
     QCOMPARE(stringify(object), stringify(expected));
     QCOMPARE(object, expected);
 
+}
+
+void C11TestCases::spec_merge_arg1_QVariantMap_containing_list_of_QVariantMap()
+{
+    QVariantMap object = _::parse("{\"list1\":[{\"a\":1},{\"b\":2}],\"list2\":[]}");
+
+    auto convert = [](const QVariant &v) -> QVariantMap {
+        return v.toMap();
+    };
+    object["list1"] = QVariant::fromValue(_::map(object["list1"].toList(), convert));
+
+    object["list2"] = QVariant::fromValue(_::map(object["list2"].toList(), convert));
+
+    QVariantMap source = _::parse("{\"list1\":[{\"c\":3},{\"d\":4},{\"e\":\"5\"}],\"list2\":[{\"f\":6},7],\"list3\":[{\"g\":8}]}");
+
+    QVariantMap expected = _::parse("{\"list1\":[{\"c\":3,\"a\":1},{\"d\":4,\"b\":2},{\"e\":\"5\"}],\"list2\":[{\"f\":6},7],\"list3\":[{\"g\":8}]}");
+
+    _::merge(object, source);
+
+    QEXPECT_FAIL("", "Not Implemented Yet", Abort);
+    QCOMPARE(stringify(object), stringify(expected));
+    QCOMPARE(object, expected);
 }
 
 void C11TestCases::test_some()

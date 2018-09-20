@@ -7,19 +7,6 @@
 #define _underline_debug(x) { qDebug() << x;}
 #include <underline.h>
 
-static QVariantMap parse(const QString &text)
-{
-    QJsonParseError error;
-    QJsonDocument doc = QJsonDocument::fromJson(text.toUtf8(),&error);
-
-    if (error.error != QJsonParseError::NoError) {
-        qWarning() << "JSON::parse() error: "<< error.errorString();
-    }
-
-    return doc.object().toVariantMap();
-}
-
-
 static QString stringify(const QVariantMap &data)
 {
     QJsonObject object = QJsonObject::fromVariantMap(data);
@@ -308,11 +295,11 @@ void QuickTests::spec_merge_args_QJSValue_QJSValue_should_support_missing_path_c
 void QuickTests::spec_merge_args_QJSValue_QJSValue_should_support_list_merging()
 {
     QQmlEngine engine;
-    QJSValue object = engine.toScriptValue(parse("{\"list1\":[{\"a\":1},{\"b\":2}],\"list2\":[]}"));
+    QJSValue object = engine.toScriptValue(_::parse("{\"list1\":[{\"a\":1},{\"b\":2}],\"list2\":[]}"));
 
-    QJSValue source = engine.toScriptValue(parse("{\"list1\":[{\"c\":3},{\"d\":4},{\"e\":\"5\"}],\"list2\":[{\"f\":6},7],\"list3\":[{\"g\":8}]}"));
+    QJSValue source = engine.toScriptValue(_::parse("{\"list1\":[{\"c\":3},{\"d\":4},{\"e\":\"5\"}],\"list2\":[{\"f\":6},7],\"list3\":[{\"g\":8}]}"));
 
-    QJSValue expected = engine.toScriptValue(parse("{\"list1\":[{\"c\":3,\"a\":1},{\"d\":4,\"b\":2},{\"e\":\"5\"}],\"list2\":[{\"f\":6},7],\"list3\":[{\"g\":8}]}"));
+    QJSValue expected = engine.toScriptValue(_::parse("{\"list1\":[{\"c\":3,\"a\":1},{\"d\":4,\"b\":2},{\"e\":\"5\"}],\"list2\":[{\"f\":6},7],\"list3\":[{\"g\":8}]}"));
 
     _::merge(object, source);
 

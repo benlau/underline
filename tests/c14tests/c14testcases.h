@@ -39,6 +39,8 @@ private slots:
 
     void test_forEach();
 
+    void spec_forEach_should_support_QVariant();
+
     void test_reduce();
 
     void test_countBy();
