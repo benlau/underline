@@ -24,7 +24,8 @@ DISTFILES +=    \
     ../../appveyor.yml \
     SampleData1.json \
     SampleData2.json \
-    test_QJSValue.js
+    test_QJSValue.js \
+    NestedItems.qml
 
 HEADERS += \
     quicktests.h

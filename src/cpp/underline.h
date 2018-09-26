@@ -1063,6 +1063,24 @@ namespace _ {
             using type = decltype(decl_func0<Functor, Args&&...>());
         };
 
+#ifdef QT_CORE_LIB
+        class QtMetableBridge {
+        public:
+            class List {};
+            std::function<unsigned int(const QVariant&)> count;
+        };
+
+        template <typename T>
+        class QtMetableRegistrationTable {
+        public:
+            static QMap<int, QtMetableBridge>& storage() {
+                static QMap<int, QtMetableBridge> storage;
+                return storage;
+            }
+        };
+#endif
+
+
         /* BEGIN Collection */
 
         template <typename T, typename ...Args>
@@ -1191,7 +1209,7 @@ namespace _ {
 
         template <typename T>
         inline auto p_isCollection_(const T& v) -> typename std::enable_if<std::is_same<T,QVariant>::value, bool>::type {
-            return v.type() == QVariant::List;
+            return v.type() == QVariant::List || QtMetableRegistrationTable<QtMetableBridge::List>::storage().contains(v.userType());
         }
 
 #endif
@@ -1754,6 +1772,8 @@ namespace _ {
             p_recursive_set_(object, tokens, 0, value);
         }
 #endif
+
+        /* BEGIN p_forIn_ */
 
         template <typename Map, typename Functor>
         inline auto p_forIn_(const Map& object, Functor iteratee) -> typename std::enable_if<Private::is_map<Map>::value, const Map&>::type {
@@ -2469,6 +2489,18 @@ namespace _ {
 
         return doc.object().toVariantMap();
     }
+
+    template <typename T>
+    inline void registerQtMetable() {
+        Private::QtMetableBridge bridge;
+        bridge.count = [](const QVariant& v) {
+            const QList<T>* ptr = static_cast<const QList<T>*>(v.constData());
+            return ptr->size();
+        };
+
+        auto& listTable = Private::QtMetableRegistrationTable<Private::QtMetableBridge::List>::storage();
+        listTable[qMetaTypeId<QList<T>>()] = bridge;
+    };
 #endif
 
     template <typename Object, typename Source, typename Iteratee>
@@ -2520,7 +2552,7 @@ namespace _ {
         }
 
         return ret;
-    }
+    }    
 
 } // End of _ namespace
 

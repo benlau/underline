@@ -42,6 +42,8 @@ private slots:
 
     void test_set_args_QVariantMap_key_QJSValue();
 
+    void spec_set_arg1_nested_QObject();
+
     void test_omit_arg1_QJSValue();
 
 };

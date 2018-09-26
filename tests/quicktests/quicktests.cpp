@@ -352,6 +352,21 @@ void QuickTests::test_set_args_QVariantMap_key_QJSValue()
     QCOMPARE(actualValue.toString(), QString("3"));
 }
 
+void QuickTests::spec_set_arg1_nested_QObject()
+{
+    QQmlApplicationEngine engine;
+    engine.load(QtShell::realpath_strip(SRCDIR, "NestedItems.qml"));
+    QVERIFY(engine.rootObjects().size() > 0);
+
+    QObject* root = engine.rootObjects()[0];
+
+    QCOMPARE(_::get(root,"nested.value1").toInt(), 1);
+
+    _::set(root, "nested.value1", 3);
+
+    QCOMPARE(_::get(root,"nested.value1").toInt(), 3);
+}
+
 void QuickTests::test_omit_arg1_QJSValue()
 {
     QQmlApplicationEngine engine;

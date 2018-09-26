@@ -1,5 +1,6 @@
 #include <QTest>
 #include <functional>
+#include <registeredgadget.h>
 #include <vector>
 #include "c14testcases.h"
 #include "dataobject.h"
@@ -742,11 +743,16 @@ void C14TestCases::test_countBy()
 
 void C14TestCases::test_isCollection()
 {
-    QCOMPARE(_::isCollection(std::vector<int>{}),    true);
-    QCOMPARE(_::isCollection(QVector<int>{ }),       true);
-    QCOMPARE(_::isCollection(QList<int>{ }),         true);
-    QCOMPARE(_::isCollection(QVariantList{ }),       true);
-    QCOMPARE(_::isCollection(QString{ }),            true);
+    QList<RegisteredGadget> registeredGadgetList;
+    QVariant variantOfRegisteredGadgetList = QVariant::fromValue(registeredGadgetList);
+
+
+    QCOMPARE(_::isCollection(std::vector<int>{}),              true);
+    QCOMPARE(_::isCollection(QVector<int>{ }),                 true);
+    QCOMPARE(_::isCollection(QList<int>{ }),                   true);
+    QCOMPARE(_::isCollection(QVariantList{ }),                 true);
+    QCOMPARE(_::isCollection(QString{ }),                      true);
+    QCOMPARE(_::isCollection(variantOfRegisteredGadgetList),   true);
 
     QCOMPARE(_::isCollection(std::map<bool,int>{}),  false);
     QCOMPARE(_::isCollection(QMap<int,int>{}),       false);
