@@ -615,21 +615,14 @@ namespace _ {
         }
 
         template  <typename Ref> // Create a KV object to fill-in the missing path.
-        inline auto key_value_create_path_object(const Ref&) -> Undefined {
+        inline auto contruct_default_object(const Ref&) -> Undefined {
             return Undefined();
         }
 
         template  <typename Ref, typename ...Args> // Create a KV object to fill-in the missing path.
-        inline auto key_value_create_path_collection(const Ref&, Args ...) -> std::vector<Undefined> {
+        inline auto construct_default_collection(const Ref&, Args ...) -> std::vector<Undefined> {
             return std::vector<Undefined>();
         }
-
-        template <typename Ref>
-        struct key_value_support_path_object_creation {
-            enum {
-                value = is_map<Ref>::value || is_qjsvalue<Ref>::value || is_qobject<Ref>::value
-            };
-        };
 
 #ifdef QT_CORE_LIB
         template <typename Meta, typename Key>
@@ -660,30 +653,30 @@ namespace _ {
             return true;
         }
 
-        inline auto key_value_create_path_object(const QVariantMap&) -> QVariantMap {
+        inline auto contruct_default_object(const QVariantMap&) -> QVariantMap {
             return QVariantMap();
         }
 
-        inline auto key_value_create_path_object(QObject*) -> QVariantMap {
+        inline auto contruct_default_object(QObject*) -> QVariantMap {
             return QVariantMap();
         }
 
-        template <typename ...Args> inline auto key_value_create_path_collection(const QVariant&, Args ...) -> QVariantList {
+        template <typename ...Args> inline auto construct_default_collection(const QVariant&, Args ...) -> QVariantList {
             return QVariantList();
         }
 
-        template <typename ...Args> inline auto key_value_create_path_collection(const QVariantMap&, Args ...) -> QVariantList {
+        template <typename ...Args> inline auto construct_default_collection(const QVariantMap&, Args ...) -> QVariantList {
             return QVariantList();
         }
 
-        template <typename ...Args> inline auto key_value_create_path_collection(QObject*, Args...) -> QVariantList {
+        template <typename ...Args> inline auto construct_default_collection(QObject*, Args...) -> QVariantList {
             return QVariantList();
         }
 
 #endif
 
 #ifdef QT_QUICK_LIB
-        inline auto key_value_create_path_object(const QJSValue& value) -> QJSValue {
+        inline auto contruct_default_object(const QJSValue& value) -> QJSValue {
             auto prototype = value.prototype();
             auto p = prototype;
 
@@ -699,16 +692,16 @@ namespace _ {
             return prototype.property("constructor").callAsConstructor();
         }
 
-        inline auto key_value_create_path_collection(const QJSValue& value) -> QJSValue {
+        inline auto construct_default_collection(const QJSValue& value) -> QJSValue {
             auto prototype = value.prototype();
             return prototype.property("constructor").callAsConstructor();
         }
 
         template <typename ...Args>
-        inline auto key_value_create_path_collection(const QJSValue& value, Args ... args) -> QJSValue {
-            auto ret = key_value_create_path_collection(value);
+        inline auto construct_default_collection(const QJSValue& value, Args ... args) -> QJSValue {
+            auto ret = construct_default_collection(value);
             if (!ret.isArray()) {
-                auto ret2 = key_value_create_path_collection(args...);
+                auto ret2 = construct_default_collection(args...);
                 copy_or_convert(ret, ret2);
             }
             return ret;
@@ -1069,6 +1062,7 @@ namespace _ {
             class List {};
             std::function<unsigned int(const QVariant&)> count;
             std::function<QVariant(const QVariant&, unsigned index)> get;
+            std::function<QVariant()> create;
         };
 
         template <typename T>
@@ -1093,11 +1087,11 @@ namespace _ {
 
             template <typename Any>
             static unsigned int size(const Any&) {return 0;}
-            static Undefined get_value(const T&, unsigned int) { return Undefined(); }
-            static void set_value(T&, unsigned int, const value_type&) {}
+            static Undefined getValue(const T&, unsigned int) { return Undefined(); }
+            static void setValue(T&, unsigned int, const value_type&) {}
 
             template <typename Any>
-            static void append(Any&){}
+            static void appendDefaultObject(Any&){}
         };
 
         template <typename T>
@@ -1108,9 +1102,9 @@ namespace _ {
             using value_type = typename remove_cvref_t<T>::value_type;
 
             static unsigned int size(const T& t) {return t.size();}
-            static value_type get_value(const T& t, unsigned int index) { return t[index]; }
-            static void set_value(T& t, unsigned int index, const value_type& value) { t[index] = value;}
-            static void append(T& t) { t.push_back(value_type()); }
+            static value_type getValue(const T& t, unsigned int index) { return t[index]; }
+            static void setValue(T& t, unsigned int index, const value_type& value) { t[index] = value;}
+            static void appendDefaultObject(T& t) { t.push_back(value_type()); }
         };
 
         template <typename T>
@@ -1123,8 +1117,8 @@ namespace _ {
             static unsigned int size(const T& t) {
                 return t.type() == QVariant::List ? t.toList().size() : 0;
             }
-            static value_type get_value(const T& t, unsigned int index) { return t.toList()[index]; }
-            static void set_value(T& t, unsigned int index, const value_type& value) {
+            static value_type getValue(const T& t, unsigned int index) { return t.toList()[index]; }
+            static void setValue(T& t, unsigned int index, const value_type& value) {
                 if (t.type() != QVariant::List) {
                     return;
                 }
@@ -1132,7 +1126,7 @@ namespace _ {
                 list[index] = value;
                 t = list;
             }
-            static void append(T& t){
+            static void appendDefaultObject(T& t){
                 if (t.type() != QVariant::List) {
                     return;
                 }
@@ -1153,21 +1147,21 @@ namespace _ {
             static unsigned int size(const T& t) {
                 return t.isArray() ? t.property("length").toInt() : 0;
             }
-            static value_type get_value(const T& t, unsigned int index) {
+            static value_type getValue(const T& t, unsigned int index) {
                 return t.property(index);
             }
-            static void set_value(T& t, unsigned int index, const value_type& value) {
+            static void setValue(T& t, unsigned int index, const value_type& value) {
                 t.setProperty(index, value);
             }
-            static void append(T& t) {
-                auto value = key_value_create_path_object(t);
+            static void appendDefaultObject(T& t) {
+                auto value = contruct_default_object(t);
                 QJSValueList args{value};
                 t.property("push").callWithInstance(t, args);
             }
 #else
-            static QJSValue get_value(const T&, unsigned int) { return QJSValue(); }
+            static QJSValue getValue(const T&, unsigned int) { return QJSValue(); }
             template <typename Any1, typename Any2>
-            static void set_value(Any1&, unsigned int, const Any2&){}
+            static void setValue(Any1&, unsigned int, const Any2&){}
 #endif
         };
 
@@ -1757,7 +1751,7 @@ namespace _ {
                 },[&](QJSValue &kyt) {
                     auto v = read(kyt, k.data);
                     if (v.isUndefined()) {
-                        copy_if_same_type(v, key_value_create_path_object(kyt));
+                        copy_if_same_type(v, contruct_default_object(kyt));
                     }
                     p_recursive_set_(v , tokens, index + 1, value);
                     write_if_same_type(object, k.data, v);
@@ -1986,14 +1980,14 @@ namespace _ {
 
             p_forEach_(v2, [&](const Value & value, unsigned int index) {
                 for (unsigned int i = collection_info<V1>::size(v1) ; i <= index;i++ ) {
-                    collection_info<V1>::append(v1);
+                    collection_info<V1>::appendDefaultObject(v1);
                 }
                 auto v1Size = collection_info<V1>::size(v1);
 
                 if (index < v1Size) {
-                    auto obj = collection_info<V1>::get_value(v1, index);
+                    auto obj = collection_info<V1>::getValue(v1, index);
                     p_merge_(obj, value); //@TODO optimization
-                    collection_info<V1>::set_value(v1, index, obj);
+                    collection_info<V1>::setValue(v1, index, obj);
                 }
             });
         }
@@ -2019,7 +2013,7 @@ namespace _ {
                         p_merge_forEach(l1, l2);
                         write(v1, key, l1);
                     } else {
-                        auto l1 = key_value_create_path_collection(dstValue, value);
+                        auto l1 = construct_default_collection(dstValue, value);
                         p_merge_forEach(l1, l2);
                         write(v1, key, l1);
                     }
@@ -2028,7 +2022,7 @@ namespace _ {
 
                 bool missingObjectAtPath = !can_cast_to_qt_metable(dstValue) && can_cast_to_qt_metable(value);
                 if (missingObjectAtPath) {
-                    auto path = key_value_create_path_object(v1);
+                    auto path = contruct_default_object(v1);
                     write(v1, key, p_merge_(path, value));
                 } else {
                     write(v1, key, p_merge_(dstValue, value));
@@ -2518,6 +2512,10 @@ namespace _ {
             const QList<T>* ptr = static_cast<const QList<T>*>(v.constData());
             QVariant tmp = QVariant::fromValue((*ptr)[index]);
             return tmp;
+        };
+
+        bridge.create = []() {
+            return QVariant::fromValue<T>(T());
         };
 
         auto& listTable = Private::QtMetableRegistrationTable<Private::QtMetableBridge::List>::storage();

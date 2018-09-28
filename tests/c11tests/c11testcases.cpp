@@ -71,21 +71,13 @@ void C11TestCases::validate_template_static_variable()
 
 void C11TestCases::spec_QVariantMap()
 {
-    QVariantMap type;
-
-    QCOMPARE(QString(typeid(_::Private::key_value_create_path_object(type)).name()), QString(typeid(type).name()));
-
-    QCOMPARE(static_cast<bool>(_::Private::key_value_support_path_object_creation<QVariantMap>::value), true);
-
 }
 
 void C11TestCases::spec_QObject()
 {
     QObject* object = new QObject(this);
 
-    QCOMPARE(static_cast<bool>(_::Private::key_value_support_path_object_creation<QObject*>::value), true);
-
-    QCOMPARE(QString(typeid(_::Private::key_value_create_path_object(object)).name()),
+    QCOMPARE(QString(typeid(_::Private::contruct_default_object(object)).name()),
              QString(typeid(QVariantMap{}).name()));
 }
 
@@ -100,8 +92,6 @@ void C11TestCases::spec_QVariant()
     QCOMPARE(static_cast<bool>(_::Private::is_static_qt_metable<QVariant>::value),                     false);
 
     QCOMPARE(static_cast<bool>(_::Private::is_static_qt_metable_castable<QVariant>::value),            true);
-
-    QCOMPARE(static_cast<bool>(_::Private::key_value_support_path_object_creation<QVariant>::value),  false);
 }
 
 void C11TestCases::test_private_has()

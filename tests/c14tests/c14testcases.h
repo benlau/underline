@@ -41,7 +41,7 @@ private slots:
 
     void spec_forEach_should_support_QVariant();
 
-    void spec_forEach_should_support_registerQtMetable();
+    void spec_forEach_should_support_registeredQtMetable();
 
     void test_reduce();
 

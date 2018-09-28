@@ -689,7 +689,7 @@ void C14TestCases::spec_forEach_should_support_QVariant()
     QCOMPARE(object.toList(), result);
 }
 
-void C14TestCases::spec_forEach_should_support_registerQtMetable()
+void C14TestCases::spec_forEach_should_support_registeredQtMetable()
 {
     QList<RegisteredGadget> list{ {1}, {2}, {3}};
 
