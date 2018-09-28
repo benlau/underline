@@ -2,9 +2,8 @@
 #include "registeredgadget.h"
 #include "underline.h"
 
-RegisteredGadget::RegisteredGadget()
+RegisteredGadget::RegisteredGadget(int value) : value(value)
 {
-    value = 0;
 }
 
 static void init() {

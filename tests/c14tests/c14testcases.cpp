@@ -6,6 +6,7 @@
 #include "dataobject.h"
 #include "gadgetobject.h"
 #include "complexqobject.h"
+#include "registeredgadget.h"
 
 #define _underline_debug(x) { qDebug() << x;}
 #include "underline.h"
@@ -686,6 +687,21 @@ void C14TestCases::spec_forEach_should_support_QVariant()
     });
 
     QCOMPARE(object.toList(), result);
+}
+
+void C14TestCases::spec_forEach_should_support_registerQtMetable()
+{
+    QList<RegisteredGadget> list{ {1}, {2}, {3}};
+
+    QVariant v = QVariant::fromValue(list);
+
+    int sum = 0;
+    _::forEach(v, [&](QVariant item) {
+        RegisteredGadget gadget = item.value<RegisteredGadget>();
+        sum += gadget.value;
+    });
+
+    QCOMPARE(sum, 6);
 }
 
 void C14TestCases::test_reduce()

@@ -9,7 +9,7 @@ class RegisteredGadget
 
     Q_PROPERTY(int value MEMBER value)
 public:
-    RegisteredGadget();
+    RegisteredGadget(int value = 0);
 
     int value;
 };

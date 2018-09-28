@@ -1068,6 +1068,7 @@ namespace _ {
         public:
             class List {};
             std::function<unsigned int(const QVariant&)> count;
+            std::function<QVariant(const QVariant&, unsigned index)> get;
         };
 
         template <typename T>
@@ -1927,8 +1928,23 @@ namespace _ {
 #ifdef QT_CORE_LIB
         template <typename Array, typename Iteratee>
         inline auto p_forEach_(Array& object, Iteratee iteratee) -> typename std::enable_if<std::is_same<Array, QVariant>::value, Array&>::type {
-            auto list = object.toList();
-            p_forEach_(list, iteratee);
+            if (object.type() == QVariant::List) {
+                auto list = object.toList();
+                p_forEach_(list, iteratee);
+            } else {
+                auto table = QtMetableRegistrationTable<QtMetableBridge::List>::storage();
+                if (table.contains(object.userType())) {
+                    auto metaObject = table[object.userType()];
+                    Private::Value<typename Private::ret_invoke<Iteratee, QVariant, int, QVariant>::type> value;
+
+                    for (unsigned int i = 0 ; i < metaObject.count(object) ; i++) {
+                        value.invoke(iteratee, metaObject.get(object,i), i, object);
+                        if (value.template canConvert<bool>() && value.equals(false)) {
+                            break;
+                        }
+                    }
+                }
+            }
             return object;
         }
 #endif
@@ -2496,6 +2512,12 @@ namespace _ {
         bridge.count = [](const QVariant& v) {
             const QList<T>* ptr = static_cast<const QList<T>*>(v.constData());
             return ptr->size();
+        };
+
+        bridge.get = [](const QVariant &v, unsigned int index) {
+            const QList<T>* ptr = static_cast<const QList<T>*>(v.constData());
+            QVariant tmp = QVariant::fromValue((*ptr)[index]);
+            return tmp;
         };
 
         auto& listTable = Private::QtMetableRegistrationTable<Private::QtMetableBridge::List>::storage();
