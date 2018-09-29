@@ -6,6 +6,7 @@
 #include <QVector>
 #include <memory>
 #include <QJsonDocument>
+#include <registeredgadget.h>
 #include "complexqobject.h"
 #include "c11testcases.h"
 #include "dataobject.h"
@@ -219,13 +220,16 @@ void C11TestCases::test_private_is_qobject()
 
 void C11TestCases::test_private_is_key_value_type()
 {
-    QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<QObject>::value), true);
-    QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<QObject*>::value), true);
-    QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<C11TestCases>::value), true);
+    QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<QObject>::value),       true);
+    QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<QObject*>::value),      true);
+    QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<C11TestCases>::value),  true);
     QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<C11TestCases*>::value), true);
-    QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<GadgetObject>::value), true);
-    QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<QVariantMap>::value), true);
-    QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<int>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<GadgetObject>::value),  true);
+    QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<QVariantMap>::value),   true);
+
+    QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<int>::value),           false);
+    QCOMPARE(static_cast<bool>(_::Private::is_key_value_type<QVariant>::value),      false);
+
 }
 
 void C11TestCases::test_private_is_std_type()
@@ -903,7 +907,6 @@ void C11TestCases::spec_merge_arg1_QVariantMap_containing_list_of_QVariantMap()
 
     _::merge(object, source);
 
-    QEXPECT_FAIL("", "Not Implemented Yet", Abort);
     QCOMPARE(stringify(object), stringify(expected));
     QCOMPARE(object, expected);
 }
@@ -1084,7 +1087,7 @@ void C11TestCases::spec_filter_args1_collection()
     QCOMPARE(actual, (QList<int>{1,3,5}));
 }
 
-void C11TestCases::test_toCollectiion()
+void C11TestCases::test_toCollection()
 {
     {
         std::map<int, int> map{{0,1}, {2,3}, {4,5}};
@@ -1107,5 +1110,18 @@ void C11TestCases::test_toCollectiion()
         QCOMPARE(collection, (QList<int>{1,3,5}));
     }
 
+}
+
+void C11TestCases::spec_toCollection_should_support_registeredQtMetable()
+{
+    QList<RegisteredGadget> list{ {1}, {2}, {3}};
+
+    QVariant v = QVariant::fromValue(list);
+
+    QVariantList res = _::toCollection(v);
+    QCOMPARE(res.size(), 3);
+
+    auto item1 = res[0].value<RegisteredGadget>();
+    QCOMPARE(item1.value, 1);
 }
 

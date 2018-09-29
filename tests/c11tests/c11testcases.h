@@ -99,6 +99,8 @@ private slots:
 
     void spec_filter_args1_collection();
 
-    void test_toCollectiion();
+    void test_toCollection();
+
+    void spec_toCollection_should_support_registeredQtMetable();
 
 };

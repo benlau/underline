@@ -1058,6 +1058,7 @@ namespace _ {
             std::function<unsigned int(const QVariant&)> count;
             std::function<QVariant(const QVariant&, unsigned index)> get;
             std::function<QVariant()> create;
+            std::function<QVariantList(const QVariant&)> toList;
         };
 
         template <typename T>
@@ -1201,18 +1202,34 @@ namespace _ {
         inline auto p_isCollection_(const T& v) -> typename std::enable_if<std::is_same<T,QVariant>::value, bool>::type {
             return v.type() == QVariant::List || QtMetableRegistrationTable<QtMetableBridge::List>::storage().contains(v.userType());
         }
-
 #endif
 
 #ifdef QT_QUICK_LIB
         inline QJSValue cast_to_collection(const QJSValue& t) { return t;}
 #endif
 
+        template <typename T> // Convert to collection but it may perform type conversion
+        inline auto p_convertToCollection_(const T& object) -> decltype(cast_to_collection(object)) {
+            return cast_to_collection(object);
+        }
 
 #ifdef QT_CORE_LIB
+        inline auto p_convertToCollection_(const QVariant& object) -> QVariantList {
+            if (object.type() == QVariant::List) {
+                return object.toList();
+            }
+
+            auto table = QtMetableRegistrationTable<QtMetableBridge::List>::storage();
+            int type = object.userType();
+            if (table.contains(type)) {
+                return table[type].toList(object);
+            }
+            return QVariantList();
+        }
+
         template <typename Ref, typename ...Args>
-        inline auto p_toCollection_(const Ref& ref, Args ...args) -> decltype(cast_to_collection(ref)) {
-            auto ret = cast_to_collection(ref);
+        inline auto p_convertToCollection_or_construct(const Ref& ref, Args ...args) -> decltype(p_convertToCollection_(ref)) {
+            auto ret = p_convertToCollection_(ref);
             if (!p_isCollection_(ref) && sizeof...(args) > 0) {
                 auto next = construct_default_collection(ref, args...);
                 copy_if_same_type(ret, next);
@@ -2015,7 +2032,7 @@ namespace _ {
 
                 if (p_isCollection_(value)) {
                     auto l2 = cast_to_collection(value);
-                    auto l1 = p_toCollection_(dstValue, value);
+                    auto l1 = p_convertToCollection_or_construct(dstValue, value);
                     p_merge_forEach(l1, l2);
                     write(v1, key, l1);
                     return;
@@ -2519,6 +2536,15 @@ namespace _ {
             return QVariant::fromValue<T>(T());
         };
 
+        bridge.toList = [](const QVariant& v) {
+            QVariantList res;
+            const QList<T>* ptr = static_cast<const QList<T>*>(v.constData());
+            for (int i = 0; i < ptr->size(); i++) {
+                res << QVariant::fromValue<T>((*ptr)[i]);
+            }
+            return res;
+        };
+
         auto& listTable = Private::QtMetableRegistrationTable<Private::QtMetableBridge::List>::storage();
         listTable[qMetaTypeId<QList<T>>()] = bridge;
     };
@@ -2571,9 +2597,13 @@ namespace _ {
             ret.push_back(Private::map_iterator_value<K,V>(iter));
             iter++;
         }
-
         return ret;
-    }    
+    }
+#ifdef QT_CORE_LIB
+    inline auto toCollection(const QVariant &t) -> QVariantList {
+        return Private::p_convertToCollection_(t);
+    }
+#endif
 
 } // End of _ namespace
 
