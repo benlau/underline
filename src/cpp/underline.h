@@ -614,13 +614,13 @@ namespace _ {
             return true;
         }
 
-        template  <typename Ref> // Create a KV object to fill-in the missing path.
+        template  <typename Ref> // Create an empty object according to the ref type
         inline auto contruct_default_object(const Ref&) -> Undefined {
             return Undefined();
         }
 
-        template  <typename Ref, typename ...Args> // Create a KV object to fill-in the missing path.
-        inline auto construct_default_collection(const Ref&, Args ...) -> std::vector<Undefined> {
+        template  <typename ...Args> // Create an empty collection according to the ref type. It may take multiple arguments for handling QJSValue
+        inline auto construct_default_collection(Args ...) -> std::vector<Undefined> {
             return std::vector<Undefined>();
         }
 
@@ -692,22 +692,17 @@ namespace _ {
             return prototype.property("constructor").callAsConstructor();
         }
 
-        inline auto construct_default_collection(const QJSValue& value) -> QJSValue {
-            auto prototype = value.prototype();
-            return prototype.property("constructor").callAsConstructor();
-        }
-
         template <typename ...Args>
         inline auto construct_default_collection(const QJSValue& value, Args ... args) -> QJSValue {
-            auto ret = construct_default_collection(value);
-            if (!ret.isArray()) {
-                auto ret2 = construct_default_collection(args...);
-                copy_or_convert(ret, ret2);
+            auto prototype = value.prototype();
+            auto res = prototype.property("constructor").callAsConstructor();
+            if (!res.isArray() && sizeof...(args) > 0) {
+                auto next = construct_default_collection(args...);
+                copy_if_same_type(res, next);
             }
-            return ret;
+            return res;
         }
 #endif
-
         /* END key_value_xxx */
 
         template <typename T>
@@ -1213,6 +1208,18 @@ namespace _ {
         inline QJSValue cast_to_collection(const QJSValue& t) { return t;}
 #endif
 
+
+#ifdef QT_CORE_LIB
+        template <typename Ref, typename ...Args>
+        inline auto p_toCollection_(const Ref& ref, Args ...args) -> decltype(cast_to_collection(ref)) {
+            auto ret = cast_to_collection(ref);
+            if (!p_isCollection_(ref) && sizeof...(args) > 0) {
+                auto next = construct_default_collection(ref, args...);
+                copy_if_same_type(ret, next);
+            }
+            return ret;
+        }
+#endif
 
         /* END Collection */
 
@@ -2008,15 +2015,9 @@ namespace _ {
 
                 if (p_isCollection_(value)) {
                     auto l2 = cast_to_collection(value);
-                    if (p_isCollection_(dstValue)) {
-                        auto l1 = cast_to_collection(dstValue);
-                        p_merge_forEach(l1, l2);
-                        write(v1, key, l1);
-                    } else {
-                        auto l1 = construct_default_collection(dstValue, value);
-                        p_merge_forEach(l1, l2);
-                        write(v1, key, l1);
-                    }
+                    auto l1 = p_toCollection_(dstValue, value);
+                    p_merge_forEach(l1, l2);
+                    write(v1, key, l1);
                     return;
                 }
 

@@ -887,6 +887,7 @@ void C11TestCases::spec_merge_args_QVariantMap_QVariantMap_should_support_list_m
 
 void C11TestCases::spec_merge_arg1_QVariantMap_containing_list_of_QVariantMap()
 {
+    _::registerQtMetable<QVariantMap>();
     QVariantMap object = _::parse("{\"list1\":[{\"a\":1},{\"b\":2}],\"list2\":[]}");
 
     auto convert = [](const QVariant &v) -> QVariantMap {
