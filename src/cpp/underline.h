@@ -527,6 +527,38 @@ namespace _ {
 
         /* END of cast_to_xxx */
 
+#ifdef QT_CORE_LIB
+        class QtMetaObject {
+        public:
+            class List {};
+            std::function<unsigned int(const QVariant&)> count;
+            std::function<QVariant(const QVariant&, unsigned index)> get;
+            std::function<QVariant()> create;
+            std::function<QVariantList(const QVariant&)> toVariantList;
+            std::function<QVariant(const QVariant&)> fromVariantList;
+        };
+
+        template <typename T>
+        class QtMetaObjectTable {
+        public:
+            static QMap<int, QtMetaObject>& storage() {
+                static QMap<int, QtMetaObject> storage;
+                return storage;
+            }
+        };
+
+        inline QVariant convertQVariant(const QVariant& v, int userType) {
+            if (v.userType() == userType) {
+                return v;
+            }
+            auto listTable = QtMetaObjectTable<Private::QtMetaObject::List>::storage();
+            if (listTable.contains(userType)) {
+                return listTable[userType].fromVariantList(v);
+            }
+            return v;
+        }
+#endif
+
         /* BEGIN key_value_xxx */
 
         template <typename ...Args>
@@ -590,22 +622,32 @@ namespace _ {
 
         template <typename Meta, typename Key, typename Value>
         inline auto key_value_write(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_gadget<Meta>::value, bool>::type {
+
             auto ptr = cast_to_pointer<Meta>(meta);
             auto metaObject = ptr->staticMetaObject;
             auto k = cast_to_const_char_container(key);
+
             int index = metaObject.indexOfProperty(k.data);
             if (index < 0 ) {
                 return false;
             }
             auto property = metaObject.property(index);
-            property.writeOnGadget(ptr, value);
+            auto convertedValue = convertQVariant(value, property.userType());
+            property.writeOnGadget(ptr, convertedValue);
             return true;
         }
 
         template <typename Meta, typename Key, typename Value>
         inline auto key_value_write(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_qobject<Meta>::value, bool>::type {
             auto k = cast_to_const_char_container(key);
-            return meta->setProperty(k.data, value);
+            auto metaObject = meta->staticMetaObject;
+            int index = metaObject.indexOfProperty(k.data);
+            if (index < 0 ) {
+                return meta->setProperty(k.data, value);
+            }
+            auto property = metaObject.property(index);
+            auto convertedValue = convertQVariant(value, property.userType());
+            return property.write(meta, convertedValue);
         }
 
         template <typename Meta, typename Key, typename Value>
@@ -1054,28 +1096,6 @@ namespace _ {
         struct ret_func {
             using type = decltype(decl_func0<Functor, Args&&...>());
         };
-
-#ifdef QT_CORE_LIB
-        class QtMetaObject {
-        public:
-            class List {};
-            std::function<unsigned int(const QVariant&)> count;
-            std::function<QVariant(const QVariant&, unsigned index)> get;
-            std::function<QVariant()> create;
-            std::function<QVariantList(const QVariant&)> toVariantList;
-            std::function<QVariant(const QVariant&)> fromVariantList;
-        };
-
-        template <typename T>
-        class QtMetaObjectTable {
-        public:
-            static QMap<int, QtMetaObject>& storage() {
-                static QMap<int, QtMetaObject> storage;
-                return storage;
-            }
-        };
-#endif
-
 
         /* BEGIN Collection */
 

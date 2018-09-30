@@ -923,7 +923,6 @@ void C11TestCases::spec_merge_arg1_Gadget_containing_list_of_Gadget()
     QVariantMap actual;
     _::merge(actual, object);
 
-    QEXPECT_FAIL("","Not implemented yet", Continue);
     QCOMPARE(stringify(actual), expected);
 }
 
@@ -938,7 +937,6 @@ void C11TestCases::spec_merge_arg2_Gadget_containing_list_of_Gadget()
 
     QString expected = "{\"list\":[{\"value\":1},{\"value\":2},{\"value\":3}]}";
 
-//    QEXPECT_FAIL("","Not implemented yet", Continue);
     QCOMPARE(stringify(object), expected);
 }
 
