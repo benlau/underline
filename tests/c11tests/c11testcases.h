@@ -77,6 +77,10 @@ private slots:
 
     void spec_merge_arg1_QVariantMap_containing_list_of_QVariantMap();
 
+    void spec_merge_arg1_Gadget_containing_list_of_Gadget();
+
+    void spec_merge_arg2_Gadget_containing_list_of_Gadget();
+
     void test_some();
 
     void test_map();

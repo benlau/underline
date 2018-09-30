@@ -653,6 +653,10 @@ namespace _ {
             return true;
         }
 
+        inline auto contruct_default_object(const QVariant&) -> QVariantMap {
+            return QVariantMap();
+        }
+
         inline auto contruct_default_object(const QVariantMap&) -> QVariantMap {
             return QVariantMap();
         }
@@ -1052,20 +1056,21 @@ namespace _ {
         };
 
 #ifdef QT_CORE_LIB
-        class QtMetableBridge {
+        class QtMetaObject {
         public:
             class List {};
             std::function<unsigned int(const QVariant&)> count;
             std::function<QVariant(const QVariant&, unsigned index)> get;
             std::function<QVariant()> create;
-            std::function<QVariantList(const QVariant&)> toList;
+            std::function<QVariantList(const QVariant&)> toVariantList;
+            std::function<QVariant(const QVariant&)> fromVariantList;
         };
 
         template <typename T>
-        class QtMetableRegistrationTable {
+        class QtMetaObjectTable {
         public:
-            static QMap<int, QtMetableBridge>& storage() {
-                static QMap<int, QtMetableBridge> storage;
+            static QMap<int, QtMetaObject>& storage() {
+                static QMap<int, QtMetaObject> storage;
                 return storage;
             }
         };
@@ -1200,7 +1205,7 @@ namespace _ {
 
         template <typename T>
         inline auto p_isCollection_(const T& v) -> typename std::enable_if<std::is_same<T,QVariant>::value, bool>::type {
-            return v.type() == QVariant::List || QtMetableRegistrationTable<QtMetableBridge::List>::storage().contains(v.userType());
+            return v.type() == QVariant::List || QtMetaObjectTable<QtMetaObject::List>::storage().contains(v.userType());
         }
 #endif
 
@@ -1219,10 +1224,10 @@ namespace _ {
                 return object.toList();
             }
 
-            auto table = QtMetableRegistrationTable<QtMetableBridge::List>::storage();
+            auto table = QtMetaObjectTable<QtMetaObject::List>::storage();
             int type = object.userType();
             if (table.contains(type)) {
-                return table[type].toList(object);
+                return table[type].toVariantList(object);
             }
             return QVariantList();
         }
@@ -1945,12 +1950,12 @@ namespace _ {
 
 #ifdef QT_CORE_LIB
         template <typename Array, typename Iteratee>
-        inline auto p_forEach_(Array& object, Iteratee iteratee) -> typename std::enable_if<std::is_same<Array, QVariant>::value, Array&>::type {
+        inline auto p_forEach_(Array& object, Iteratee iteratee) -> typename std::enable_if<is_qvariant<Array>::value, Array&>::type {
             if (object.type() == QVariant::List) {
                 auto list = object.toList();
                 p_forEach_(list, iteratee);
             } else {
-                auto table = QtMetableRegistrationTable<QtMetableBridge::List>::storage();
+                auto table = QtMetaObjectTable<QtMetaObject::List>::storage();
                 if (table.contains(object.userType())) {
                     auto metaObject = table[object.userType()];
                     Private::Value<typename Private::ret_invoke<Iteratee, QVariant, int, QVariant>::type> value;
@@ -2031,8 +2036,8 @@ namespace _ {
                 }
 
                 if (p_isCollection_(value)) {
-                    auto l2 = cast_to_collection(value);
                     auto l1 = p_convertToCollection_or_construct(dstValue, value);
+                    auto l2 = p_convertToCollection_(value);
                     p_merge_forEach(l1, l2);
                     write(v1, key, l1);
                     return;
@@ -2055,28 +2060,30 @@ namespace _ {
         template <typename V1, typename V2>
         inline auto p_merge_(V1& v1, const V2& v2) -> pointer_or_reference_t<V1> {
 
-            auto bothAreForInAbleThen = [&]() {
-                bool res = p_isForInAble_(v1) && p_isForInAble_(v2);
-                if (res) p_merge_forIn_(v1 ,v2);
-                return res;
-            };
+            bool isV1ForInAble = p_isForInAble_(v1);
+            bool isV2ForInAble = p_isForInAble_(v2);
 
-            if (bothAreForInAbleThen()) return v1;
+            bool bothAreForInAble = isV1ForInAble && isV2ForInAble;
+            if (bothAreForInAble) {
+                p_merge_forIn_(v1 ,v2);
+                return v1;
+            }
 
-            auto BothAreForInAbleByCastingV2 = [&]() {
-                return p_isForInAble_(v1) &&
-                    try_cast_to_qt_metable(v2, [&](QObject* metable){
-                        p_merge_forIn_(v1, metable);
-                    },[&](GadgetContainer metable) {
-                        p_merge_forIn_(v1, metable);
-                    },[&](QVariantMap& metable) {
-                        p_merge_forIn_(v1, metable);
-                    },[&](QJSValue& metable) {
-                        p_merge_forIn_(v1, metable);
-                    });
-            };
+            bool isV2Castable = can_cast_to_qt_metable(v2);
+            bool bothAreForInAbleByCastingV2 = isV1ForInAble && isV2Castable;
 
-            if (BothAreForInAbleByCastingV2()) return v1;
+            if (bothAreForInAbleByCastingV2) {
+                try_cast_to_qt_metable(v2, [&](QObject* metable){
+                    p_merge_forIn_(v1, metable);
+                },[&](GadgetContainer metable) {
+                    p_merge_forIn_(v1, metable);
+                },[&](QVariantMap& metable) {
+                    p_merge_forIn_(v1, metable);
+                },[&](QJSValue& metable) {
+                    p_merge_forIn_(v1, metable);
+                });
+                return v1;
+            }
 
             bool forInAbleByCastingV1 = try_cast_to_qt_metable(v1, [&](QObject* metable){
                 p_merge_(metable, v2);
@@ -2098,6 +2105,22 @@ namespace _ {
             });
 
             if (forInAbleByCastingV1) return v1;
+
+            bool forInAbleByCreatingEmptyObjectAtV1 = isV2Castable;
+            if (forInAbleByCreatingEmptyObjectAtV1) {
+                auto emptyObject = contruct_default_object(v1);
+                try_cast_to_qt_metable(v2, [&](QObject* metable){
+                    p_merge_forIn_(emptyObject, metable);
+                },[&](GadgetContainer metable) {
+                    p_merge_forIn_(emptyObject, metable);
+                },[&](QVariantMap& metable) {
+                    p_merge_forIn_(emptyObject, metable);
+                },[&](QJSValue& metable) {
+                    p_merge_forIn_(emptyObject, metable);
+                });
+                copy_or_convert(v1, emptyObject);
+                return v1;
+            }
 
             copy_or_convert(v1, v2);
 
@@ -2520,23 +2543,23 @@ namespace _ {
 
     template <typename T>
     inline void registerQtMetable() {
-        Private::QtMetableBridge bridge;
-        bridge.count = [](const QVariant& v) {
+        Private::QtMetaObject metaObject;
+        metaObject.count = [](const QVariant& v) {
             const QList<T>* ptr = static_cast<const QList<T>*>(v.constData());
             return ptr->size();
         };
 
-        bridge.get = [](const QVariant &v, unsigned int index) {
+        metaObject.get = [](const QVariant &v, unsigned int index) {
             const QList<T>* ptr = static_cast<const QList<T>*>(v.constData());
             QVariant tmp = QVariant::fromValue((*ptr)[index]);
             return tmp;
         };
 
-        bridge.create = []() {
+        metaObject.create = []() {
             return QVariant::fromValue<T>(T());
         };
 
-        bridge.toList = [](const QVariant& v) {
+        metaObject.toVariantList = [](const QVariant& v) {
             QVariantList res;
             const QList<T>* ptr = static_cast<const QList<T>*>(v.constData());
             for (int i = 0; i < ptr->size(); i++) {
@@ -2545,8 +2568,18 @@ namespace _ {
             return res;
         };
 
-        auto& listTable = Private::QtMetableRegistrationTable<Private::QtMetableBridge::List>::storage();
-        listTable[qMetaTypeId<QList<T>>()] = bridge;
+        metaObject.fromVariantList = [](const QVariant &v) {
+            QVariantList list = v.toList();
+            auto res = map(list, [=](const QVariant& elem) {
+                T t;
+                merge(t, elem.toMap());
+                return t;
+            });
+            return QVariant::fromValue(res);
+        };
+
+        auto& listTable = Private::QtMetaObjectTable<Private::QtMetaObject::List>::storage();
+        listTable[qMetaTypeId<QList<T>>()] = metaObject;
     };
 #endif
 

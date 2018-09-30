@@ -7,6 +7,7 @@
 #include <memory>
 #include <QJsonDocument>
 #include <registeredgadget.h>
+#include <registeredgadget2.h>
 #include "complexqobject.h"
 #include "c11testcases.h"
 #include "dataobject.h"
@@ -909,6 +910,36 @@ void C11TestCases::spec_merge_arg1_QVariantMap_containing_list_of_QVariantMap()
 
     QCOMPARE(stringify(object), stringify(expected));
     QCOMPARE(object, expected);
+}
+
+void C11TestCases::spec_merge_arg1_Gadget_containing_list_of_Gadget()
+{
+    QString expected = "{\"list\":[{\"value\":1},{\"value\":2},{\"value\":3}]}";
+    QVariantMap source = _::parse(expected);
+    RegisteredGadget2 object;
+
+    _::merge(object, source);
+
+    QVariantMap actual;
+    _::merge(actual, object);
+
+    QEXPECT_FAIL("","Not implemented yet", Continue);
+    QCOMPARE(stringify(actual), expected);
+}
+
+void C11TestCases::spec_merge_arg2_Gadget_containing_list_of_Gadget()
+{
+    RegisteredGadget2 source;
+    source.setList(QList<RegisteredGadget>{ {1}, {2}, {3}});
+
+    QVariantMap object;
+
+    _::merge(object, source);
+
+    QString expected = "{\"list\":[{\"value\":1},{\"value\":2},{\"value\":3}]}";
+
+//    QEXPECT_FAIL("","Not implemented yet", Continue);
+    QCOMPARE(stringify(object), expected);
 }
 
 void C11TestCases::test_some()
