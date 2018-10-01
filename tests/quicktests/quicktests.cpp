@@ -7,22 +7,6 @@
 #define _underline_debug(x) { qDebug() << x;}
 #include <underline.h>
 
-static QString stringify(const QVariantMap &data)
-{
-    QJsonObject object = QJsonObject::fromVariantMap(data);
-
-    QJsonDocument doc;
-    doc.setObject(object);
-    QByteArray bytes = doc.toJson(QJsonDocument::Compact);
-
-    return bytes;
-}
-
-static QString stringify(const QJSValue &data)
-{
-    return stringify(data.toVariant().toMap());
-}
-
 QuickTests::QuickTests(QObject *parent) : QObject(parent)
 {
     auto ref = [=]() {
@@ -300,7 +284,7 @@ void QuickTests::spec_merge_args_QJSValue_QJSValue_should_support_list_merging()
 
     _::merge(object, source);
 
-    QCOMPARE(stringify(object), stringify(expected));
+    QCOMPARE(_::stringify(object), _::stringify(expected));
     QCOMPARE(object.toVariant().toMap(), expected.toVariant().toMap());
 }
 

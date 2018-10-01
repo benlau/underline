@@ -2612,6 +2612,26 @@ namespace _ {
     }
 
     template <typename T>
+    QString stringify(const T &object, bool indented = false)
+    {
+        _underline_static_assert_is_object_a_qt_metable("_::stringify: ", T);
+        QVariantMap data;
+        if (std::is_same<T, QVariantMap>::value) {
+            Private::copy_or_convert(data, object);
+        } else {
+            Private::p_merge_(data, object);
+        }
+
+        QJsonObject jsonObject = QJsonObject::fromVariantMap(data);
+
+        QJsonDocument doc;
+        doc.setObject(jsonObject);
+        QJsonDocument::JsonFormat format = indented ? QJsonDocument::Indented : QJsonDocument::Compact;
+        QByteArray bytes = doc.toJson(format);
+        return bytes;
+    }
+
+    template <typename T>
     inline void registerQtType() {
         _underline_static_assert_is_static_qt_metable("_::registerQtType", T);
         Private::p_registerQtType_<T>();

@@ -21,17 +21,6 @@ static bool isOdd(int value) {
     return value % 2 == 1;
 }
 
-static QString stringify(const QVariantMap &data)
-{
-    QJsonObject object = QJsonObject::fromVariantMap(data);
-
-    QJsonDocument doc;
-    doc.setObject(object);
-    QByteArray bytes = doc.toJson(QJsonDocument::Compact);
-
-    return bytes;
-}
-
 static DataObject* createMockObject(QObject* parent) {
     DataObject* ret = new DataObject(parent);
     ret->setProperty("value1", 1);
@@ -885,7 +874,7 @@ void C11TestCases::spec_merge_args_QVariantMap_QVariantMap_should_support_list_m
 
     _::merge(object, source);
 
-    QCOMPARE(stringify(object), stringify(expected));
+    QCOMPARE(_::stringify(object), _::stringify(expected));
     QCOMPARE(object, expected);
 
 }
@@ -908,7 +897,7 @@ void C11TestCases::spec_merge_arg1_QVariantMap_containing_list_of_QVariantMap()
 
     _::merge(object, source);
 
-    QCOMPARE(stringify(object), stringify(expected));
+    QCOMPARE(_::stringify(object), _::stringify(expected));
     QCOMPARE(object, expected);
 }
 
@@ -923,7 +912,7 @@ void C11TestCases::spec_merge_arg1_Gadget_containing_list_of_Gadget()
     QVariantMap actual;
     _::merge(actual, object);
 
-    QCOMPARE(stringify(actual), expected);
+    QCOMPARE(_::stringify(actual), expected);
 }
 
 void C11TestCases::spec_merge_arg2_Gadget_containing_list_of_Gadget()
@@ -937,7 +926,7 @@ void C11TestCases::spec_merge_arg2_Gadget_containing_list_of_Gadget()
 
     QString expected = "{\"list\":[{\"value\":1},{\"value\":2},{\"value\":3}]}";
 
-    QCOMPARE(stringify(object), expected);
+    QCOMPARE(_::stringify(object), expected);
 }
 
 void C11TestCases::test_some()
