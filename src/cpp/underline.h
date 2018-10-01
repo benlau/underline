@@ -2149,6 +2149,30 @@ namespace _ {
 #endif
         /* PRIVATE_MERGE end */
 
+        template <typename Collection, typename Iteratee>
+        using p_map_return_type_t = typename Private::array_rebinder<Collection,typename Private::via_func_info<Iteratee, Collection>::non_void_ret_type>::type;
+
+        template <typename Collection, typename Iteratee>
+        using p_enable_if_map_return_type_t = typename std::enable_if<
+            is_static_collection<Collection>::value && via_func_info<Iteratee,Collection>::is_invokable && !via_func_info<Iteratee,Collection>::is_void_ret,
+            p_map_return_type_t<Collection,Iteratee>
+        >::type;
+
+        template <typename Collection, typename Iteratee>
+        inline auto p_map_(const Collection& collection, Iteratee iteratee) -> p_enable_if_map_return_type_t<Collection,Iteratee> {
+            using func_info = Private::via_func_info<Iteratee, Collection>;
+
+            typename Private::array_rebinder<Collection, typename func_info::non_void_ret_type>::type res;
+
+            res.reserve(static_cast<int>(collection.size()));
+
+            for (unsigned int i = 0 ; i < static_cast<unsigned int>(collection.size()) ; i++) {
+                res.push_back(Private::invoke(iteratee, collection[i], i, collection));
+            }
+
+            return res;
+        }
+
 #ifdef QT_CORE_LIB
         template <typename QtMetable>
         QVariantMap _omit(const QtMetable& object, const QVariantMap& properties) {
@@ -2188,9 +2212,7 @@ namespace _ {
             }
             return _omit(object, properties);
         }
-#endif
 
-#ifdef QT_CORE_LIB
         template <typename QMetaObject>
         inline QVariantMap p_pick_(QMetaObject& object, const QStringList& paths) {
             QVariantMap res;
@@ -2216,9 +2238,49 @@ namespace _ {
             }
             return res;
         }
-#endif
 
-    } /* End of Private Session */
+        template <typename T>
+        inline void p_registerQtType_() {
+            Private::QtMetaObject metaObject;
+            metaObject.count = [](const QVariant& v) {
+                const QList<T>* ptr = static_cast<const QList<T>*>(v.constData());
+                return ptr->size();
+            };
+
+            metaObject.get = [](const QVariant &v, unsigned int index) {
+                const QList<T>* ptr = static_cast<const QList<T>*>(v.constData());
+                QVariant tmp = QVariant::fromValue((*ptr)[index]);
+                return tmp;
+            };
+
+            metaObject.create = []() {
+                return QVariant::fromValue<T>(T());
+            };
+
+            metaObject.toVariantList = [](const QVariant& v) {
+                QVariantList res;
+                const QList<T>* ptr = static_cast<const QList<T>*>(v.constData());
+                for (int i = 0; i < ptr->size(); i++) {
+                    res << QVariant::fromValue<T>((*ptr)[i]);
+                }
+                return res;
+            };
+
+            metaObject.fromVariantList = [](const QVariant &v) {
+                QVariantList list = v.toList();
+                auto res = p_map_(list, [=](const QVariant& elem) {
+                    T t;
+                    p_merge_(t, elem.toMap());
+                    return t;
+                });
+                return QVariant::fromValue(res);
+            };
+
+            auto& listTable = Private::QtMetaObjectTable<Private::QtMetaObject::List>::storage();
+            listTable[qMetaTypeId<QList<T>>()] = metaObject;
+        }
+#endif
+    } /* PRIVATE_END */
 
     template <typename Object, typename Functor>
     inline const Object& forIn(const Object& object, Functor iteratee) {
@@ -2389,22 +2451,10 @@ namespace _ {
     >::type {
 
         using func_info = Private::via_func_info<Iteratee, Collection>;
-
         _underline_static_assert_is_collection("_::map(): ", Collection);
-
         _underline_static_assert_is_iteratee_invokable("_::map(): ", func_info::is_invokable);
-
         _underline_static_assert_is_iteratee_not_void("_::map() ", !func_info::is_void_ret);
-
-        typename Private::array_rebinder<Collection, typename func_info::non_void_ret_type>::type res;
-
-        res.reserve(static_cast<int>(collection.size()));
-
-        for (unsigned int i = 0 ; i < static_cast<unsigned int>(collection.size()) ; i++) {
-            res.push_back(Private::invoke(iteratee, collection[i], i, collection));
-        }
-
-        return res;
+        return Private::p_map_(collection, iteratee);
     }
 
     template <typename Array,  typename Iteratee>
@@ -2564,44 +2614,7 @@ namespace _ {
     template <typename T>
     inline void registerQtType() {
         _underline_static_assert_is_static_qt_metable("_::registerQtType", T);
-
-        Private::QtMetaObject metaObject;
-        metaObject.count = [](const QVariant& v) {
-            const QList<T>* ptr = static_cast<const QList<T>*>(v.constData());
-            return ptr->size();
-        };
-
-        metaObject.get = [](const QVariant &v, unsigned int index) {
-            const QList<T>* ptr = static_cast<const QList<T>*>(v.constData());
-            QVariant tmp = QVariant::fromValue((*ptr)[index]);
-            return tmp;
-        };
-
-        metaObject.create = []() {
-            return QVariant::fromValue<T>(T());
-        };
-
-        metaObject.toVariantList = [](const QVariant& v) {
-            QVariantList res;
-            const QList<T>* ptr = static_cast<const QList<T>*>(v.constData());
-            for (int i = 0; i < ptr->size(); i++) {
-                res << QVariant::fromValue<T>((*ptr)[i]);
-            }
-            return res;
-        };
-
-        metaObject.fromVariantList = [](const QVariant &v) {
-            QVariantList list = v.toList();
-            auto res = map(list, [=](const QVariant& elem) {
-                T t;
-                merge(t, elem.toMap());
-                return t;
-            });
-            return QVariant::fromValue(res);
-        };
-
-        auto& listTable = Private::QtMetaObjectTable<Private::QtMetaObject::List>::storage();
-        listTable[qMetaTypeId<QList<T>>()] = metaObject;
+        Private::p_registerQtType_<T>();
     };
 #endif
 
