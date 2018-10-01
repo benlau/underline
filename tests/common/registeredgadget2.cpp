@@ -19,7 +19,7 @@ void RegisteredGadget2::setList(const QList<RegisteredGadget> &list)
 }
 
 static void init() {
-    _::registerQtMetable<RegisteredGadget2>();
+    _::registerQtType<RegisteredGadget2>();
 }
 
 Q_COREAPP_STARTUP_FUNCTION(init);

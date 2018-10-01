@@ -26,6 +26,7 @@ private slots:
 
     void spec_map_static_assert_arg1_is_not_a_collection();
     void spec_toCollection_static_assert_arg1_is_not_a_map();
+    void spec_registerQtType_static_assert_non_key_value_type();
 };
 
 using namespace QtShell;
@@ -152,7 +153,6 @@ void Builder::initTestCase()
 
 void Builder::cleanupTestCase()
 {
-//    log.close();
 //    qDebug().noquote() << cat(logFileName);
 }
 
@@ -182,6 +182,21 @@ void Builder::spec_toCollection_static_assert_arg1_is_not_a_map()
     QVERIFY(ret.errors.size() > 0);
 
     QVERIFY(ret.errors[0].indexOf("The expected input is an valid Map container class") >= 0);
+}
+
+void Builder::spec_registerQtType_static_assert_non_key_value_type()
+{
+
+    Result ret = build(__FUNCTION__, CODE([]() {
+        _::registerQtType<int>();
+    }));
+
+    QVERIFY(ret.exitCode != 0);
+
+    QVERIFY(ret.errors.size() <= buildErrorCountThreshold);
+    QVERIFY(ret.errors.size() > 0);
+
+    QVERIFY(ret.errors[0].indexOf("_::registerQtType: Invalid argument type. It should be a QtMetable type. Check the document of _::isQtMetable for the list of supported types.") >= 0);
 }
 
 QTEST_APPLESS_MAIN(Builder)

@@ -57,7 +57,7 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
     static_assert(_::Private::is_key_value_type<type>::value, prefix "Invalid argument type. It should be a valie Key-Value-Type. Check the document of _::isKeyValueType for the list of supported types")
 
 #define _underline_static_assert_is_static_qt_metable(func, type) \
-    static_assert(_::Private::is_static_qt_metable<type>::value, "_::" func ": Invalid argument type. It should be a QtMetable type. Check the document of _::isQtMetable for the list of supported types.")
+    static_assert(_::Private::is_static_qt_metable<type>::value, func ": Invalid argument type. It should be a QtMetable type. Check the document of _::isQtMetable for the list of supported types.")
 
 
 #define _underline_static_assert_is_iteratee_invokable(prefix, value) \
@@ -2562,7 +2562,9 @@ namespace _ {
     }
 
     template <typename T>
-    inline void registerQtMetable() {
+    inline void registerQtType() {
+        _underline_static_assert_is_static_qt_metable("_::registerQtType", T);
+
         Private::QtMetaObject metaObject;
         metaObject.count = [](const QVariant& v) {
             const QList<T>* ptr = static_cast<const QList<T>*>(v.constData());
