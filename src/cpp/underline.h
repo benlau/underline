@@ -44,7 +44,7 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
 #define _underline_predicate_return_type_mismatch_error "The return type of predicate function must be bool"
 #define _underline_input_type_is_not_array "Invalid Argument Type. The input should be an valid Collection class where _::isCollection() returns true. "
 #define _underline_iteratee_void_ret_error "The return type of iteratee function cannot be void"
-
+#define _underline_invalid_argument_type_it_must_be_a_valid_key_value_type "Invalid argument type. It should be a valie Key-Value-Type. Check the document of _::isKeyValueType for the list of supported types"
 #define _underline_qjsvalue_set_error "It should only modify the value of a QJSValue object by another QJSValeu"
 
 #define _underline_static_assert_is_collection(prefix, type) \
@@ -54,7 +54,7 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
     static_assert(_::Private::is_map<type>::value, prefix "The expected input is an valid Map container class, where _::isMap() returns true.")
 
 #define _underline_static_assert_is_key_value_type(prefix, type) \
-    static_assert(_::Private::is_key_value_type<type>::value, prefix "Invalid argument type. It should be a valie Key-Value-Type. Check the document of _::isKeyValueType for the list of supported types")
+    static_assert(_::Private::is_key_value_type<type>::value, prefix _underline_invalid_argument_type_it_must_be_a_valid_key_value_type)
 
 #define _underline_static_assert_is_static_qt_metable(func, type) \
     static_assert(_::Private::is_static_qt_metable<type>::value, func ": Invalid argument type. It should be a QtMetable type. Check the document of _::isQtMetable for the list of supported types.")
@@ -1951,7 +1951,23 @@ namespace _ {
             return object;
         }
 #endif
-
+#ifdef QT_CORE_LIB
+        template <typename Object, typename Iteratee>
+        inline auto p_forIn_(const Object& object, Iteratee iteratee)
+        -> typename std::enable_if<is_qvariant<Object>::value, const Object&>::type
+        {
+            try_cast_to_qt_metable(object, [&](QObject* metable){
+                p_forIn_(metable, iteratee);
+            },[&](GadgetContainer metable) {
+                p_forIn_(metable, iteratee);
+            },[&](QVariantMap& metable) {
+                p_forIn_(metable, iteratee);
+            },[&](QJSValue& metable) {
+                p_forIn_(metable, iteratee);
+            });
+            return object;
+        }
+#endif
         template <typename Array, typename Iteratee>
         inline auto p_forEach_(Array, Iteratee) -> typename std::enable_if<!is_static_collection<Array>::value && !std::is_same<Array, QVariant>::value && !is_real_qjsvalue<Array>::value, void>::type {}
 
@@ -2290,6 +2306,7 @@ namespace _ {
 
     template <typename Object, typename Functor>
     inline Object& forIn(Object& object, Functor iteratee) {
+        static_assert(_::Private::is_key_value_type<Object>::value || _::Private::is_qvariant<Object>::value, "_::forIn: " _underline_invalid_argument_type_it_must_be_a_valid_key_value_type);
         Private::p_forIn_(object, iteratee);
         return object;
     }

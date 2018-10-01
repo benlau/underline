@@ -35,7 +35,9 @@ private slots:
 
     void test_forIn();
 
-    void test_forIn_arg1_QObject_should_support_dynamic_properties();
+    void spec_forIn_arg1_QObject_should_support_dynamic_properties();
+
+    void spec_forIn_should_support_QVariant();
 
     void test_forEach();
 

@@ -628,7 +628,7 @@ void C14TestCases::test_forIn()
 
 }
 
-void C14TestCases::test_forIn_arg1_QObject_should_support_dynamic_properties()
+void C14TestCases::spec_forIn_arg1_QObject_should_support_dynamic_properties()
 {
     QObject* object = new QObject(this);
 
@@ -641,6 +641,18 @@ void C14TestCases::test_forIn_arg1_QObject_should_support_dynamic_properties()
 
     QCOMPARE(keys, (QStringList{"objectName", "customValue1"}));
 
+}
+
+void C14TestCases::spec_forIn_should_support_QVariant()
+{
+    QVariant v = QVariantMap{ {"value1", 1}};
+    QStringList keys;
+
+    _::forIn(v, [&](auto, auto key) {
+        keys << key;
+    });
+
+    QCOMPARE(keys, (QStringList{"value1"}));
 }
 
 void C14TestCases::test_forEach()
