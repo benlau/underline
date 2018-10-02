@@ -594,6 +594,13 @@ namespace _ {
         };
 
         template <typename T>
+        struct _key_value_info<T, typename std::enable_if<is_qvariant<T>::value,  std::true_type>::type> {
+            enum { is_key_value_type = false};
+            using key_type = QString;
+            using value_type = QVariant;
+        };
+
+        template <typename T>
         struct key_value_info : _key_value_info<T, std::true_type>{};
 
         template <typename Meta, typename Key>
@@ -2058,7 +2065,12 @@ namespace _ {
         }
 
         template <typename V1, typename V2>
-        inline auto p_merge_forIn_(V1& v1 , const V2& v2) -> typename std::enable_if<is_key_value_type<V1>::value && is_key_value_type<V2>::value, void>::type {
+        struct p_merge_forIn_cond {
+            enum { value = is_key_value_type<V1>::value && (is_key_value_type<V2>::value || is_qvariant<V2>::value)};
+        };
+
+        template <typename V1, typename V2>
+        inline auto p_merge_forIn_(V1& v1 , const V2& v2) -> typename std::enable_if<p_merge_forIn_cond<V1,V2>::value, void>::type {
             using Key = typename key_value_info<V2>::key_type;
             using Value = typename key_value_info<V2>::value_type;
 
@@ -2090,7 +2102,7 @@ namespace _ {
         }
 
         template <typename V1, typename V2>
-        inline auto p_merge_forIn_(V1& , const V2&) -> typename std::enable_if<!is_key_value_type<V1>::value || !is_key_value_type<V2>::value, void>::type {
+        inline auto p_merge_forIn_(V1& , const V2&) -> typename std::enable_if<!p_merge_forIn_cond<V1,V2>::value, void>::type {
         }
 
         template <typename V1, typename V2>
@@ -2109,15 +2121,7 @@ namespace _ {
             bool bothAreForInAbleByCastingV2 = isV1ForInAble && isV2Castable;
 
             if (bothAreForInAbleByCastingV2) {
-                try_cast_to_qt_metable(v2, [&](QObject* metable){
-                    p_merge_forIn_(v1, metable);
-                },[&](GadgetContainer metable) {
-                    p_merge_forIn_(v1, metable);
-                },[&](QVariantMap& metable) {
-                    p_merge_forIn_(v1, metable);
-                },[&](QJSValue& metable) {
-                    p_merge_forIn_(v1, metable);
-                });
+                p_merge_forIn_(v1, v2);
                 return v1;
             }
 
@@ -2125,7 +2129,7 @@ namespace _ {
                 p_merge_(metable, v2);
             },[&](GadgetContainer metable) {
                 p_merge_(metable, v2);
-            },[&](QVariantMap& metable) {
+            },[&](QVariantMap& metable) {               
                 if (can_cast_to_qt_metable(v2)) {
                     p_merge_(metable, v2);
                     copy_or_convert(v1, metable);
@@ -2145,15 +2149,7 @@ namespace _ {
             bool forInAbleByCreatingEmptyObjectAtV1 = isV2Castable;
             if (forInAbleByCreatingEmptyObjectAtV1) {
                 auto emptyObject = contruct_default_object(v1);
-                try_cast_to_qt_metable(v2, [&](QObject* metable){
-                    p_merge_forIn_(emptyObject, metable);
-                },[&](GadgetContainer metable) {
-                    p_merge_forIn_(emptyObject, metable);
-                },[&](QVariantMap& metable) {
-                    p_merge_forIn_(emptyObject, metable);
-                },[&](QJSValue& metable) {
-                    p_merge_forIn_(emptyObject, metable);
-                });
+                p_merge_forIn_(emptyObject, v2);
                 copy_or_convert(v1, emptyObject);
                 return v1;
             }
