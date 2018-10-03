@@ -511,23 +511,6 @@ void C11TestCases::test_private_cast_to_qobject()
 
 }
 
-void C11TestCases::test_private_merge()
-{
-    {
-        /* QObject, QVariant */
-        DataObject* v1 = new DataObject(this);
-        v1->setValue1(1);
-
-        QVariantMap v2;
-        v2["value1"] = 10;
-
-        auto res = _::Private::p_merge_(v1, v2);
-
-        QVERIFY(v1 == res);
-        QCOMPARE(v1->value1(), 10);
-    }
-}
-
 void C11TestCases::test_private_GadgetContainer()
 {
     {   /* Qt API Behaviour Validation */
@@ -923,6 +906,18 @@ void C11TestCases::spec_merge_arg2_Gadget_containing_list_of_Gadget()
     QVariantMap object;
 
     _::merge(object, source);
+
+    QString expected = "{\"list\":[{\"value\":1},{\"value\":2},{\"value\":3}]}";
+
+    QCOMPARE(_::stringify(object), expected);
+}
+
+void C11TestCases::spec_omit_support_Gadget_containing_list_of_Gadget()
+{
+    RegisteredGadget2 source;
+    source.setList(QList<RegisteredGadget>{ {1}, {2}, {3}});
+
+    QVariantMap object = _::omit(source, QString{});
 
     QString expected = "{\"list\":[{\"value\":1},{\"value\":2},{\"value\":3}]}";
 

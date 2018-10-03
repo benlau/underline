@@ -53,8 +53,6 @@ private slots:
 
     void test_private_cast_to_qobject();
 
-    void test_private_merge();
-
     void test_private_GadgetContainer();
 
     void test_private_contains();
@@ -80,6 +78,8 @@ private slots:
     void spec_merge_arg1_Gadget_containing_list_of_Gadget();
 
     void spec_merge_arg2_Gadget_containing_list_of_Gadget();
+
+    void spec_omit_support_Gadget_containing_list_of_Gadget();
 
     void test_some();
 

@@ -2041,13 +2041,18 @@ namespace _ {
 #endif
 
         /* PRIVATE_MERGE begin */
-
 #ifdef QT_CORE_LIB
-        template <typename V1, typename V2>
-        inline auto p_merge_(V1& v1, const V2& v2) -> pointer_or_reference_t<V1>;
+        class MergePredicateObject {
+        public:
+            bool predicate(const QString &) const { return true;}
+            MergePredicateObject next(const QString&) const { return *this;};
+        };
 
-        template <typename V1, typename V2>
-        inline void p_merge_forEach(V1& v1, const V2&v2) {
+        template <typename V1, typename V2, typename PredicateObject>
+        inline auto p_merge_(V1& v1, const V2& v2, const PredicateObject &) -> pointer_or_reference_t<V1>;
+
+        template <typename V1, typename V2, typename PredicateObject>
+        inline void p_merge_forEach(V1& v1, const V2&v2, const PredicateObject& predicate) {
             using Value = typename collection_info<V2>::value_type;
 
             p_forEach_(v2, [&](const Value & value, unsigned int index) {
@@ -2058,7 +2063,7 @@ namespace _ {
 
                 if (index < v1Size) {
                     auto obj = collection_info<V1>::getValue(v1, index);
-                    p_merge_(obj, value); //@TODO optimization
+                    p_merge_(obj, value, predicate); //@TODO optimization
                     collection_info<V1>::setValue(v1, index, obj);
                 }
             });
@@ -2069,24 +2074,29 @@ namespace _ {
             enum { value = is_key_value_type<V1>::value && (is_key_value_type<V2>::value || is_qvariant<V2>::value)};
         };
 
-        template <typename V1, typename V2>
-        inline auto p_merge_forIn_(V1& v1 , const V2& v2) -> typename std::enable_if<p_merge_forIn_cond<V1,V2>::value, void>::type {
+        template <typename V1, typename V2, typename PredicateObject>
+        inline auto p_merge_forIn_(V1& v1 , const V2& v2, const PredicateObject& predicate) -> typename std::enable_if<p_merge_forIn_cond<V1,V2>::value, void>::type {
             using Key = typename key_value_info<V2>::key_type;
             using Value = typename key_value_info<V2>::value_type;
 
             p_forIn_(v2, [&](const Value& value, const Key& key) {
+                if (!predicate.predicate(key)) {
+                    return;
+                }
+                auto next = predicate.next(key);
+
                 auto dstValue = read(v1, key);
 
                 QObject* v1_qobject_ptr = cast_to_qobject(dstValue);
                 if (v1_qobject_ptr != nullptr) {
-                    p_merge_(v1_qobject_ptr, value);
+                    p_merge_(v1_qobject_ptr, value, next);
                     return;
                 }
 
                 if (p_isCollection_(value)) {
                     auto l1 = p_convertToCollection_or_construct(dstValue, value);
                     auto l2 = p_convertToCollection_(value);
-                    p_merge_forEach(l1, l2);
+                    p_merge_forEach(l1, l2, next);
                     write(v1, key, l1);
                     return;
                 }
@@ -2094,62 +2104,43 @@ namespace _ {
                 bool missingObjectAtPath = !can_cast_to_qt_metable(dstValue) && can_cast_to_qt_metable(value);
                 if (missingObjectAtPath) {
                     auto path = contruct_default_object(v1);
-                    write(v1, key, p_merge_(path, value));
+                    write(v1, key, p_merge_(path, value, next));
                 } else {
-                    write(v1, key, p_merge_(dstValue, value));
+                    write(v1, key, p_merge_(dstValue, value, next));
                 }
             });
         }
 
-        template <typename V1, typename V2>
-        inline auto p_merge_forIn_(V1& , const V2&) -> typename std::enable_if<!p_merge_forIn_cond<V1,V2>::value, void>::type {
+        template <typename V1, typename V2, typename PredicateObject>
+        inline auto p_merge_forIn_(V1& , const V2&, const PredicateObject&) -> typename std::enable_if<!p_merge_forIn_cond<V1,V2>::value, void>::type {
         }
 
-        template <typename V1, typename V2>
-        inline auto p_merge_(V1& v1, const V2& v2) -> pointer_or_reference_t<V1> {
+        template <typename V1, typename V2, typename PredicateObject>
+        inline auto p_merge_(V1& v1, const V2& v2, const PredicateObject& predicate) -> pointer_or_reference_t<V1> {
 
-            bool isV1ForInAble = p_isForInAble_(v1);
-            bool isV2ForInAble = p_isForInAble_(v2);
+            bool isV2Castable = p_isForInAble_(v2) || can_cast_to_qt_metable(v2);
 
-            bool bothAreForInAble = isV1ForInAble && isV2ForInAble;
-            if (bothAreForInAble) {
-                p_merge_forIn_(v1 ,v2);
-                return v1;
-            }
+            if (isV2Castable) {
+                if (p_isForInAble_(v1)) {
+                    p_merge_forIn_(v1, v2, predicate);
+                    return v1;
+                }
 
-            bool isV2Castable = can_cast_to_qt_metable(v2);
-            bool bothAreForInAbleByCastingV2 = isV1ForInAble && isV2Castable;
-
-            if (bothAreForInAbleByCastingV2) {
-                p_merge_forIn_(v1, v2);
-                return v1;
-            }
-
-            bool forInAbleByCastingV1 = try_cast_to_qt_metable(v1, [&](QObject* metable){
-                p_merge_(metable, v2);
-            },[&](GadgetContainer metable) {
-                p_merge_(metable, v2);
-            },[&](QVariantMap& metable) {               
-                if (can_cast_to_qt_metable(v2)) {
-                    p_merge_(metable, v2);
+                bool forInAbleByCastingV1 = try_cast_to_qt_metable(v1, [&](QObject* metable){
+                    p_merge_(metable, v2, predicate);
+                },[&](GadgetContainer metable) {
+                    p_merge_(metable, v2, predicate);
+                },[&](QVariantMap& metable) {
+                    p_merge_(metable, v2, predicate);
                     copy_or_convert(v1, metable);
-                } else {
-                    copy_or_convert(v1, v2);
-                }
-            },[&](QJSValue& metable) {
-                if (can_cast_to_qt_metable(v2)) {
-                    p_merge_(metable, v2);
-                } else {
-                    copy_or_convert(v1, v2);
-                }
-            });
+                },[&](QJSValue& metable) {
+                    p_merge_(metable, v2, predicate);
+                });
 
-            if (forInAbleByCastingV1) return v1;
+                if (forInAbleByCastingV1) return v1;
 
-            bool forInAbleByCreatingEmptyObjectAtV1 = isV2Castable;
-            if (forInAbleByCreatingEmptyObjectAtV1) {
                 auto emptyObject = contruct_default_object(v1);
-                p_merge_forIn_(emptyObject, v2);
+                p_merge_forIn_(emptyObject, v2, predicate);
                 copy_or_convert(v1, emptyObject);
                 return v1;
             }
@@ -2187,42 +2178,30 @@ namespace _ {
 
 #ifdef QT_CORE_LIB
         template <typename QtMetable>
-        QVariantMap _omit(const QtMetable& object, const QVariantMap& properties) {
-            using Key = typename key_value_info<QtMetable>::key_type;
-            using Value = typename key_value_info<QtMetable>::value_type;
-            QVariantMap result;
-
-            p_forIn_(object, [&](const Value& value, const Key& key) {
-                if (properties.contains(key) && properties[key].type() == QVariant::Bool) {
-                    return;
-                }
-                QVariant newValue;
-                bool handled = Private::try_cast_to_qt_metable(value, [&](QObject* kyt){
-                    newValue = _omit(kyt, properties[key].toMap());
-                },[&](Private::GadgetContainer& kyt) {
-                    newValue = _omit(kyt, properties[key].toMap());
-                },[&](QVariantMap& kyt) {
-                    newValue = _omit(kyt, properties[key].toMap());
-                },[&](const QJSValue& kyt) {
-                    newValue = _omit(kyt, properties[key].toMap());
-                });
-
-                if (!handled) {
-                    convertTo(value, newValue);
-                }
-
-                result[key] = newValue;
-            });
-            return result;
-        }
-
-        template <typename QtMetable>
         QVariantMap _omit(const QtMetable& object, const QStringList& paths) {
             QVariantMap properties;
             for (auto path: paths) {
                p_set_(properties, path , true);
             }
-            return _omit(object, properties);
+
+            class OmitPrdicate {
+            public:
+                QVariantMap properties;
+                bool predicate(const QString& key) const {
+                    return !(properties.contains(key) && properties[key].toBool());
+                }
+
+                OmitPrdicate next(const QString& key) const {
+                    OmitPrdicate n;
+                    n.properties = properties[key].toMap();
+                    return n;
+                }
+            };
+            OmitPrdicate predicate;
+            predicate.properties = properties;
+            QVariantMap result;
+            p_merge_(result, object, predicate);
+            return result;
         }
 
         template <typename QMetaObject>
@@ -2230,18 +2209,20 @@ namespace _ {
             QVariantMap res;
             QVariant defaultValue;
 
+            Private::MergePredicateObject predicate;
+
             for (auto path: paths) {
                 QVariant value = p_get_(object, path, defaultValue);
 
                 QVariantMap map;
                 bool handled = Private::try_cast_to_qt_metable(value, [&](QObject* kyt){
-                    p_merge_(map, kyt);
+                    p_merge_(map, kyt, predicate);
                 },[&](Private::GadgetContainer& kyt) {
-                    p_merge_(map, kyt);
+                    p_merge_(map, kyt, predicate);
                 },[&](QVariantMap&) {
                     map = value.toMap();
                 },[&](const QJSValue& kyt) {
-                    p_merge_(map, kyt);
+                    p_merge_(map, kyt, predicate);
                 });
 
                 if (handled) value = map;
@@ -2279,10 +2260,11 @@ namespace _ {
             };
 
             metaObject.fromVariantList = [](const QVariant &v) {
+                MergePredicateObject predicate;
                 QVariantList list = v.toList();
                 auto res = p_map_(list, [=](const QVariant& elem) {
                     T t;
-                    p_merge_(t, elem.toMap());
+                    p_merge_(t, elem.toMap(), predicate);
                     return t;
                 });
                 return QVariant::fromValue(res);
@@ -2377,7 +2359,8 @@ namespace _ {
 
         _underline_static_assert_is_key_value_type("_::merge: ", Source);
 
-        Private::p_merge_(object, source);
+        Private::MergePredicateObject predicate;
+        Private::p_merge_(object, source, predicate);
 
         return object;
     }
@@ -2600,7 +2583,6 @@ namespace _ {
         return Private::is_static_qt_metable<T>::value;
     }
 
-
     template <typename ...Args>
     std::vector<int> rangeS(Args ...args) {
         return range<std::vector<int>>(args...);
@@ -2632,7 +2614,8 @@ namespace _ {
         if (std::is_same<T, QVariantMap>::value) {
             Private::copy_or_convert(data, object);
         } else {
-            Private::p_merge_(data, object);
+            Private::MergePredicateObject predicate;
+            Private::p_merge_(data, object, predicate);
         }
 
         QJsonObject jsonObject = QJsonObject::fromVariantMap(data);
