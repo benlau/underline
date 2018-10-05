@@ -410,6 +410,13 @@ void C14TestCases::test_get()
         value = _::get(source, "valueX");
         QVERIFY(value.isNull());
     }
+
+    {
+        GadgetObject source;
+        source.value = 99;
+        auto value = _::get(source, "value");
+        QCOMPARE(value.toInt(), 99);
+    }
 }
 
 void C14TestCases::test_set()

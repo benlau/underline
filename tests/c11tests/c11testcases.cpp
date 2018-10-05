@@ -924,6 +924,20 @@ void C11TestCases::spec_omit_support_Gadget_containing_list_of_Gadget()
     QCOMPARE(_::stringify(object), expected);
 }
 
+void C11TestCases::spec_pick_support_Gadget_containing_list_of_Gadget()
+{
+
+    RegisteredGadget2 source;
+    source.setList(QList<RegisteredGadget>{ {1}, {2}, {3}});
+
+    QVariantMap object = _::pick(source, QString{"list"});
+
+    QString expected = "{\"list\":[{\"value\":1},{\"value\":2},{\"value\":3}]}";
+
+    QCOMPARE(_::stringify(object), expected);
+
+}
+
 void C11TestCases::test_some()
 {
     {

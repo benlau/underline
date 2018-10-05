@@ -444,11 +444,28 @@ namespace _ {
 #endif
 
         template <typename T>
-        inline auto cast_to_gadget_container(const T&) -> typename std::enable_if<!std::is_same<T, QVariant>::value, GadgetContainer>::type {
+        inline auto cast_to_gadget_container(const T&) -> typename std::enable_if<!is_qvariant<T>::value && !is_gadget<T>::value, GadgetContainer>::type {
             return GadgetContainer();
         }
 
 #ifdef QT_CORE_LIB
+        template <typename T>
+        inline auto cast_to_gadget_container(T& object) -> typename std::enable_if<is_gadget<T>::value, GadgetContainer>::type {
+            GadgetContainer container;
+            container.metaObject = &T::staticMetaObject;;
+            container.data = &object;
+            container.constData = &object;
+            return container;
+        }
+
+        template <typename T>
+        inline auto cast_to_gadget_container(const T& object) -> typename std::enable_if<is_gadget<T>::value, GadgetContainer>::type {
+            GadgetContainer container;
+            container.metaObject = &T::staticMetaObject;;
+            container.constData = &object;
+            return container;
+        }
+
         inline GadgetContainer cast_to_gadget_container(const QVariant &v) {
             GadgetContainer gadget;
 
@@ -2205,30 +2222,18 @@ namespace _ {
         }
 
         template <typename QMetaObject>
-        inline QVariantMap p_pick_(QMetaObject& object, const QStringList& paths) {
+        inline QVariantMap p_pick_(const QMetaObject& object, const QStringList& paths) {
+            QVariantMap tmp;
             QVariantMap res;
-            QVariant defaultValue;
-
-            Private::MergePredicateObject predicate;
-
             for (auto path: paths) {
-                QVariant value = p_get_(object, path, defaultValue);
-
-                QVariantMap map;
-                bool handled = Private::try_cast_to_qt_metable(value, [&](QObject* kyt){
-                    p_merge_(map, kyt, predicate);
-                },[&](Private::GadgetContainer& kyt) {
-                    p_merge_(map, kyt, predicate);
-                },[&](QVariantMap&) {
-                    map = value.toMap();
-                },[&](const QJSValue& kyt) {
-                    p_merge_(map, kyt, predicate);
-                });
-
-                if (handled) value = map;
-
-               p_set_(res, path, value);
+                QVariant v = p_get_(object, path, QVariant());
+                if (v.isNull()) {
+                    continue;
+                }
+                p_set_(tmp, path , v);
             }
+            MergePredicateObject predicate;
+            p_merge_(res, tmp, predicate);
             return res;
         }
 

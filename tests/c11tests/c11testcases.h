@@ -81,6 +81,8 @@ private slots:
 
     void spec_omit_support_Gadget_containing_list_of_Gadget();
 
+    void spec_pick_support_Gadget_containing_list_of_Gadget();
+
     void test_some();
 
     void test_map();
