@@ -10,10 +10,10 @@
         "url": "git@github.com:benlau/underline.git"
     },
     "version": {
-        "label": "0.0.1"
+        "label": "0.0.2"
     },
     "dependencies": [
     ],
-    "license": "MIT",
+    "license": "APACHE_2_0",
     "priFilename": "src/underline.pri"
 }
