@@ -110,6 +110,9 @@ Programming Guide
 API
 ===
 
+ * [Object Manipulation](#object-manipulation)
+ * [Type Check](#type-checker)
+
 assign
 -----
 
@@ -350,23 +353,6 @@ QVector<int> output2 = _::map(QVector<QString>() {"1","2","3"}, [](auto item, in
 QVector<int> output3 = _::map(std::vector<QString>(){"1","2","3"}, [](auto item, int index, auto collection) { return item.toInt();});
 ```
 
-merge
-------
-
-```c++
-template <typename QtMetable1, typename QtMetable2>
-QtMetable1& merge(QtMetable1& object, QtMetable2& source)
-```
-
-Iterates all the string-keyed properties from the source object then copy to the destination object.  If the property exists on the destination object, it will call itself recursively for merging.
-
-Arguments:
- * object: The destination object. Check [_::isQtMetable](#isqtmetable) for the supported types.
- * source: The source object. Check [_::isQtMetable](#isqtmetable) for the supported types.
-
-Return:
- * object: The destination object
-
 omit
 ----
 
@@ -590,6 +576,63 @@ Arguments
 Returns
 
  * bool: Returns true if any element passes to the predicate function, otherwise, it is false.
+
+Object Manipulation
+===
+
+merge
+------
+
+Qt-Only API
+
+```c++
+template <typename QtMetable1, typename QtMetable2>
+QtMetable1& merge(QtMetable1& object, QtMetable2& source)
+```
+
+Iterates all the properties from the source object then copy to the destination object.  If the property exists on the destination object, it will call itself recursively for merging.
+
+Arguments:
+ * object: The destination object. Check [_::isQtMetable](#isqtmetable) for the supported types.
+ * source: The source object. Check [_::isQtMetable](#isqtmetable) for the supported types.
+
+Return:
+ * object: The destination object
+
+Examples
+```C++
+    QVariantMap source = _::parse("{\"a\":1,\"b\":{\"c\":3}}"); // "{"a":1,"b":{"c":3}}"
+    QVariantMap object = _::parse("{\"b\":{\"d\":4},\"e\":5}"); // "{"b":{"d":4},"e":5}"
+
+    _::merge(object, source); // "{"a":1,"b":{"c":3,"d":4},"e":5}"
+
+    ASSERT_EQ(_::stringify(object), QString("{\"a\":1,\"b\":{\"c\":3,\"d\":4},\"e\":5}"));
+```
+
+```C++
+//Header
+class Gadget {
+    Q_GADGET
+    Q_PROPERTY(int     value1 MEMBER value1)
+    Q_PROPERTY(double  value2 MEMBER value2)
+    Q_PROPERTY(QString value3 MEMBER value3)
+
+public:
+    int value1 = 1;
+    double value2 = 2.1;
+    QString value3 = "3";
+};
+
+//Source
+    Gadget source;
+    QVariantMap object;
+
+    _::merge(object, source);
+
+    ASSERT_EQ(_::stringify(object),
+              QString("{\"value1\":1,\"value2\":2.1,\"value3\":\"3\"}"));
+    // "{"value1":1,"value2":2.1,"value3":"3"}"
+```
 
 Type Checker
 ============
