@@ -113,31 +113,6 @@ API
  * [Object Manipulation](#object-manipulation)
  * [Type Check](#type-checker)
 
-assign
------
-
-```C++
-template <typename KeyValueType>
-KeyValueType& _::assign(KeyValueType& object, const KeyValueType& source, ...);
-```
-
-This function assigns the properties from the source object to the destination object. The input should be an valid Key Value Type where [_::isKeyValueType](#iskeyvaluetype) returns true. The sequence to apply source objects is from left to right. Subsequent sources overwrite property assignments of previous sources. It is a non-recursive function. For deep copying and merge, you should use [_::merge](#merge).
-
-Arguments:
-
- * object: The destination object
- * source && ... : The source object(s) to be assigned to the destination object. The key and value type of source object should be convertible to the destination object key-value system.
-
-Returns:
-
- * The destination object
-
-Example
-
-```C++
-_::assign(/*QObject*/ object, QVariantMap{{"objectName", "Test"}});
-_::assign(map, object, QVariantMap{{"objectName", "Test"}});
-```
 
 clamp
 -----
@@ -253,54 +228,6 @@ Example
 ```C++
 ```
 
-forIn
------
-
-```
-template <typename KeyValueType, typename Iteratee>
-KeyValueType& _::forIn(const KeyValueType& object, Iteratee iteratee)
-```
-
-Iterates all the string key properties of an object and calls the iteratee function. The iteratee function is invoked with one to three arguments: [value, [key, [object]]].
-
-Arguments:
-
- * object: The source object. Check [_::isKeyValueType](#iskeyvaluetype) function for the supported types.
- * iteratee: The function invoked per iteration.
-
-Returns:
-
- * object
-
-Example
-```
-```
-
-get
----
-
-```C++
-template <typename isQtMetable>
-QVariant _::get(const isQtMetable& object, const QString &path,QVariant defaultValue = QVariant());
-```
-
-Obtain the value from the source object at the given path. If the path does not exist, it returns the default value.
-
-Arguments
- * object: The source check. Check [_::isQtMetable](#isqtmetable) for the supported types
- * path (QString): The path of the property to get
- * defaultValue(QVariant): The default value to return if the path does not exist.
-
-Return:
- * value: The value in the given path. If the path doesn't exist, it will return the defaultValue.
-
-Example (Qt):
-
-```C++
-// Obtain the objectName property from object's parent
-QVariant property = _::get(/* QObject* */ object, "parent.objectName");
-```
-
 keyBy
 -----
 
@@ -353,102 +280,7 @@ QVector<int> output2 = _::map(QVector<QString>() {"1","2","3"}, [](auto item, in
 QVector<int> output3 = _::map(std::vector<QString>(){"1","2","3"}, [](auto item, int index, auto collection) { return item.toInt();});
 ```
 
-omit
-----
-
-```C++
-template <typename QtMetable>
-QVariantMap omit(const QtMetable& source, const QStringList& paths);
-
-template <typename QtMetable>
-QVariantMap omit(const QtMetable& source, const QString& path);
-```
-
-Creates a new object which is a clone of the source, but the properties listed in the paths are omitted.
-
-Arguments
-
- * source: The source object
- * paths: The property paths to omit
-
-Returns
-
- * QVariantMap: Returns the new object.
-
-pick
----
-
-```C++
-template <typename QtMetable>
-QVariantMap _::pick(const QtMetable& object, QStringList &paths);
-
-template <typename QtMetable>
-QVariantMap _::pick(const QtMetable& object, QString path);
-```
-
-Creates a new object which is a clone of the source object but only the properties listed in the paths are picked.
-
-Arguments
-
- * source: The source object
- * paths: The property paths to pick
-
-Returns
-
- * QVariantMap: Returns the new object.
-
-Example
-```C++
-```
-
 set
----
-
-```C++
-template <typename QtMetable>
-void _::set(QtMetable &object, const QString &path, const QVariant &value)
-```
-
-Set the property in the destination object on the given path. If the object is a QVariantMap / QJSValue and a portion of path doesn't exist, it is created.
-
-Arguments
-
- * source: The input object. Check [_::isQtMetable](#isqtmetable) for the supported types.
- * paths: The property paths to set
- * value: The property value to be set
-
-Return
- * object: The destination object
-
-Example:
-
-STL
-```C++
-    // Input: {"a":1,"b":2,"c":{"d":"3"}}
-    QVariantMap object = {{"a", 1}, {"b", 2.0}, {"c", QVariantMap{{"d", "3"}}}};
-
-    _::set(object, "b", 2.1);
-    _::set(object, "c.e", "3.1");
-    _::set(object, "f.g", "4.1");
-
-    ASSERT_EQ(object["b"].toDouble() , 2.1);
-    ASSERT_EQ(object["c"].toMap()["d"].toString() , QString("3"));
-    ASSERT_EQ(object["c"].toMap()["e"].toString() , QString("3.1"));
-    ASSERT_EQ(object["f"].toMap()["g"].toString() , QString("4.1"));
-
-    // Result: {"a":1,"b":2.1,"c":{"d":"3","e":"3.1"},"f":{"g":"4.1"}}
-```
-Qt
-```C++
-QObject* object = new QObject();
-QObject* subObject = new QObject(object);
-object->setProperty("value", QVariant::fromValue<QObject*>(subObject));  // object: {"objectName":"","value":{"objectName":""}}
-
-_::set(object, "value.objectName", "subObject"); //object: {"objectName":"","value":{"objectName":"subObject"}}
-
-ASSERT_EQ(subObject->objectName(), QString("subObject"));
-```
-
 toCollection
 --------
 
@@ -579,6 +411,176 @@ Returns
 
 Object Manipulation
 ===
+
+assign
+-----
+
+```C++
+template <typename KeyValueType>
+KeyValueType& _::assign(KeyValueType& object, const KeyValueType& source, ...);
+```
+
+This function assigns the properties from the source object to the destination object. The input should be an valid Key Value Type where [_::isKeyValueType](#iskeyvaluetype) returns true. The sequence to apply source objects is from left to right. Subsequent sources overwrite property assignments of previous sources. It is a non-recursive function. For deep copying and merge, you should use [_::merge](#merge).
+
+Arguments:
+
+ * object: The destination object
+ * source && ... : The source object(s) to be assigned to the destination object. The key and value type of source object should be convertible to the destination object key-value system.
+
+Returns:
+
+ * The destination object
+
+Example
+
+```C++
+_::assign(/*QObject*/ object, QVariantMap{{"objectName", "Test"}});
+_::assign(map, object, QVariantMap{{"objectName", "Test"}});
+```
+
+forIn
+-----
+
+```
+template <typename KeyValueType, typename Iteratee>
+KeyValueType& _::forIn(const KeyValueType& object, Iteratee iteratee)
+```
+
+Iterates all the string key properties of an object and calls the iteratee function. The iteratee function is invoked with one to three arguments: [value, [key, [object]]].
+
+Arguments:
+
+ * object: The source object. Check [_::isKeyValueType](#iskeyvaluetype) function for the supported types.
+ * iteratee: The function invoked per iteration.
+
+Returns:
+
+ * object
+
+Example
+```
+```
+
+get
+---
+
+```C++
+template <typename isQtMetable>
+QVariant _::get(const isQtMetable& object, const QString &path,QVariant defaultValue = QVariant());
+```
+
+Obtain the value from the source object at the given path. If the path does not exist, it returns the default value.
+
+Arguments
+ * object: The source check. Check [_::isQtMetable](#isqtmetable) for the supported types
+ * path (QString): The path of the property to get
+ * defaultValue(QVariant): The default value to return if the path does not exist.
+
+Return:
+ * value: The value in the given path. If the path doesn't exist, it will return the defaultValue.
+
+Example (Qt):
+
+```C++
+// Obtain the objectName property from object's parent
+QVariant property = _::get(/* QObject* */ object, "parent.objectName");
+```
+
+omit
+----
+
+```C++
+template <typename QtMetable>
+QVariantMap omit(const QtMetable& source, const QStringList& paths);
+
+template <typename QtMetable>
+QVariantMap omit(const QtMetable& source, const QString& path);
+```
+
+Creates a new object which is a clone of the source, but the properties listed in the paths are omitted.
+
+Arguments
+
+ * source: The source object
+ * paths: The property paths to omit
+
+Returns
+
+ * QVariantMap: Returns the new object.
+
+pick
+---
+
+```C++
+template <typename QtMetable>
+QVariantMap _::pick(const QtMetable& object, QStringList &paths);
+
+template <typename QtMetable>
+QVariantMap _::pick(const QtMetable& object, QString path);
+```
+
+Creates a new object which is a clone of the source object but only the properties listed in the paths are picked.
+
+Arguments
+
+ * source: The source object
+ * paths: The property paths to pick
+
+Returns
+
+ * QVariantMap: Returns the new object.
+
+Example
+```C++
+```
+
+
+---
+
+```C++
+template <typename QtMetable>
+void _::set(QtMetable &object, const QString &path, const QVariant &value)
+```
+
+Set the property in the destination object on the given path. If the object is a QVariantMap / QJSValue and a portion of path doesn't exist, it is created.
+
+Arguments
+
+ * source: The input object. Check [_::isQtMetable](#isqtmetable) for the supported types.
+ * paths: The property paths to set
+ * value: The property value to be set
+
+Return
+ * object: The destination object
+
+Example:
+
+STL
+```C++
+    // Input: {"a":1,"b":2,"c":{"d":"3"}}
+    QVariantMap object = {{"a", 1}, {"b", 2.0}, {"c", QVariantMap{{"d", "3"}}}};
+
+    _::set(object, "b", 2.1);
+    _::set(object, "c.e", "3.1");
+    _::set(object, "f.g", "4.1");
+
+    ASSERT_EQ(object["b"].toDouble() , 2.1);
+    ASSERT_EQ(object["c"].toMap()["d"].toString() , QString("3"));
+    ASSERT_EQ(object["c"].toMap()["e"].toString() , QString("3.1"));
+    ASSERT_EQ(object["f"].toMap()["g"].toString() , QString("4.1"));
+
+    // Result: {"a":1,"b":2.1,"c":{"d":"3","e":"3.1"},"f":{"g":"4.1"}}
+```
+Qt
+```C++
+QObject* object = new QObject();
+QObject* subObject = new QObject(object);
+object->setProperty("value", QVariant::fromValue<QObject*>(subObject));  // object: {"objectName":"","value":{"objectName":""}}
+
+_::set(object, "value.objectName", "subObject"); //object: {"objectName":"","value":{"objectName":"subObject"}}
+
+ASSERT_EQ(subObject->objectName(), QString("subObject"));
+```
 
 merge
 ------
