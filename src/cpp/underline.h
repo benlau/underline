@@ -198,6 +198,9 @@ namespace _ {
             QByteArray bytes;
         };
 
+        template <typename T>
+        using remove_cvref_t = typename std::remove_reference<typename std::remove_cv<T>::type>::type;
+
         _declare_underline_has(reserve, decltype(std::declval<Type>().reserve(0)), void)
 
         _declare_underline_has(push_back, decltype(std::declval<Type>().push_back(std::declval<typename std::remove_reference<typename std::remove_cv<Type>::type::value_type>::type>())), void)
@@ -271,9 +274,6 @@ namespace _ {
         template <typename T> // Avoid returning a void, change it to Undefined
         using avoid_void_t = typename std::conditional<std::is_same<T,void>::value, Undefined, T>::type;
 
-        template <typename T>
-        using remove_cvref_t = typename std::remove_reference<typename std::remove_cv<T>::type>::type;
-
         /* BEGIN is_xxx */
 
         template <typename T>
@@ -287,38 +287,26 @@ namespace _ {
         };
 
         template <typename T>
-        struct is_map {
-            enum {
-                value = has_key_type<T>::value &&
-                        has_mapped_type<T>::value &&
-                        has_operator_round_backets_key<T>::value
-            };
-        };
+        struct is_map: std::integral_constant<int,
+                    has_key_type<T>::value &&
+                    has_mapped_type<T>::value &&
+                    has_operator_round_backets_key<T>::value
+                >{};
 
         template <typename Object>
-        struct is_qobject {
-            enum { value = std::is_convertible<typename std::add_pointer<typename std::remove_pointer< remove_cvref_t<Object>>::type>::type, const QObject*>::value };
-        };
+        struct is_qobject: std::integral_constant<int,std::is_convertible<typename std::add_pointer<typename std::remove_pointer<remove_cvref_t<Object>>::type>::type, const QObject*>::value> {};
 
-        template <typename T> struct is_gadget {
-            enum { value = has_static_meta_object<T>::value && ! is_qobject<T>::value};
-        };
+        template <typename T> struct is_gadget: std::integral_constant<int, has_static_meta_object<T>::value && ! is_qobject<T>::value> {};
 
-        template <typename T> struct is_qjsvalue {
-            enum { value = std::is_same<remove_cvref_t<T>, QJSValue>::value};
-        };
+        template <typename T> struct is_qjsvalue: std::integral_constant<int,std::is_same<remove_cvref_t<T>, QJSValue>::value> {};
 
-        template <typename T> struct is_qvariant {
-            enum { value = std::is_same<remove_cvref_t<T>, QVariant>::value};
-        };
+        template <typename T> struct is_qvariant: std::integral_constant<int,std::is_same<remove_cvref_t<T>, QVariant>::value> {};
 
-        template <typename T> struct is_real_qjsvalue {
 #ifdef QT_QUICK_LIB
-            enum { value = is_qjsvalue<T>::value};
+        template <typename T> struct is_real_qjsvalue: is_qjsvalue<T> {};
 #else
-            enum { value = is_qjsvalue<T>::value && ! std::is_same<remove_cvref_t<T>, _::Private::QJSValue>::value};
+        template <typename T> struct is_real_qjsvalue: std::integral_constant<int,is_qjsvalue<T>::value && ! std::is_same<remove_cvref_t<T>, _::Private::QJSValue>::value> {};
 #endif
-        };
 
         template <typename T> struct is_qt_any_type {
             enum {
