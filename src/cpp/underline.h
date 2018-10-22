@@ -265,11 +265,7 @@ namespace _ {
         }
 
         template <typename From, typename To>
-        struct is_custom_convertible {
-            enum {
-                value = std::is_convertible<From, To>::value || !std::is_same<Undefined, decltype(convertTo(std::declval<From>(), std::declval<To&>()))>::value
-            };
-        };
+        struct is_custom_convertible : std::integral_constant<int,std::is_convertible<From, To>::value || !std::is_same<Undefined, decltype(convertTo(std::declval<From>(), std::declval<To&>()))>::value> {};
 
         template <typename T> // Avoid returning a void, change it to Undefined
         using avoid_void_t = typename std::conditional<std::is_same<T,void>::value, Undefined, T>::type;
@@ -308,19 +304,13 @@ namespace _ {
         template <typename T> struct is_real_qjsvalue: std::integral_constant<int,is_qjsvalue<T>::value && ! std::is_same<remove_cvref_t<T>, _::Private::QJSValue>::value> {};
 #endif
 
-        template <typename T> struct is_qt_any_type {
-            enum {
-                value = std::is_same<T,QJSValue>::value || std::is_same<T,QVariant>::value
-            };
-        };
+        template <typename T> struct is_qt_any_type : std::integral_constant<int, std::is_same<T,QJSValue>::value || std::is_same<T,QVariant>::value> {};
 
         template <typename ...Args>
         struct is_std_type : std::false_type {};
 
         template <typename T>
-        struct is_std_map {
-            enum { value = is_std_type<T>::value && is_map<T>::value };
-        };
+        struct is_std_map : std::integral_constant<int, is_std_type<T>::value && is_map<T>::value> {};
 
         template <typename ...Args>
         struct is_qt_type: std::false_type {};
@@ -795,7 +785,6 @@ namespace _ {
                 value = Info::is_key_value_type &&
                         std::is_convertible<Key, typename Info::key_type>::value &&
                         std::is_convertible<Value, typename Info::value_type>::value
-
             };
         };
 
@@ -892,42 +881,22 @@ namespace _ {
         using enable_if_is_collection_ret_value_type = typename std::enable_if< is_static_collection<typename std::remove_reference<T>::type>::value, typename std::remove_reference<T>::type::value_type>;
 
         template <typename Meta>
-        struct is_meta_object {
-            enum {
-                value = key_value_info<Meta>::is_key_value_type
-            };
-        };
+        struct is_meta_object: std::integral_constant<int, key_value_info<Meta>::is_key_value_type> {};
 
         template <typename T>
-        struct is_key_value_type {
-            enum { value = key_value_info<T>::is_key_value_type};
-        };
+        struct is_key_value_type: std::integral_constant<int, key_value_info<T>::is_key_value_type> {};
 
         template <typename T>
-        struct is_real_key_value_type {
-            enum { value = key_value_info<T>::is_key_value_type && !std::is_same<T,QJSValue>::value};
-        };
+        struct is_real_key_value_type: std::integral_constant<int,key_value_info<T>::is_key_value_type && !std::is_same<T,QJSValue>::value> {};
 
         template <typename T>
-        struct is_static_qt_metable {
-            enum {
-                value = key_value_info<T>::is_key_value_type && !is_std_map<T>::value
-            };
-        };
+        struct is_static_qt_metable: std::integral_constant<int,key_value_info<T>::is_key_value_type && !is_std_map<T>::value> {};
 
         template <typename T>
-        struct is_static_qt_metable_castable {
-            enum {
-                value = is_static_qt_metable<T>::value || std::is_same<T,QVariant>::value
-            };
-        };
+        struct is_static_qt_metable_castable: std::integral_constant<int,is_static_qt_metable<T>::value || std::is_same<T,QVariant>::value> {};
 
         template <typename T>
-        struct is_static_real_qt_metable {
-            enum {
-                value = is_real_key_value_type<T>::value && !is_std_map<T>::value
-            };
-        };
+        struct is_static_real_qt_metable: std::integral_constant<int,is_real_key_value_type<T>::value && !is_std_map<T>::value> {};
 
         template <typename T, typename F1, typename F2, typename F3>
         inline bool try_cast_to_real_qt_metable(T& value, F1 func1, F2 func2, F3 func3) {

@@ -214,11 +214,7 @@ void QuickTests::test_merge_arg1_QJSValue_arg2_other()
         QVariantMap object;
         object["value4"] = QVariantMap{{"value2", 2.0}};
 
-        qDebug().noquote() << object;
-
         _::merge(object, source);
-
-        qDebug().noquote() << object;
 
         QCOMPARE(object["value4"].toMap()["value1"].toInt(), 21);
         QCOMPARE(object["value4"].toMap()["value2"].toDouble(), 2.0);
@@ -230,27 +226,21 @@ void QuickTests::test_merge_arg1_QJSValue_arg2_other()
 
         QString content;
         content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
-        qDebug() << content;
         QJSValue source = engine.evaluate(content);
         QCOMPARE(source.property("value4").property("value1").toInt(), 21);
 
         content = QtShell::cat(QString(SRCDIR) + "/SampleData2.json");
-        qDebug() << content;
         QJSValue object = engine.evaluate(content);
         QCOMPARE(object.property("value4").property("value2").toNumber(), 2.0);
 
         object.property("value4").setProperty("value1", 10);
         QCOMPARE(object.property("value4").property("value1").toInt(), 10);
 
-        qDebug() << "";
-        qDebug() << "Condition: _::merge(QJSValue, QJSValue)";
         _::merge(object, source);
 
         QCOMPARE(object.property("value4").property("value1").toInt(), 21);
         QCOMPARE(object.property("value4").property("value2").toNumber(), 2.0);
 
-        qDebug() << "";
-        qDebug() << "Condition: _::merge(QVariant, QJSValue)";
         QVariantMap map;
         _::merge(map, object);
 
