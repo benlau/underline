@@ -113,7 +113,9 @@ void QuickTests::test_private_is_convertible_args_QJSValue_QVariant()
 
     QQmlApplicationEngine engine;
     QString content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
-    QJSValue source = engine.evaluate(content);
+    QString script = QString("(%1)").arg(content);
+    QJSValue source = engine.evaluate(script);
+    qDebug() << source.property("value1").toInt();
 
     QVariant dest;
     _::Private::convertTo(source, dest);
@@ -129,7 +131,8 @@ void QuickTests::test_forIn_arg1_QJSValue()
         QQmlApplicationEngine engine;
 
         QString content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
-        QJSValue value = engine.evaluate(content);
+        QString script = QString("(%1)").arg(content);
+        QJSValue value = engine.evaluate(script);
 
         QVariantMap map;
 
@@ -174,7 +177,8 @@ void QuickTests::test_assign_arg1_QJSValue_arg2_other()
         QObject* root = engine.rootObjects()[0];
 
         QString content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
-        QJSValue value = engine.evaluate(content);
+        QString script = QString("(%1)").arg(content);
+        QJSValue value = engine.evaluate(script);
 
         QCOMPARE(value.property("value1").toInt(), 10);
         QCOMPARE(root->property("value1").toInt(), 1);
@@ -208,8 +212,8 @@ void QuickTests::test_merge_arg1_QJSValue_arg2_other()
 
         QString content;
         content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
-        qDebug().noquote() << content;
-        QJSValue source = engine.evaluate(content);
+        QString script = QString("(%1)").arg(content);
+        QJSValue source = engine.evaluate(script);
 
         QVariantMap object;
         object["value4"] = QVariantMap{{"value2", 2.0}};
@@ -226,11 +230,14 @@ void QuickTests::test_merge_arg1_QJSValue_arg2_other()
 
         QString content;
         content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
-        QJSValue source = engine.evaluate(content);
+        QString script = QString("(%1)").arg(content);
+
+        QJSValue source = engine.evaluate(script);
         QCOMPARE(source.property("value4").property("value1").toInt(), 21);
 
         content = QtShell::cat(QString(SRCDIR) + "/SampleData2.json");
-        QJSValue object = engine.evaluate(content);
+        script = QString("(%1)").arg(content);
+        QJSValue object = engine.evaluate(script);
         QCOMPARE(object.property("value4").property("value2").toNumber(), 2.0);
 
         object.property("value4").setProperty("value1", 10);
@@ -343,7 +350,8 @@ void QuickTests::test_omit_arg1_QJSValue()
     QQmlApplicationEngine engine;
 
     QString content = QtShell::cat(QString(SRCDIR) + "/SampleData1.json");
-    QJSValue object = engine.evaluate(content);
+    QString script = QString("(%1)").arg(content);
+    QJSValue object = engine.evaluate(script);
 
     QVariantMap result = _::omit(object, QStringList{"value2", "value4.value1"});
 
