@@ -1136,7 +1136,6 @@ void C11TestCases::test_toCollection()
         QCOMPARE(collection.size(), 3);
         QCOMPARE(collection, (QList<int>{1,3,5}));
     }
-
 }
 
 void C11TestCases::spec_toCollection_should_support_registeredQtMetable()
@@ -1150,5 +1149,21 @@ void C11TestCases::spec_toCollection_should_support_registeredQtMetable()
 
     auto item1 = res[0].value<RegisteredGadget>();
     QCOMPARE(item1.value, 1);
+}
+
+void C11TestCases::test_first()
+{
+    {
+        QList<QString> list;
+
+        QCOMPARE(_::first(list, QString("default")), QString("default"));
+    }
+
+    {
+        QList<QString> list = QList<QString>{"1"};
+
+        QCOMPARE(_::first(list, QString("default")), QString("1"));
+    }
+
 }
 

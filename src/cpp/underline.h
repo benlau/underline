@@ -59,7 +59,6 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
 #define _underline_static_assert_is_static_qt_metable(func, type) \
     static_assert(_::Private::is_static_qt_metable<type>::value, func ": Invalid argument type. It should be a QtMetable type. Check the document of _::isQtMetable for the list of supported types.")
 
-
 #define _underline_static_assert_is_iteratee_invokable(prefix, value) \
     static_assert(value, prefix _underline_iteratee_mismatched_error)
 
@@ -1103,7 +1102,7 @@ namespace _ {
             using size_type = typename remove_cvref_t<T>::size_type;
             using value_type = typename remove_cvref_t<T>::value_type;
 
-            static unsigned int size(const T& t) {return t.size();}
+            static unsigned int size(const T& t) {return static_cast<unsigned int>(t.size());}
             static value_type getValue(const T& t, unsigned int index) { return t[index]; }
             static void setValue(T& t, unsigned int index, const value_type& value) { t[index] = value;}
             static void appendDefaultObject(T& t) { t.push_back(value_type()); }
@@ -2645,6 +2644,18 @@ namespace _ {
         }
         return ret;
     }
+
+    template <typename Collection, typename ValueType>
+    inline auto first(const Collection& collection, const ValueType& defaultValue) -> ValueType {
+        _underline_static_assert_is_collection("_::first: ", Collection);
+        auto size = Private::collection_info<Collection>::size(collection);
+        if (size == 0) {
+            return defaultValue;
+        } else {
+            return Private::collection_info<Collection>::getValue(collection, 0);
+        }
+    }
+
 #ifdef QT_CORE_LIB
     inline auto toCollection(const QVariant &t) -> QVariantList {
         return Private::p_convertToCollection_(t);
