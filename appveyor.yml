@@ -4,28 +4,17 @@ branches:
   except:
     - project/travis
 
-matrix:
-  fast_finish: false
-
-image:
-  - Visual Studio 2015
-  - Visual Studio 2017
-
-#environment:
-#  matrix:
-#  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-#    QTDIR: C:\Qt\5.9.5\msvc2015_64
-#    VCVARSALL: C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat
-#  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-#    VCVARSALL: C:\Program Files (x86)\Microsoft Visual Studio 15.0\VC\vcvarsall.bat
-#    QTDIR: C:\Qt\5.10.1\msvc2017_64
+environment:
+  matrix:
+  - name: win32
+    platform: amd64_x86
+    qt: msvc2017
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
 
 build_script:
-  - if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2015" (call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86_amd64 && set QTDIR=C:\Qt\5.9.5\msvc2015_64)
-  - if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2017" (call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64 && set QTDIR=C:\Qt\5.10.1\msvc2017_64)
+  - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
   - set GOPATH=c:\gopath
-  - dir C:\Qt\5.9.5
-  - dir C:\Qt\5.10.1
+  - set QTDIR=C:\Qt\5.9.7\msvc2017_64
   - set PATH=%PATH%;%QTDIR%\bin;C:\MinGW\bin;%GOPATH%\bin;
   - go get qpm.io/qpm
   - go install qpm.io/qpm
