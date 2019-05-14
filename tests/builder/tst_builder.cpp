@@ -27,6 +27,7 @@ private slots:
     void spec_map_static_assert_arg1_is_not_a_collection();
     void spec_toCollection_static_assert_arg1_is_not_a_map();
     void spec_registerQtType_static_assert_non_key_value_type();
+    void spec_first_static_assert_collection_value_type_should_match_with_defaultValue();
 };
 
 using namespace QtShell;
@@ -153,7 +154,6 @@ void Builder::initTestCase()
 
 void Builder::cleanupTestCase()
 {
-//    qDebug().noquote() << cat(logFileName);
 }
 
 void Builder::spec_map_static_assert_arg1_is_not_a_collection()
@@ -186,7 +186,6 @@ void Builder::spec_toCollection_static_assert_arg1_is_not_a_map()
 
 void Builder::spec_registerQtType_static_assert_non_key_value_type()
 {
-
     Result ret = build(__FUNCTION__, CODE([]() {
         _::registerQtType<int>();
     }));
@@ -197,6 +196,22 @@ void Builder::spec_registerQtType_static_assert_non_key_value_type()
     QVERIFY(ret.errors.size() > 0);
 
     QVERIFY(ret.errors[0].indexOf("_::registerQtType: Invalid argument type. It should be a QtMetable type. Check the document of _::isQtMetable for the list of supported types.") >= 0);
+}
+
+void Builder::spec_first_static_assert_collection_value_type_should_match_with_defaultValue()
+{
+    Result ret = build(__FUNCTION__, CODE([]() {
+        QStringList collection;
+        int defaultValue;
+        _::first(collection, defaultValue);
+    }));
+
+    QVERIFY(ret.exitCode != 0);
+
+    QVERIFY(ret.errors.size() <= buildErrorCountThreshold);
+    QVERIFY(ret.errors.size() > 0);
+
+    QVERIFY(ret.errors[0].indexOf(_underline_default_value_type_doesnot_match_with_collection_value_type) >= 0);
 }
 
 QTEST_APPLESS_MAIN(Builder)

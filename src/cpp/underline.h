@@ -46,6 +46,7 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
 #define _underline_iteratee_void_ret_error "The return type of iteratee function cannot be void"
 #define _underline_invalid_argument_type_it_must_be_a_valid_key_value_type "Invalid argument type. It should be a valie Key-Value-Type. Check the document of _::isKeyValueType for the list of supported types"
 #define _underline_qjsvalue_set_error "It should only modify the value of a QJSValue object by another QJSValeu"
+#define _underline_default_value_type_doesnot_match_with_collection_value_type "The default value type does not match with the value type of collection."
 
 #define _underline_static_assert_is_collection(prefix, type) \
     static_assert(_::Private::is_static_collection<type>::value, prefix _underline_input_type_is_not_array)
@@ -2646,6 +2647,10 @@ namespace _ {
     template <typename Collection, typename ValueType>
     inline auto first(const Collection& collection, const ValueType& defaultValue) -> ValueType {
         _underline_static_assert_is_collection("_::first: ", Collection);
+
+        using V = typename Private::collection_info<Collection>::value_type;
+        static_assert(std::is_same<V,ValueType>::value, "_::first: " _underline_default_value_type_doesnot_match_with_collection_value_type);
+
         auto size = Private::collection_info<Collection>::size(collection);
         if (size == 0) {
             return defaultValue;
