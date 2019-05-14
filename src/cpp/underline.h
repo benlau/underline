@@ -86,7 +86,7 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
             template <typename> \
             static inline auto test(...) -> Undefined; \
             enum { \
-                value = !std::is_same<decltype(test<T>(0)), Undefined>::value \
+                value = !std::is_same<decltype(test<remove_cvref_t<T>>(0)), Undefined>::value \
             }; \
         }; \
 
@@ -120,7 +120,7 @@ namespace _ {
 
     namespace Private {
 
-        /// An Undefined class as a default return type of invalid function to keep compiler happy
+        /// An Undefined class is a default return type of invalid function to keep compiler happy
         class Undefined {
         };
 
@@ -272,21 +272,19 @@ namespace _ {
         /* BEGIN is_xxx */
 
         template <typename T>
-        struct is_static_collection {
-            enum {
-                value = std::is_class<T>::value &&
-                        has_push_back<remove_cvref_t<T>>::value &&
-                        has_operator_round_backets_int<remove_cvref_t<T>>::value &&
-                        has_reserve<remove_cvref_t<T>>::value
-            };
-        };
+        struct is_static_collection: std::integral_constant<int,
+            std::is_class<T>::value &&
+            has_push_back<T>::value &&
+            has_operator_round_backets_int<T>::value &&
+            has_reserve<T>::value
+        >{};
 
         template <typename T>
         struct is_map: std::integral_constant<int,
-                    has_key_type<T>::value &&
-                    has_mapped_type<T>::value &&
-                    has_operator_round_backets_key<T>::value
-                >{};
+            has_key_type<T>::value &&
+            has_mapped_type<T>::value &&
+            has_operator_round_backets_key<T>::value
+         >{};
 
         template <typename Object>
         struct is_qobject: std::integral_constant<int,std::is_convertible<typename std::add_pointer<typename std::remove_pointer<remove_cvref_t<Object>>::type>::type, const QObject*>::value> {};
