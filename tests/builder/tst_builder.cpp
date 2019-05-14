@@ -20,6 +20,9 @@ public:
 
     Builder::Result build(const QString& name, const QString &code);
 
+private:
+    QString baseBuildDir;
+
 private slots:
     void initTestCase();
     void cleanupTestCase();
@@ -39,6 +42,7 @@ static int buildErrorCountThreshold = 10;
 
 Builder::Builder()
 {
+    baseBuildDir = pwd();
 }
 
 Builder::~Builder()
@@ -94,7 +98,7 @@ Builder::Result Builder::build(const QString& name, const QString &code)
 
     QString normalizedName = name;
     normalizedName.replace(":", "");
-    QString buildPath = realpath_strip(pwd(), normalizedName, "build-code");
+    QString buildPath = realpath_strip(baseBuildDir, normalizedName, "build-code");
 
     rm("-rf", buildPath);
     mkdir("-p", buildPath);
@@ -158,7 +162,7 @@ void Builder::cleanupTestCase()
 
 void Builder::spec_map_static_assert_arg1_is_not_a_collection()
 {
-    Result ret = build(__FUNCTION__, CODE([]() {
+    Result ret = build(QTest::currentTestFunction(), CODE([]() {
         class A {};
         A a;
         _::map(a, [](int) { return 0;});
@@ -173,7 +177,7 @@ void Builder::spec_map_static_assert_arg1_is_not_a_collection()
 
 void Builder::spec_toCollection_static_assert_arg1_is_not_a_map()
 {
-    Result ret = build(__FUNCTION__, CODE([]() {
+    Result ret = build(QTest::currentTestFunction(), CODE([]() {
         _::toCollection(std::vector<int>{0});
     }));
 
@@ -186,7 +190,7 @@ void Builder::spec_toCollection_static_assert_arg1_is_not_a_map()
 
 void Builder::spec_registerQtType_static_assert_non_key_value_type()
 {
-    Result ret = build(__FUNCTION__, CODE([]() {
+    Result ret = build(QTest::currentTestFunction(), CODE([]() {
         _::registerQtType<int>();
     }));
 
@@ -200,7 +204,7 @@ void Builder::spec_registerQtType_static_assert_non_key_value_type()
 
 void Builder::spec_first_static_assert_collection_value_type_should_match_with_defaultValue()
 {
-    Result ret = build(__FUNCTION__, CODE([]() {
+    Result ret = build(QTest::currentTestFunction(), CODE([]() {
         QStringList collection;
         int defaultValue;
         _::first(collection, defaultValue);
