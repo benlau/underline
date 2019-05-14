@@ -1160,10 +1160,24 @@ void C11TestCases::test_first()
     }
 
     {
-        QList<QString> list = QList<QString>{"1"};
+        QList<QString> list = QList<QString>{"1", "2"};
 
         QCOMPARE(_::first(list, QString("default")), QString("1"));
     }
+}
 
+void C11TestCases::test_last()
+{
+    {
+        QList<QString> list;
+
+        QCOMPARE(_::last(list, QString("default")), QString("default"));
+    }
+
+    {
+        QList<QString> list = QList<QString>{"1", "2"};
+
+        QCOMPARE(_::last(list, QString("default")), QString("2"));
+    }
 }
 

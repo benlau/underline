@@ -2659,6 +2659,21 @@ namespace _ {
         }
     }
 
+    template <typename Collection, typename ValueType>
+    inline auto last(const Collection& collection, const ValueType& defaultValue) -> ValueType {
+        _underline_static_assert_is_collection("_::first: ", Collection);
+
+        using V = typename Private::collection_info<Collection>::value_type;
+        static_assert(std::is_same<V,ValueType>::value, "_::first: " _underline_default_value_type_doesnot_match_with_collection_value_type);
+
+        auto size = Private::collection_info<Collection>::size(collection);
+        if (size == 0) {
+            return defaultValue;
+        } else {
+            return Private::collection_info<Collection>::getValue(collection, size - 1);
+        }
+    }
+
 #ifdef QT_CORE_LIB
     inline auto toCollection(const QVariant &t) -> QVariantList {
         return Private::p_convertToCollection_(t);

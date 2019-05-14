@@ -110,4 +110,7 @@ private slots:
     void spec_toCollection_should_support_registeredQtMetable();
 
     void test_first();
+
+    void test_last();
+
 };

@@ -206,6 +206,8 @@ void Builder::spec_first_static_assert_collection_value_type_should_match_with_d
         _::first(collection, defaultValue);
     }));
 
+    qDebug() << ret.errors;
+
     QVERIFY(ret.exitCode != 0);
 
     QVERIFY(ret.errors.size() <= buildErrorCountThreshold);
