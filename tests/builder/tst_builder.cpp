@@ -19,6 +19,7 @@ public:
     };
 
     Builder::Result build(const QString& name, const QString &code);
+    void buildAndTest(const QString& name, const QString &code, const QString& expectedErrorMessage);
 
 private:
     QString baseBuildDir;
@@ -151,6 +152,18 @@ Builder::Result Builder::build(const QString& name, const QString &code)
     return ret;
 }
 
+void Builder::buildAndTest(const QString &name, const QString &code, const QString &expectedErrorMessage)
+{
+    auto ret = build(name, code);
+
+    QVERIFY(ret.exitCode != 0);
+
+    QVERIFY(ret.errors.size() <= buildErrorCountThreshold);
+    QVERIFY(ret.errors.size() > 0);
+
+    QVERIFY(ret.errors[0].indexOf(expectedErrorMessage) >= 0);
+}
+
 void Builder::initTestCase()
 {
     logFileName = realpath_strip(pwd(), "build_log.txt");
@@ -204,20 +217,11 @@ void Builder::spec_registerQtType_static_assert_non_key_value_type()
 
 void Builder::spec_first_static_assert_collection_value_type_should_match_with_defaultValue()
 {
-    Result ret = build(QTest::currentTestFunction(), CODE([]() {
+    buildAndTest(QTest::currentTestFunction(), CODE([]() {
         QStringList collection;
         int defaultValue;
         _::first(collection, defaultValue);
-    }));
-
-    qDebug() << ret.errors;
-
-    QVERIFY(ret.exitCode != 0);
-
-    QVERIFY(ret.errors.size() <= buildErrorCountThreshold);
-    QVERIFY(ret.errors.size() > 0);
-
-    QVERIFY(ret.errors[0].indexOf(_underline_default_value_type_doesnot_match_with_collection_value_type) >= 0);
+    }), _underline_default_value_type_doesnot_match_with_collection_value_type);
 }
 
 QTEST_APPLESS_MAIN(Builder)
