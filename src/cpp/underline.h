@@ -79,11 +79,11 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
 #define _underline_debug(msg)
 #endif
 
-#define _declare_underline_has(name, expr1, expr2) \
+#define _declare_underline_has(name, testMethod, retType) \
         template <typename T> \
         struct has_##name { \
             template <typename Type> \
-            static inline auto test(int) -> typename  std::enable_if<std::is_convertible<expr1, expr2>::value, bool>::type; \
+            static inline auto test(int) -> typename std::enable_if<std::is_convertible<testMethod, retType>::value, bool>::type; \
             template <typename> \
             static inline auto test(...) -> Undefined; \
             enum { \
@@ -96,7 +96,7 @@ https://stackoverflow.com/questions/46144103/enable-if-not-working-in-visual-stu
     namespace _ { \
         namespace Private { \
             template <class ValueType, class NewKeyType, class NewValueType> \
-            struct array_to_map_rebinder<CollectionType<ValueType>, NewKeyType, NewValueType> { \
+            struct convert_collection_to_map<CollectionType<ValueType>, NewKeyType, NewValueType> { \
                 typedef MapType<avoid_void_t<NewKeyType>, avoid_void_t<NewValueType>> type; \
             }; \
         } \
@@ -203,13 +203,14 @@ namespace _ {
 
         _declare_underline_has(reserve, decltype(std::declval<Type>().reserve(0)), void)
 
-        _declare_underline_has(push_back, decltype(std::declval<Type>().push_back(std::declval<typename std::remove_reference<typename std::remove_cv<Type>::type::value_type>::type>())), void)
+        _declare_underline_has(push_back, decltype(std::declval<Type>().push_back(std::declval<typename remove_cvref_t<Type>::value_type>())), void)
 
         _declare_underline_has(static_meta_object, typename std::remove_cv<decltype(std::remove_pointer<Type>::type::staticMetaObject)>::type, QMetaObject)
 
         _declare_underline_has(operator_round_backets_int, decltype(std::declval<Type>()[0]), typename std::remove_cv<Type>::type::value_type)
 
-        _declare_underline_has(operator_round_backets_key, decltype(std::declval<Type>()[std::declval<typename std::remove_cv<Type>::type::key_type>()]), typename std::remove_cv<Type>::type::mapped_type)
+        _declare_underline_has(operator_round_backets_key, decltype(std::declval<Type>()[std::declval<typename std::remove_cv<Type>::type::key_type>()]),
+                                                           typename std::remove_cv<Type>::type::mapped_type)
 
         _declare_underline_has(mapped_type,typename std::remove_cv<Type>::type::mapped_type,typename std::remove_cv<Type>::type::mapped_type)
 
@@ -622,7 +623,6 @@ namespace _ {
 
         template <typename Meta, typename Key, typename Value>
         inline auto key_value_write(Meta& meta, const Key& key, const Value& value) -> typename std::enable_if<is_gadget<Meta>::value, bool>::type {
-
             auto ptr = cast_to_pointer<Meta>(meta);
             auto metaObject = ptr->staticMetaObject;
             auto k = cast_to_const_char_container(key);
@@ -993,18 +993,18 @@ namespace _ {
 
         /// Source: https://stackoverflow.com/questions/5052211/changing-value-type-of-a-given-stl-container
         template <class Container, class NewType>
-        struct array_rebinder {
+        struct rebind_array_value_type {
             using type = NullArray<Undefined>;
         };
 
         template <class ValueType, class... Args, template <class...> class Container, class NewType>
-        struct array_rebinder<Container<ValueType, Args...>, NewType>
+        struct rebind_array_value_type<Container<ValueType, Args...>, NewType>
         {
-            using type = Container<NewType, typename array_rebinder<Args, NewType>::type...>;
+            using type = Container<NewType, typename rebind_array_value_type<Args, NewType>::type...>;
         };
 
         template <class Collection, class NewKeyType, class NewValueType>
-        struct array_to_map_rebinder {
+        struct convert_collection_to_map {
             using type = NullMap<NewKeyType, NewValueType>;
         };
 
@@ -1615,7 +1615,7 @@ namespace _ {
         using ret_invoke_collection_value_type_t = typename ret_invoke<Iteratee, typename collection_value_type<Collection>::type>::type;
 
         template <class Collection, typename Iteratee, typename ValueType>
-        using RebindedMap_keyIterateeRet = typename array_to_map_rebinder<remove_cvref_t<Collection>,   _::Private::ret_invoke_collection_value_type_t<Iteratee,remove_cvref_t<Collection>>, ValueType>::type;
+        using RebindedMap_keyIterateeRet = typename convert_collection_to_map<remove_cvref_t<Collection>,   _::Private::ret_invoke_collection_value_type_t<Iteratee,remove_cvref_t<Collection>>, ValueType>::type;
 
         ///Value is a wrapper of any data structure include <void>.
         template <typename T>
@@ -1702,12 +1702,12 @@ namespace _ {
 
 #ifdef QT_CORE_LIB
         template <class NewType>
-        struct array_rebinder<QStringList, NewType> {
+        struct rebind_array_value_type<QStringList, NewType> {
             typedef QList<NewType> type;
         };
 
         template <class NewType>
-        struct array_rebinder<QVariantList, NewType> {
+        struct rebind_array_value_type<QVariantList, NewType> {
             typedef QList<NewType> type;
         };
 
@@ -2125,7 +2125,7 @@ namespace _ {
         /* PRIVATE_MERGE end */
 
         template <typename Collection, typename Iteratee>
-        using p_map_return_type_t = typename Private::array_rebinder<Collection,typename Private::via_func_info<Iteratee, Collection>::non_void_ret_type>::type;
+        using p_map_return_type_t = typename Private::rebind_array_value_type<Collection,typename Private::via_func_info<Iteratee, Collection>::non_void_ret_type>::type;
 
         template <typename Collection, typename Iteratee>
         using p_enable_if_map_return_type_t = typename std::enable_if<
@@ -2137,7 +2137,7 @@ namespace _ {
         inline auto p_map_(const Collection& collection, Iteratee iteratee) -> p_enable_if_map_return_type_t<Collection,Iteratee> {
             using func_info = Private::via_func_info<Iteratee, Collection>;
 
-            typename Private::array_rebinder<Collection, typename func_info::non_void_ret_type>::type res;
+            typename Private::rebind_array_value_type<Collection, typename func_info::non_void_ret_type>::type res;
 
             res.reserve(static_cast<int>(collection.size()));
 
@@ -2402,7 +2402,7 @@ namespace _ {
     }
 
     template <typename Collection, typename Iteratee>
-    inline auto map(const Collection& collection, Iteratee iteratee) -> typename Private::array_rebinder<Collection,
+    inline auto map(const Collection& collection, Iteratee iteratee) -> typename Private::rebind_array_value_type<Collection,
         typename Private::via_func_info<Iteratee, Collection>::non_void_ret_type
     >::type {
 
