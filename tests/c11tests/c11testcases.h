@@ -37,6 +37,10 @@ private slots:
 
     void test_private_traits();
 
+    void test_private_is_lambda();
+
+    void test_private_is_callable();
+
     void test_private_invoke();
 
     void test_private_invoke_by_read();

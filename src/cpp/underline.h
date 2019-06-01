@@ -216,6 +216,24 @@ namespace _ {
 
         _declare_underline_has(key_type,typename std::remove_cv<Type>::type::key_type,typename std::remove_cv<Type>::type::key_type)
 
+        template <typename...>
+        using std_true_type = std::true_type;
+
+        template <typename F>
+        auto resolve_is_lambda(int) -> std_true_type<decltype (&F::operator())> {}
+
+        template <typename>
+        auto resolve_is_lambda(...) -> void {}
+
+        template <typename F>
+        struct is_lambda : std::integral_constant<
+                    bool,
+                    std::is_same<decltype(resolve_is_lambda<F>(0)), std::true_type>::value
+        > {};
+
+        template <typename F>
+        struct is_callable : std::integral_constant<bool, is_lambda<F>::value || std::is_function<F>::value> {};
+
         template <typename T>
         using pointer_or_reference_t = typename std::conditional<std::is_pointer<T>::value, T, T&>::type;
 
@@ -1010,11 +1028,9 @@ namespace _ {
 
         /// Check is the Functor be able to take Args as input. It works with generic lambda.
         template <typename Functor,typename ...Args>
-        struct is_args_compatible {
-            enum {
-                value = std::is_convertible<Functor, std::function<void(Args...)> >::value
-            };
-        };
+        struct is_args_compatible: std::integral_constant<int,
+            std::is_convertible<Functor, std::function<void(Args...)> >::value
+        >{};
 
         template <typename Type, typename Functor, typename ...Args>
         using enable_if_args_compatible = typename std::enable_if<is_args_compatible<Functor, Args &&...>::value, Type>;

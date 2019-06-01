@@ -21,12 +21,14 @@ static bool isOdd(int value) {
     return value % 2 == 1;
 }
 
+static void func0() {
+}
+
 static DataObject* createMockObject(QObject* parent) {
     DataObject* ret = new DataObject(parent);
     ret->setProperty("value1", 1);
     ret->setProperty("value2", 2.0);
     ret->setProperty("value3", "3");
-
     return ret;
 }
 
@@ -40,6 +42,7 @@ C11TestCases::C11TestCases(QObject *parent) : QObject(parent)
 
 void C11TestCases::initTestCase()
 {
+    Q_UNUSED(func0);
 }
 
 void C11TestCases::validate_template_static_variable()
@@ -87,8 +90,7 @@ void C11TestCases::spec_QVariant()
 
 void C11TestCases::test_private_has()
 {
-    class A{
-
+    class A {
     };
 
     QCOMPARE(static_cast<bool>(_::Private::has_reserve<std::vector<int>>::value), true);
@@ -143,6 +145,8 @@ void C11TestCases::test_private_has()
 
 void C11TestCases::test_private_is_static_collection()
 {
+    using QObjectSubClass = C11TestCases;
+
     QCOMPARE(static_cast<bool>(_::Private::is_static_collection<std::vector<int>>::value), true);
     QCOMPARE(static_cast<bool>(_::Private::is_static_collection<QStringList>::value), true);
 
@@ -155,7 +159,7 @@ void C11TestCases::test_private_is_static_collection()
     QCOMPARE(static_cast<bool>(_::Private::is_static_collection<QVector<int>>::value), true);
     QCOMPARE(static_cast<bool>(_::Private::is_static_collection<QList<int>>::value), true);
 
-    QCOMPARE(static_cast<bool>(_::Private::is_static_collection<C11TestCases>::value), false);
+    QCOMPARE(static_cast<bool>(_::Private::is_static_collection<QObjectSubClass>::value), false);
 
     QCOMPARE(static_cast<bool>(_::Private::is_static_collection<std::map<int, bool>>::value), false);
 
@@ -298,6 +302,35 @@ void C11TestCases::test_private_traits()
         QVERIFY(ti1 == ti2);
 
     }
+}
+
+void C11TestCases::test_private_is_lambda()
+{
+    auto lambda0 = []() {};
+
+    auto lambda1 = [](int) {};
+
+    auto lambda2 = [](bool, QString) {};
+
+    auto lambda3 = [](unsigned int, QString, QVariant) {};
+
+    QVERIFY((_::Private::is_lambda<decltype (lambda0)>::value));
+    QVERIFY((_::Private::is_lambda<decltype (lambda1)>::value));
+    QVERIFY((_::Private::is_lambda<decltype (lambda2)>::value));
+    QVERIFY((_::Private::is_lambda<decltype (lambda3)>::value));
+
+    QVERIFY(!(_::Private::is_lambda<decltype(func0)>::value));
+    QVERIFY(!(_::Private::is_lambda<QString>::value));
+    QVERIFY(!(_::Private::is_lambda<decltype(func0)>::value));
+}
+
+void C11TestCases::test_private_is_callable() {
+    auto lambda0 = []() {};
+
+    QVERIFY((_::Private::is_callable<decltype(lambda0)>::value));
+    QVERIFY((_::Private::is_callable<decltype(func0)>::value));
+
+    QVERIFY(!(_::Private::is_callable<QString>::value));
 }
 
 void C11TestCases::test_private_invoke()

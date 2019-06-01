@@ -154,6 +154,9 @@ Builder::Result Builder::build(const QString& name, const QString &code)
 
 void Builder::buildAndTest(const QString &name, const QString &code, const QString &expectedErrorMessage)
 {
+    qDebug().noquote() << "Compiled code:" << code;
+    qDebug().noquote() << "Expected Error Message" << expectedErrorMessage;
+
     auto ret = build(name, code);
 
     QVERIFY(ret.exitCode != 0);
