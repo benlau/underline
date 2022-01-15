@@ -21,7 +21,7 @@
   "dependencies": {
     "lodash": "^4.17.11",
     "mustache": "2.3.0",
-    "shelljs": "0.8.2",
+    "shelljs": "0.8.5",
     "sprintf-js": "1.1.1"
   }
 }
